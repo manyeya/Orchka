@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 const loginSchema = z.object({
     email: z.email("Please enter a valid email"),
@@ -56,6 +57,14 @@ export function LoginForm() {
         <div className='flex flex-col gap-6'>
             <Card className='w-[600px] mx-auto'>
                 <CardHeader className='text-center'>
+                    <div className='flex justify-center mb-6'>
+                        <Image
+                            src='/flowbase-logo.svg'
+                            alt='Logo'
+                            width={120}
+                            height={40}
+                        />
+                    </div>
                     <CardTitle>Welcome Back</CardTitle>
                     <CardDescription>Sign in to your account</CardDescription>
                 </CardHeader>
@@ -70,6 +79,13 @@ export function LoginForm() {
                                 onClick={() => authClient.signIn.social({ provider: 'github' })}
                                 disabled={isPending}
                             >
+                                <Image
+                                    src='/github-logo.svg'
+                                    alt='GitHub'
+                                    width={20}
+                                    height={20}
+                                    className='mr-2'
+                                />
                                 Continue with GitHub
                             </Button>
                             <Button
@@ -79,6 +95,13 @@ export function LoginForm() {
                                 onClick={() => authClient.signIn.social({ provider: 'google' })}
                                 disabled={isPending}
                             >
+                                <Image
+                                    src='/google-logo.svg'
+                                    alt='Google'
+                                    width={20}
+                                    height={20}
+                                    className='mr-2'
+                                />
                                 Continue with Google
                             </Button>
                         </div>
