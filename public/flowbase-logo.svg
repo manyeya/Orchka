@@ -1,0 +1,21 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Workflow-inspired design in primary color -->
+  
+  <!-- Main flow line -->
+  <path d="M10 20 L25 20 L32 12 L39 28 L50 20 L65 20 L72 12 L79 28 L90 20 L105 20 L112 12 L119 28" 
+        stroke="hsl(48.5130 13.68% 67.16%)" 
+        stroke-width="3" 
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  
+  <!-- Connection nodes -->
+  <circle cx="25" cy="20" r="3" fill="hsl(48.5130 13.68% 67.16%)"/>
+  <circle cx="50" cy="20" r="3" fill="hsl(48.5130 13.68% 67.16%)"/>
+  <circle cx="90" cy="20" r="3" fill="hsl(48.5130 13.68% 67.16%)"/>
+  
+  <!-- Workflow arrows -->
+  <polygon points="18,17 22,20 18,23" fill="hsl(48.5130 13.68% 67.16%)"/>
+  <polygon points="43,17 47,20 43,23" fill="hsl(48.5130 13.68% 67.16%)"/>
+  <polygon points="83,17 87,20 83,23" fill="hsl(48.5130 13.68% 67.16%)"/>
+</svg>
