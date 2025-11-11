@@ -19,7 +19,10 @@ export default function Home() {
   const ai = useMutation(trpc.ai.mutationOptions({
     onSuccess: () => {
       toast.success("Testing AI Successful")
-    }
+    },
+    onError: (ctx => {
+      toast.error(ctx.message)
+    })
   }))
 
   return (
