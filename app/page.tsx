@@ -15,6 +15,13 @@ export default function Home() {
       toast.success("Job Queued")
     }
   }))
+
+  const ai = useMutation(trpc.ai.mutationOptions({
+    onSuccess: () => {
+      toast.success("Testing AI Successful")
+    }
+  }))
+
   return (
     <div className="font-sans ">
       <CurrentUser />
@@ -24,6 +31,7 @@ export default function Home() {
         )) : <li>No workflows</li>}
       </ul>
       <Button disabled={createWorkflow.isPending} onClick={() => createWorkflow.mutate()}>Create Workflow</Button>
+      <Button disabled={ai.isPending} onClick={() => ai.mutate()}>Test AI</Button>
     </div>
   );
 }
