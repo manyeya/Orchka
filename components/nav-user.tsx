@@ -30,6 +30,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth/client"
+import { hasSubscription } from "@/features/payments/hooks/use-payment"
+
 
 export function NavUser() {
   const { isMobile } = useSidebar()
@@ -43,6 +45,10 @@ export function NavUser() {
 
   const handleSignOut = async () => {
     await authClient.signOut()
+  }
+
+  const handleUpgrade = async () => {
+    await authClient.checkout({ slug: "Orchka-Pro" })
   }
 
   return (
@@ -88,13 +94,16 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {!hasSubscription && (
+
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleUpgrade}>
+                  <Sparkles />
+                  Upgrade to Pro
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            )}
+            {!hasSubscription && (<DropdownMenuSeparator />)}
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />

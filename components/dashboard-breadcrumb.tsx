@@ -26,7 +26,7 @@ export function DashboardBreadcrumb() {
   const pathname = usePathname()
 
   // Remove the /dashboard prefix if it exists
-  const cleanPath = pathname.replace(/^\/dashboard/, "")
+  const cleanPath = pathname.replace(/^\//, "")
 
   // Split path into segments
   const segments = cleanPath.split("/").filter(Boolean)
@@ -74,36 +74,22 @@ export function DashboardBreadcrumb() {
     }
   }
 
-  // If no segments, show Dashboard
-  if (breadcrumbItems.length === 0) {
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Dashboard</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    )
-  }
-
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/dashboard">Dashboard</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
         {breadcrumbItems.map((item, index) => (
-          <div key={item.href} className="flex items-center">
-            <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
+          <div key={item.href} className="flex items-center justify-center">
+            {index > 0 && (
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4" />
+              </BreadcrumbSeparator>
+            )}
             <BreadcrumbItem>
               {item.isLast ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                <BreadcrumbPage className="ml-2">{item.label}</BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
-                  <Link href={`/dashboard${item.href}`}>{item.label}</Link>
+                  <Link href={item.href}>{item.label}</Link>
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>

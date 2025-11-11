@@ -37,7 +37,7 @@ function SettingsSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="w-96 border-r bg-muted/10">
+    <div className="w-[calc(var(--spacing) * 100)] border-r bg-muted/10">
       <div className="p-6">
         <h2 className="text-lg font-semibold">Settings</h2>
         <p className="text-sm text-muted-foreground mt-1">
