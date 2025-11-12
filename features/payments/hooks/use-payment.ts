@@ -11,7 +11,7 @@ const usePayments = () => {
     })
 }
 
-export const hasSubscription = () => {
+export const useSubscription = () => {
     const {data:customer, isLoading, ...rest} = usePayments();
     const activeSubscriptions = customer?.activeSubscriptions && customer.activeSubscriptions.length > 0;
     
