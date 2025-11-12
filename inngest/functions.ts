@@ -13,6 +13,7 @@ export const helloWorld = inngest.createFunction(
       return prisma.workflow.create({
         data: {
           name: "New Workflow - " + event.data.email,
+          userId: event.data.userId,
         }
       })
     });

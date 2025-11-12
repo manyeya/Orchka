@@ -8,6 +8,7 @@ import {
   GalleryVerticalEnd,
   Map,
   PieChart,
+  PlusIcon,
   Settings2,
   SquareTerminal,
 } from "lucide-react"
@@ -23,6 +24,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { Button } from "./ui/button"
 
 // This is sample data.
 const data = {
@@ -33,7 +35,7 @@ const data = {
   },
   teams: [
     {
-      name: "Flowbase",
+      name: "Project Orc",
       logo: GalleryVerticalEnd,
       plan: "Enterprise",
     },

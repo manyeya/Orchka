@@ -5,10 +5,10 @@ import { cache } from 'react';
 import { createTRPCContext } from './init';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
-import { dehydrate } from '@tanstack/react-query';
+import { dehydrate,HydrationBoundary } from '@tanstack/react-query';
 
-import { HydrationBoundary } from '@tanstack/react-query';
 export const getQueryClient = cache(makeQueryClient);
+
 export const trpc = createTRPCOptionsProxy({
   ctx: createTRPCContext,
   router: appRouter,
@@ -25,6 +25,7 @@ export function HydrateClient(props: { children: React.ReactNode }) {
     </HydrationBoundary>
   );
 }
+
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
 ) {

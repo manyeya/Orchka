@@ -30,12 +30,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth/client"
-import { hasSubscription } from "@/features/payments/hooks/use-payment"
+import { useSubscription} from "@/features/payments/hooks/use-payment"
 
 
 export function NavUser() {
   const { isMobile } = useSidebar()
   const session = authClient.useSession()
+
+  const {hasSubscription, subscription, isLoading} = useSubscription()
 
   const user = session.data?.user
 
@@ -94,7 +96,7 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {!hasSubscription && (
+            {!isLoading && subscription?.status !== "active" && (
 
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={handleUpgrade}>
@@ -103,7 +105,8 @@ export function NavUser() {
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             )}
-            {!hasSubscription && (<DropdownMenuSeparator />)}
+
+            { !isLoading && subscription?.status !== "active" && (<DropdownMenuSeparator />)}
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
