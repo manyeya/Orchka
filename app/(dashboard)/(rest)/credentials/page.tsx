@@ -10,8 +10,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { requireAuth } from '@/lib/auth/utils'
 
-function CredentialsPage() {
+async function CredentialsPage() {
+  await requireAuth()
   return (
     <Empty>
       <EmptyHeader>

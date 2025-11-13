@@ -1,14 +1,17 @@
+"use client"
+
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DashboardBreadcrumb } from "@/components/dashboard-breadcrumb"
-import { requireAuth } from "@/lib/auth/utils"
+import { CommandPalette } from "@/components/command-palette"
+import { useCommandPalette } from "@/hooks/use-command-palette"
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  await requireAuth()
+  const { open, setOpen } = useCommandPalette()
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
@@ -21,6 +24,7 @@ export default async function DashboardLayout({
           {children}
         </div>
       </SidebarInset>
+      <CommandPalette open={open} onOpenChange={setOpen} />
     </SidebarProvider>
   )
 }

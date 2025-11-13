@@ -57,7 +57,6 @@ export const premiumProcedure = protectedProcedure.use(async ({ctx, next}) => {
         externalId: ctx.auth.user.id,
     })
     
-    console.log(customer)
     if (!customer.activeSubscriptions || customer.activeSubscriptions.length === 0) {
         throw new TRPCError({
             code: 'FORBIDDEN',
