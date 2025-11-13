@@ -32,7 +32,7 @@ async function ExecutionsPage() {
         </EmptyMedia>
         <EmptyTitle>No Executions Yet</EmptyTitle>
         <EmptyDescription>
-          You haven't run any workflow executions yet. Start by running
+          You havent run any workflow executions yet. Start by running
           your first workflow.
         </EmptyDescription>
       </EmptyHeader>

@@ -24,7 +24,7 @@ export const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
         <AlertDialogHeader>
           <AlertDialogTitle>Upgrade Required</AlertDialogTitle>
           <AlertDialogDescription>
-            You've reached the limit for your current plan. Upgrade now to unlock more features and continue using Flowbase without restrictions.
+            You have reached the limit for your current plan. Upgrade now to unlock more features and continue using Flowbase without restrictions.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

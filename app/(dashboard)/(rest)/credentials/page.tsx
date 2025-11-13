@@ -32,7 +32,7 @@ async function CredentialsPage() {
         </EmptyMedia>
         <EmptyTitle>No Credentials Yet</EmptyTitle>
         <EmptyDescription>
-          You haven't added any credentials yet. Add your first credential
+          You havent added any credentials yet. Add your first credential
           to connect to external services.
         </EmptyDescription>
       </EmptyHeader>

@@ -28,7 +28,7 @@ export const WorkflowsList = () => {
                     </EmptyMedia>
                     <EmptyTitle>No Workflows Yet</EmptyTitle>
                     <EmptyDescription>
-                        You haven't created any workflows yet. Get started by creating
+                        You havent created any workflows yet. Get started by creating
                         your first workflow.
                     </EmptyDescription>
                 </EmptyHeader>
