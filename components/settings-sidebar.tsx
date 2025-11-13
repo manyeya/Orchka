@@ -18,6 +18,7 @@ export function SettingsSidebar() {
             const isActive = pathname === item.href
             return (
               <Link
+                prefetch
                 key={item.href}
                 href={item.href}
                 className={cn(
@@ -51,6 +52,7 @@ export function SettingsSidebar() {
           const isActive = pathname === item.href
           return (
             <Link
+              prefetch
               key={item.href}
               href={item.href}
               className={cn(
