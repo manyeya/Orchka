@@ -11,15 +11,17 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty"
-import { EntityContainer, EntityHeader } from "@/components/entity-component"
+import { EntityContainer, EntityHeader, EntityPagination, EntitySearch } from "@/components/entity-component"
 import { useUpgradeModal } from "@/features/payments/hooks/use-upgrade-modal"
+import { useWorkflowsParams } from "../hooks/use-workflows-params"
+import { useEntitySearch } from "@/hooks/use-entity-search"
 
 export const WorkflowsList = () => {
     const workflows = useSuspenseWorkflows()
     const { isPending, mutate } = useCreateWorkflow()
     const { modal, handleError } = useUpgradeModal()
 
-    if (workflows.data.length === 0) {
+    if (workflows.data.count === 0) {
         return (
             <Empty>
                 <EmptyHeader>
@@ -54,12 +56,13 @@ export const WorkflowsList = () => {
 
     return (
         <ul>
-            {workflows.data.map((workflow) => (
+            {workflows.data.items.map((workflow) => (
                 <li key={workflow.id}>{workflow.name}</li>
             ))}
         </ul>
     )
 }
+
 
 
 const WorkflowsHeader = () => {
@@ -72,7 +75,7 @@ const WorkflowsHeader = () => {
                 title="Workflows"
                 description="Manage your workflows"
                 newButtonLabel="Create Workflow"
-                onNew={() => mutate(undefined,{
+                onNew={() => mutate(undefined, {
                     onError: (error) => {
                         handleError(error)
                     }
@@ -83,10 +86,33 @@ const WorkflowsHeader = () => {
     )
 }
 
+const WorkflowsSearch = () => {
+    const [params, setParams] = useWorkflowsParams()
+    const { searchValue, onSearchChange } = useEntitySearch({ params, setParams })
+    return (
+        <EntitySearch value={searchValue} onChange={onSearchChange} placeholder="Search Workflows" />
+    )
+}
+
+const WorkflowsPagination = () => {
+    const [params, setParams] = useWorkflowsParams()
+    const workflows = useSuspenseWorkflows()
+    return (
+        <EntityPagination
+            page={workflows.data.page}
+            totalPages={workflows.data.totalPages}
+            onPageChange={(page) => setParams({ ...params, page })}
+            disabled={workflows.isFetching}
+        />
+    )
+}
+
 export const WorkflowsContainer = ({ children }: { children: React.ReactNode }) => {
     return (
         <EntityContainer
             header={<WorkflowsHeader />}
+            search={<WorkflowsSearch />}
+            pagination={<WorkflowsPagination />}
         >
             {children}
         </EntityContainer>

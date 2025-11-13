@@ -5,6 +5,8 @@ import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
 import { requireAuth } from '@/lib/auth/utils'
 import type { Metadata } from 'next'
+import { workflowsParamsLoader } from '@/features/workflows/server/params-loader'
+import type { SearchParams } from 'nuqs/server'
 
 export const metadata: Metadata = {
   title: "Workflows",
@@ -15,9 +17,14 @@ export const metadata: Metadata = {
   },
 }
 
-async function WorkflowPage() {
+type WorkflowPageProps = {
+  searchParams: Promise<SearchParams>
+}
+
+async function WorkflowPage({ searchParams }: WorkflowPageProps) {
   await requireAuth()
-  prefetchWorkflows()
+  const params = await workflowsParamsLoader(searchParams)
+  prefetchWorkflows(params)
   return (
     <WorkflowsContainer>
       <HydrateClient>
