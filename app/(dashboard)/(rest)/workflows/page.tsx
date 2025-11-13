@@ -4,6 +4,16 @@ import { prefetchWorkflows } from '@/features/workflows/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
 import { requireAuth } from '@/lib/auth/utils'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Workflows",
+  description: "Manage and monitor your automated workflows in Orchka.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function WorkflowPage() {
   await requireAuth()

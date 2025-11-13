@@ -11,6 +11,16 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { requireAuth } from '@/lib/auth/utils'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Executions",
+  description: "View and manage your workflow executions.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function ExecutionsPage() {
   await requireAuth()

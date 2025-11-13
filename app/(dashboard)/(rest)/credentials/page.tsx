@@ -11,6 +11,16 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { requireAuth } from '@/lib/auth/utils'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Credentials",
+  description: "Manage and monitor your credentials.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function CredentialsPage() {
   await requireAuth()
