@@ -2,11 +2,13 @@ import { useTRPC } from "@/trpc/client"
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useWorkflowsParams } from "./use-workflows-params"
 
 // get all workflows
 export const useSuspenseWorkflows = () => {
     const trpc = useTRPC()
-    return useSuspenseQuery(trpc.workflows.getWorkflows.queryOptions())
+    const [params] = useWorkflowsParams()
+    return useSuspenseQuery(trpc.workflows.getWorkflows.queryOptions(params))
 }
 
 //create a new workflow
@@ -18,7 +20,7 @@ export const useCreateWorkflow = () => {
         onSuccess: (data) => {
             toast.success(`Workflow ${data.name} created successfully`)
             router.push(`/workflows/${data.id}`)
-            queryClient.invalidateQueries(trpc.workflows.getWorkflows.queryOptions())
+            queryClient.invalidateQueries(trpc.workflows.getWorkflows.queryOptions({}))
         },
         onError: (error) => {
             toast.error(`Failed to create workflow: ${error.message}`)
@@ -26,4 +28,3 @@ export const useCreateWorkflow = () => {
     }))
 }
 
-//Author: Manyeya Khutso Siema
