@@ -1,4 +1,9 @@
+"use client";
+
 import { Zap, Share2, Shield, Box, Cpu, Activity } from "lucide-react";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const features = [
     {
@@ -33,11 +38,46 @@ const features = [
     },
 ];
 
+import { useGSAP } from "@gsap/react";
+
 export function Features() {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useGSAP(() => {
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Animate header
+        gsap.set(".features-header", { y: 50, opacity: 0 });
+        gsap.to(".features-header", {
+            scrollTrigger: {
+                trigger: ".features-header",
+                start: "top 80%",
+            },
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power3.out",
+        });
+
+        // Animate cards
+        gsap.set(".feature-card", { y: 50, opacity: 0 });
+        gsap.to(".feature-card", {
+            scrollTrigger: {
+                trigger: ".features-grid",
+                start: "top 80%",
+            },
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power3.out",
+        });
+    }, { scope: containerRef });
+
     return (
-        <section className="w-full py-20 bg-background border-b border-border">
+        <section ref={containerRef} className="w-full py-20 bg-background border-b border-border">
             <div className="container mx-auto px-4 md:px-6">
-                <div className="flex flex-col items-start mb-12">
+                <div className="features-header flex flex-col items-start mb-12">
                     <div className="inline-block px-3 py-1 mb-4 text-xs font-mono uppercase tracking-widest border border-primary text-primary">
                         System Capabilities
                     </div>
@@ -46,11 +86,11 @@ export function Features() {
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-border">
+                <div className="features-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-border">
                     {features.map((feature, index) => (
                         <div
                             key={index}
-                            className="group relative p-8 border-r border-b border-border hover:bg-accent/5 transition-colors duration-300"
+                            className="feature-card group relative p-8 border-r border-b border-border hover:bg-accent/5 transition-colors duration-300"
                         >
                             <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span className="text-[10px] font-mono text-muted-foreground">

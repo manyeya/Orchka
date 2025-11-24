@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
     ReactFlow,
     Background,
@@ -15,6 +15,8 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Database, Mail, MessageSquare, FileText, Globe, Zap, LucideIcon, Lock, Activity, Cpu } from "lucide-react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 // Icon map for serializable data
 const iconMap = {
@@ -46,8 +48,8 @@ const BrutalistNode = (props: NodeProps) => {
                 </div>
             </div>
 
-            <Handle type="target" position={Position.Top} className="!bg-primary !w-2 !h-2 !rounded-none !border-none" />
-            <Handle type="source" position={Position.Bottom} className="!bg-primary !w-2 !h-2 !rounded-none !border-none" />
+            <Handle type="target" position={Position.Top} className="bg-primary! w-2! h-2! rounded-none! border-none!" />
+            <Handle type="source" position={Position.Bottom} className="bg-primary! w-2! h-2! rounded-none! border-none!" />
         </div>
     );
 };
@@ -104,19 +106,67 @@ const initialEdges = [
     { id: "e5-6", source: "5", target: "6", animated: true, style: { stroke: "var(--primary)" } },
 ];
 
+import { useGSAP } from "@gsap/react";
+
 export function WorkflowPreview() {
     const [nodes, , onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const onConnect = useCallback(
         (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: "var(--primary)" } }, eds)),
         [setEdges],
     );
 
+    useGSAP(() => {
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Animate header
+        gsap.set(".workflow-header", { y: 50, opacity: 0 });
+        gsap.to(".workflow-header", {
+            scrollTrigger: {
+                trigger: ".workflow-header",
+                start: "top 80%",
+            },
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power3.out",
+        });
+
+        // Animate visualizer
+        gsap.set(".workflow-visualizer", { scale: 0.95, opacity: 0 });
+        gsap.to(".workflow-visualizer", {
+            scrollTrigger: {
+                trigger: ".workflow-visualizer",
+                start: "top 70%",
+            },
+            scale: 1,
+            opacity: 1,
+            duration: 1,
+            ease: "power3.out",
+        });
+
+        // Animate bento cards
+        gsap.set(".bento-card", { x: 50, opacity: 0 });
+        gsap.to(".bento-card", {
+            scrollTrigger: {
+                trigger: ".workflow-visualizer",
+                start: "top 70%",
+            },
+            x: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power3.out",
+            delay: 0.2,
+        });
+    }, { scope: containerRef });
+
     return (
-        <section className="w-full py-20 bg-background border-b border-border overflow-hidden">
+        <section ref={containerRef} className="w-full py-20 bg-background border-b border-border overflow-hidden">
             <div className="container mx-auto px-4 md:px-6">
-                <div className="flex flex-col items-center text-center mb-16">
+                <div className="workflow-header flex flex-col items-center text-center mb-16">
                     <h2 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase font-mono mb-4">
                         Visual Intelligence
                     </h2>
@@ -127,7 +177,7 @@ export function WorkflowPreview() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[800px] md:h-[600px]">
                     {/* Main Visualizer - Spans 2 cols */}
-                    <div className="md:col-span-2 relative bg-accent/5 border border-border rounded-lg overflow-hidden group">
+                    <div className="workflow-visualizer md:col-span-2 relative bg-accent/5 border border-border rounded-lg overflow-hidden group">
                         <div className="absolute top-4 left-4 z-10 px-2 py-1 bg-background border border-border text-xs font-mono uppercase">
                             Live Preview
                         </div>
@@ -158,7 +208,7 @@ export function WorkflowPreview() {
                     {/* Bento Grid Explainers - Right Col */}
                     <div className="grid grid-rows-3 gap-4">
                         {/* Card 1 */}
-                        <div className="p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
+                        <div className="bento-card p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
                             <div className="w-10 h-10 bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary">
                                 <Cpu className="w-5 h-5" />
                             </div>
@@ -169,7 +219,7 @@ export function WorkflowPreview() {
                         </div>
 
                         {/* Card 2 */}
-                        <div className="p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
+                        <div className="bento-card p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
                             <div className="w-10 h-10 bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary">
                                 <Activity className="w-5 h-5" />
                             </div>
@@ -180,7 +230,7 @@ export function WorkflowPreview() {
                         </div>
 
                         {/* Card 3 */}
-                        <div className="p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
+                        <div className="bento-card p-6 bg-background border border-border flex flex-col justify-center hover:bg-accent/5 transition-colors">
                             <div className="w-10 h-10 bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 text-primary">
                                 <Lock className="w-5 h-5" />
                             </div>
