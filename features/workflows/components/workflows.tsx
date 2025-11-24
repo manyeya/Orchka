@@ -13,8 +13,6 @@ import { formatDistanceToNow } from "date-fns"
 
 export const WorkflowsList = () => {
     const workflows = useSuspenseWorkflows()
-    // const { isPending, mutate } = useCreateWorkflow()
-    // const { modal, handleError } = useUpgradeModal()
 
     return (
         <EntityList

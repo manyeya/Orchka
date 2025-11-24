@@ -3,6 +3,11 @@ import { AlertTriangle, AlertTriangleIcon, ArrowUpRight, DotSquareIcon, FileExcl
 import Link from "next/link"
 import { Input } from "./ui/input"
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
     Pagination,
     PaginationContent,
     PaginationItem,
@@ -356,5 +361,28 @@ export const EntityItem = ({
                 </Link>
             </Item>
         </div>
+    )
+}
+
+interface EntityTooltipProps {
+    children: React.ReactNode
+    content: React.ReactNode
+    side?: "top" | "right" | "bottom" | "left"
+}
+
+export const AppTooltip = ({
+    children,
+    content,
+    side = "bottom"
+}: EntityTooltipProps) => {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                {children}
+            </TooltipTrigger>
+            <TooltipContent side={side} className="text-xs">
+                {content}
+            </TooltipContent>
+        </Tooltip>
     )
 }
