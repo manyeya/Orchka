@@ -5,7 +5,7 @@ export function Hero() {
     return (
         <section className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-background text-foreground border-b border-border">
             {/* Grid Background */}
-            <div className="absolute inset-0 w-full h-full bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20 pointer-events-none" />
+            <div className="absolute inset-0 w-full h-full bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20 pointer-events-none" />
 
             {/* Floating Abstract Elements */}
             <div className="absolute top-20 left-10 w-32 h-32 border border-primary/20 rounded-full animate-pulse opacity-50 hidden md:block" />
@@ -29,7 +29,7 @@ export function Hero() {
                     </span>
                 </h1>
 
-                <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8 mb-10 font-mono">
+                <p className="max-w-2xl leading-normal text-muted-foreground sm:text-xl sm:leading-8 mb-10 font-mono">
                     The brutalist workflow engine for alien franchises. Build, deploy, and scale your intergalactic operations with zero latency.
                 </p>
 
