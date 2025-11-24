@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { PlusIcon, SearchIcon } from "lucide-react"
+import { AlertTriangle, AlertTriangleIcon, ArrowUpRight, DotSquareIcon, FileExclamationPointIcon, FolderCode, Loader2Icon, MoreVerticalIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react"
 import Link from "next/link"
 import { Input } from "./ui/input"
 import {
@@ -10,6 +10,14 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Spinner } from "./ui/spinner"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
+import { cn } from "@/lib/utils"
+
+import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemHeader, ItemMedia, ItemTitle } from "./ui/item"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
+
 
 type EntityHeaderProps = {
     title: string
@@ -84,9 +92,9 @@ export const EntityContainer = ({
         <div className="p-4 md:px-10 md:py-6 h-full">
             <div className="mx-auto max-w-screen-7xl w-full flex flex-col h-full gap-y-8">
                 {header}
-            {search}
+                {search}
                 <div className="flex flex-col h-full gap-y-4 justify-center items-center">
-        
+
                     {children}
                 </div>
                 {pagination}
@@ -163,5 +171,190 @@ export const EntityPagination = ({
                 </PaginationItem>
             </PaginationContent>
         </Pagination>
+    )
+}
+
+interface StateViewProps {
+    message?: string
+}
+
+interface LoadingViewProps extends StateViewProps {
+    entity?: string
+}
+
+
+export const LoadingView = ({ message, entity }: LoadingViewProps) => {
+    return (
+        <div className="flex flex-col h-full gap-y-4 justify-center items-center">
+            <Spinner />
+            <p>{message || `Loading ${entity}...`}</p>
+        </div>
+    )
+}
+
+interface EmptyViewProps extends StateViewProps {
+    entity?: string
+    description?: string
+    isPending?: boolean
+    canBeImported?: boolean
+    onNew?: () => void
+    icon: React.ReactNode
+}
+
+export const EmptyView = ({ message, icon, entity, isPending, canBeImported, onNew }: EmptyViewProps) => {
+    return (
+        <Empty>
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    {icon}
+                </EmptyMedia>
+                <EmptyTitle>{message || `No ${entity} Yet`}</EmptyTitle>
+                <EmptyDescription>
+                    {message || `You havent created any ${entity} yet. Get started by creating
+                    your first ${entity}.`}
+                </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+                <div className="flex gap-2">
+                    <Button disabled={isPending} onClick={onNew}>Create {entity}</Button>
+                    {canBeImported && <Button variant="outline">Import {entity}</Button>}
+                </div>
+            </EmptyContent>
+            <Button
+                variant="link"
+                asChild
+                className="text-muted-foreground"
+                size="sm"
+            >
+                <Link href="#">
+                    Learn More <ArrowUpRight />
+                </Link>
+            </Button>
+        </Empty>
+    )
+}
+
+interface ErrorViewProps extends StateViewProps {
+    entity?: string
+}
+
+export const ErrorView = ({ message, entity }: ErrorViewProps) => {
+    return (
+        <Empty>
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <AlertTriangleIcon />
+                </EmptyMedia>
+                <EmptyTitle>{message || `Error loading ${entity}`}</EmptyTitle>
+                <EmptyDescription>
+                    {message || `Something went wrong while loading ${entity}. Please try again.`}
+                </EmptyDescription>
+            </EmptyHeader>
+        </Empty>
+    )
+}
+
+
+interface EntityListProps<T> {
+    items: T[]
+    render: (item: T, index: number) => React.ReactNode
+    getKey: (item: T, index: number) => string | number
+    emptyView?: React.ReactNode
+    className?: string
+}
+
+export const EntityList = <T,>({
+    items,
+    render,
+    getKey,
+    emptyView,
+    className
+}: EntityListProps<T>) => {
+    if (items.length === 0 && emptyView) {
+        return (
+            <div className="flex-1 flex justify-center items-center">
+                <div className="max-w-sm mx-auto">
+                    {emptyView}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className={cn("flex flex-col gap-y-4", className)}>
+            {items.map((item, index) => (
+                <div key={getKey ? getKey(item, index) : index}>{render(item, index)}</div>
+            ))}
+        </div>
+    )
+}
+
+
+interface EntityItemProps {
+    href: string
+    title: string
+    subtitle?: React.ReactNode
+    image?: string
+    actions?: React.ReactNode
+    onRemove?: () => void | Promise<void>
+    isRemoving?: boolean
+    className?: string
+}
+
+export const EntityItem = ({
+    href,
+    title,
+    subtitle,
+    image,
+    actions,
+    onRemove,
+    isRemoving,
+    className
+}: EntityItemProps) => {
+
+    const handleRemove = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (isRemoving) return
+        if (onRemove) {
+            await onRemove()
+        }
+    }
+    return (
+        <div className="flex w-full max-w-lg flex-col gap-6">
+            <Item asChild>
+                <Link href={href} prefetch>
+                    <ItemMedia>
+                        <Avatar className="size-10">
+                            <AvatarImage src={image} />
+                            <AvatarFallback>{title.slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                    </ItemMedia>
+                    <ItemContent>
+                        <ItemTitle>{title}</ItemTitle>
+                        <ItemDescription>{subtitle}</ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                        {actions}
+                        {onRemove && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={e => e.stopPropagation()}>
+                                        <MoreVerticalIcon />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleRemove}>
+                                        <TrashIcon />
+                                        Remove
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </ItemActions>
+                </Link>
+            </Item>
+        </div>
     )
 }

@@ -1,69 +1,32 @@
 "use client"
 
-import { useSuspenseWorkflows, useCreateWorkflow } from "../hooks/use-workflows"
-import { FolderCode, ArrowUpRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from "@/components/ui/empty"
-import { EntityContainer, EntityHeader, EntityPagination, EntitySearch } from "@/components/entity-component"
+import { useSuspenseWorkflows, useCreateWorkflow, useRemoveWorkflow } from "../hooks/use-workflows"
+import { FolderCode } from "lucide-react"
+
+import { EmptyView, EntityContainer, EntityHeader, EntityItem, EntityList, EntityPagination, EntitySearch, ErrorView, LoadingView } from "@/components/entity-component"
 import { useUpgradeModal } from "@/features/payments/hooks/use-upgrade-modal"
 import { useWorkflowsParams } from "../hooks/use-workflows-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
+import { useRouter } from "next/navigation"
+import { Workflow } from "@/lib/generated/prisma/client"
+import { formatDistanceToNow } from "date-fns"
 
 export const WorkflowsList = () => {
     const workflows = useSuspenseWorkflows()
-    const { isPending, mutate } = useCreateWorkflow()
-    const { modal, handleError } = useUpgradeModal()
-
-    if (workflows.data.count === 0) {
-        return (
-            <Empty>
-                <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                        <FolderCode />
-                    </EmptyMedia>
-                    <EmptyTitle>No Workflows Yet</EmptyTitle>
-                    <EmptyDescription>
-                        You havent created any workflows yet. Get started by creating
-                        your first workflow.
-                    </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                    <div className="flex gap-2">
-                        <Button disabled={isPending} onClick={() => mutate()}>Create Workflow</Button>
-                        <Button variant="outline">Import Workflow</Button>
-                    </div>
-                </EmptyContent>
-                <Button
-                    variant="link"
-                    asChild
-                    className="text-muted-foreground"
-                    size="sm"
-                >
-                    <a href="#">
-                        Learn More <ArrowUpRight />
-                    </a>
-                </Button>
-            </Empty>
-        )
-    }
+    // const { isPending, mutate } = useCreateWorkflow()
+    // const { modal, handleError } = useUpgradeModal()
 
     return (
-        <ul>
-            {workflows.data.items.map((workflow) => (
-                <li key={workflow.id}>{workflow.name}</li>
-            ))}
-        </ul>
+        <EntityList
+            items={workflows.data.items}
+            render={(workflow) => (
+                <WorkflowsItem workflow={workflow} />
+            )}
+            getKey={(workflow) => workflow.id}
+            emptyView={<WorkflowsEmptyView />}
+        />
     )
 }
-
-
 
 const WorkflowsHeader = () => {
     const { isPending, mutate } = useCreateWorkflow()
@@ -119,3 +82,58 @@ export const WorkflowsContainer = ({ children }: { children: React.ReactNode }) 
     )
 }
 
+export const WorkflowsLoadingView = () => {
+    return (
+        <LoadingView entity="Workflows" />
+    )
+}
+
+export const WorkflowsEmptyView = () => {
+    const { isPending, mutate } = useCreateWorkflow()
+    const { modal, handleError } = useUpgradeModal()
+    const router = useRouter()
+    return (
+        <>
+            {modal}
+            <EmptyView entity="Workflows" isPending={isPending} onNew={() => mutate(
+                undefined,
+                {
+                    onError: (error) => {
+                        handleError(error)
+                    },
+                    onSuccess: (data) => {
+                        router.push(`/workflows/${data.id}`)
+                    }
+                }
+            )} canBeImported icon={<FolderCode />} />
+        </>
+    )
+}
+
+export const WorkflowsErrorView = () => {
+    return (
+        <ErrorView entity="Workflows" />
+    )
+}
+
+export const WorkflowsItem = ({ workflow }: { workflow: Workflow }) => {
+    const { mutateAsync: removeWorkflow, isPending: isRemoving } = useRemoveWorkflow()
+    return (
+        <EntityItem
+            href={`/workflows/${workflow.id}`}
+            title={workflow.name}
+            subtitle={
+                <>
+                    Updated {formatDistanceToNow(workflow.updatedAt, { addSuffix: true })}{" "}
+                    &bull;{" "}
+                    Created {formatDistanceToNow(workflow.createdAt, { addSuffix: true })}
+                </>
+            }
+            image={workflow.name.charAt(0)}
+            onRemove={async () => {
+                await removeWorkflow({ id: workflow.id })
+            }}
+            isRemoving={isRemoving}
+        />
+    )
+}

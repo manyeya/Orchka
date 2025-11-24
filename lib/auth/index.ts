@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
-import { polar, checkout, portal, usage, webhooks } from "@polar-sh/better-auth";
-
+import { polar, checkout, portal } from "@polar-sh/better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@/lib/db";
 import { polarClient } from "../polar";

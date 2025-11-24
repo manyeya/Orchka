@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { WorkflowsContainer, WorkflowsList } from '@/features/workflows/components/workflows'
+import { WorkflowsContainer, WorkflowsErrorView, WorkflowsList, WorkflowsLoadingView } from '@/features/workflows/components/workflows'
 import { prefetchWorkflows } from '@/features/workflows/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -28,8 +28,8 @@ async function WorkflowPage({ searchParams }: WorkflowPageProps) {
   return (
     <WorkflowsContainer>
       <HydrateClient>
-        <ErrorBoundary fallback={<p>Something went wrong</p>}>
-          <Suspense fallback={<p>Loading...</p>}>
+        <ErrorBoundary fallback={<WorkflowsErrorView />}>
+          <Suspense fallback={<WorkflowsLoadingView />}>
             <WorkflowsList />
           </Suspense>
         </ErrorBoundary>
