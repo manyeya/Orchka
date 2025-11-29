@@ -89,11 +89,10 @@ export default function RootLayout({
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
-
           >
             <NuqsAdapter>
               {children}
-              <Toaster />
+              <Toaster position="bottom-center" richColors />
             </NuqsAdapter>
           </ThemeProvider>
         </TRPCReactProvider>

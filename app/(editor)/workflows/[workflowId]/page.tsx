@@ -17,7 +17,7 @@ async function WorkflowPage({ params }: WorkflowPageProps) {
   const { workflowId } = await params
   prefetchWorkflow(workflowId)
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col h-screen">
       <CommandProvider>
         <HydrateClient>
           <ErrorBoundary fallback={<EditorErrorView />}>
