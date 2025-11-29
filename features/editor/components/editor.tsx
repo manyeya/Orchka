@@ -34,7 +34,7 @@ function Editor({ workflowId }: { workflowId: string }) {
         [],
     );
     const onConnect = useCallback(
-        (params: Connection) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+        (params: Connection) => setEdges((edgesSnapshot) => addEdge({ ...params, animated: true, style: { stroke: 'var(--primary)' } }, edgesSnapshot)),
         [],
     );
     return (
@@ -44,8 +44,13 @@ function Editor({ workflowId }: { workflowId: string }) {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
-                proOptions={{hideAttribution: true }}
+                proOptions={{ hideAttribution: true }}
                 nodeTypes={nodeComponents}
+                defaultEdgeOptions={{
+                    animated: true,
+                    style: { stroke: 'var(--primary)' },
+                }}
+                connectionLineStyle={{ stroke: 'var(--primary)', strokeWidth: 2 }}
                 fitView>
                 <Background />
                 <Controls />
