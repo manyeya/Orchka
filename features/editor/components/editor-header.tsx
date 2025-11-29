@@ -162,7 +162,7 @@ export function EditorHeader({
     return (
         <div className="flex items-center justify-between h-14 px-4 border-b border-border bg-background">
             <div className="flex items-center gap-2">
-                <EditorBreadcrum workflowId={workflowId}/>
+                <EditorBreadcrum workflowId={workflowId} />
                 {isDirty && (
                     <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 border-amber-200 dark:border-amber-800">
                         Unsaved
@@ -198,7 +198,7 @@ export function EditorHeader({
                         </AppTooltip>
                     </div>
 
-                    <Separator orientation="vertical" className="h-6 mx-2 bg-border" />
+                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
 
                     {/* Import/Export */}
                     <div className="flex items-center gap-1">
@@ -224,7 +224,7 @@ export function EditorHeader({
                             </Button>
                         </AppTooltip>
                     </div>
-                    <Separator orientation="vertical" className="h-full mx-2 bg-border" />
+                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
                     {/* Validation */}
                     <AppTooltip content={getValidationTooltip()}>
                         <Button

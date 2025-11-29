@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { NodeType } from "@/lib/generated/prisma/enums"
 import Image from "next/image"
 import { Item, ItemContent, ItemMedia, ItemTitle, ItemDescription } from "@/components/ui/item"
-import { Separator } from "@radix-ui/react-separator"
+import { Separator } from "@/components/ui/separator"
 
 interface NodeTypeOption {
     type: NodeType
@@ -53,7 +53,7 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                 return;
             }
         }
-        
+
         setNodes((nodes) => {
             const hasInitialTrigger = nodes.some((node) => node.type === NodeType.INITIAL)
             const centerX = window.innerWidth / 2
@@ -114,7 +114,7 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                         )
                     })}
                 </div>
-                <Separator className="border-accent" />
+                <Separator className="my-4" />
 
                 <div className="flex flex-col gap-4">
                     <SheetHeader>
