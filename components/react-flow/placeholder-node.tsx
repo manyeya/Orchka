@@ -1,6 +1,6 @@
 "use client";
 
-import React, {  type ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import {
   Handle,
   Position,
@@ -15,10 +15,10 @@ export type PlaceholderNodeProps = Partial<NodeProps> & {
 };
 
 export function PlaceholderNode({ children, onClick }: PlaceholderNodeProps) {
-  
+
   return (
     <BaseNode
-      className="bg-card w-auto h-auto border-dashed border-gray-400 p-4 text-center text-gray-400 shadow-none cursor-pointer hover:bg-background hover:border-gray-400"
+      className="bg-card w-auto h-auto border-dashed border-gray-400 p-4 text-center text-gray-400 shadow-none cursor-pointer hover:bg-background hover:border-primary"
       onClick={onClick}
     >
       {children}
