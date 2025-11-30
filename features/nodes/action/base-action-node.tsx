@@ -7,13 +7,8 @@ import { memo, type ReactNode, useCallback } from "react"
 import { BaseNode, BaseNodeContent } from "@/components/react-flow/base-node"
 import { BaseHandle } from "@/components/react-flow/base-handle"
 import { WorkflowNode } from "@/components/workflow-node"
-
-enum NodeStatus {
-    IDLE = "idle",
-    LOADING = "loading",
-    SUCCESS = "success",
-    ERROR = "error",
-}
+import { useDeleteNode } from "@/features/editor/hooks/use-delete-node"
+import { NodeStatus, NodeStatusIndicator } from "@/components/react-flow/node-status-indicator"
 
 interface BaseActionNodeProps extends NodeProps {
     icon: LucideIcon | string;
@@ -27,9 +22,10 @@ interface BaseActionNodeProps extends NodeProps {
 
 export const BaseActionNode = memo((props: BaseActionNodeProps) => {
     const { icon: Icon, name, description, children, status, onSettingsClick, onDoubleClick } = props
+    const deleteNode = useDeleteNode()
     const handleRemoveClick = useCallback(() => {
-
-    }, [props.id])
+        deleteNode(props.id)
+    }, [props.id, deleteNode])
     return (
         <WorkflowNode name={name}
             description={description}
@@ -37,18 +33,20 @@ export const BaseActionNode = memo((props: BaseActionNodeProps) => {
             onSettingsClick={onSettingsClick}
             showToolbar={true}
         >
-            <BaseNode onDoubleClick={onDoubleClick} className="relative group">
-                <BaseNodeContent>
-                {typeof Icon === "string" ? (
-                    <Image src={Icon} alt={name} width={16} height={16} />
-                ) : (
-                    <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
-                )}
-                {children}
-                    <BaseHandle id={props.id + "-target"} type="target" position={Position.Left} />
-                    <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
-                </BaseNodeContent>
-            </BaseNode>
+            <NodeStatusIndicator status={status}>
+                <BaseNode onDoubleClick={onDoubleClick} className="relative group">
+                    <BaseNodeContent>
+                        {typeof Icon === "string" ? (
+                            <Image src={Icon} alt={name} width={16} height={16} />
+                        ) : (
+                            <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
+                        )}
+                        {children}
+                        <BaseHandle id={props.id + "-target"} type="target" position={Position.Left} />
+                        <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
+                    </BaseNodeContent>
+                </BaseNode>
+            </NodeStatusIndicator>
         </WorkflowNode>
     )
 })

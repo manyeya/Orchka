@@ -1,13 +1,20 @@
 import type { Node, NodeProps } from "@xyflow/react"
 import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
-import { memo } from "react";
+import { memo, useCallback } from "react";
+import { SettingsSheet } from "@/features/editor/components/settings-sheet";
+import { useState } from "react";
+import { NodeStatus } from "@/components/react-flow/node-status-indicator";
+import { HttpSettingsForm, type HttpSettingsFormValues } from "./http-settings-form";
+import { useSetAtom } from "jotai";
+import { updateNodeAtom } from "@/features/editor/store";
 
 
 type HttpRequestNodeData = {
     endpoint?: string;
     method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
     body?: string;
+    settings?: HttpSettingsFormValues;
     [key: string]: unknown;
 }
 
@@ -15,16 +22,61 @@ type HttpRequestNodeType = Node<HttpRequestNodeData>;
 
 export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
     const nodeData = props.data as HttpRequestNodeData;
-    const description = nodeData.endpoint ? `${nodeData.method || "GET"} ${nodeData.endpoint}` : "Not Configured"
+    const description = nodeData.settings?.url
+        ? `${nodeData.settings.method || "GET"} ${nodeData.settings.url}`
+        : "Not Configured"
+    const [status, setStatus] = useState<NodeStatus>("initial")
+    const [open, setOpen] = useState(false)
+    const updateNode = useSetAtom(updateNodeAtom);
+
+    const handleFormSubmit = useCallback((values: HttpSettingsFormValues) => {
+        // Update node data with form values using Jotai store
+        updateNode({
+            id: props.id,
+            updates: {
+                data: {
+                    ...props.data,
+                    settings: values,
+                    endpoint: values.url,
+                    method: values.method,
+                    body: values.body,
+                }
+            }
+        });
+        setOpen(false);
+    }, [props.id, props.data, updateNode])
+
+    const handleCancel = useCallback(() => {
+        setOpen(false);
+    }, [])
+
     return (
-        <BaseActionNode 
-        {...props} 
-        id={props.id} 
-        icon={GlobeIcon} 
-        name="HTTP Request" 
-        description={description} 
-        onSettingsClick={() => { }} 
-        onDoubleClick={() => { }} 
-        />
+        <>
+            <SettingsSheet open={open} onOpenChange={setOpen}>
+                <div className="p-6">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-semibold">HTTP Request Settings</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Configure your HTTP request with headers, authentication, and more
+                        </p>
+                    </div>
+                    <HttpSettingsForm
+                        defaultValues={nodeData.settings}
+                        onSubmit={handleFormSubmit}
+                        onCancel={handleCancel}
+                    />
+                </div>
+            </SettingsSheet>
+            <BaseActionNode
+                {...props}
+                id={props.id}
+                icon={GlobeIcon}
+                name="HTTP Request"
+                description={description}
+                status={status}
+                onSettingsClick={() => { setOpen(true) }}
+                onDoubleClick={() => { setOpen(true) }}
+            />
+        </>
     )
 })

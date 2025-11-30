@@ -33,8 +33,24 @@ import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
 import { AppTooltip } from '@/components/entity-component';
-import { useWorkflowBuilder } from '../store';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import {
+    isDirtyAtom,
+    canUndoAtom,
+    canRedoAtom,
+    undoAtom,
+    redoAtom,
+    markCleanAtom,
+    exportWorkflowAtom,
+    importWorkflowAtom,
+    validateGraphAtom,
+    validationResultAtom,
+    workflowContextAtom,
+    nodesAtom,
+    edgesAtom,
+} from '../store';
 import EditorBreadcrum from './editor-breadcrum';
+import { useUpdateWorkflow } from '@/features/workflows/hooks/use-workflows';
 
 interface EditorHeaderProps {
     workflowId: string;
@@ -43,20 +59,24 @@ interface EditorHeaderProps {
 export function EditorHeader({
     workflowId,
 }: EditorHeaderProps) {
-    const {
-        isDirty,
-        canUndo,
-        canRedo,
-        undo,
-        redo,
-        save,
-        exportWorkflow,
-        importWorkflow,
-        validateGraph,
-        validationResult,
-        workflowContext,
-        setWorkflowContext,
-    } = useWorkflowBuilder();
+    // Read-only state
+    const isDirty = useAtomValue(isDirtyAtom);
+    const canUndo = useAtomValue(canUndoAtom);
+    const canRedo = useAtomValue(canRedoAtom);
+    const validationResult = useAtomValue(validationResultAtom);
+    const nodes = useAtomValue(nodesAtom);
+    const edges = useAtomValue(edgesAtom);
+
+    // Read-write state
+    const [workflowContext, setWorkflowContext] = useAtom(workflowContextAtom);
+
+    // Actions
+    const undo = useSetAtom(undoAtom);
+    const redo = useSetAtom(redoAtom);
+    const markClean = useSetAtom(markCleanAtom);
+    const exportWorkflow = useSetAtom(exportWorkflowAtom);
+    const importWorkflow = useSetAtom(importWorkflowAtom);
+    const validateGraph = useSetAtom(validateGraphAtom);
 
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -64,10 +84,29 @@ export function EditorHeader({
     const [isPublishing, setIsPublishing] = useState(false);
     const [showPublishDialog, setShowPublishDialog] = useState(false);
 
+    const updateWorkflow = useUpdateWorkflow();
+
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await save();
+            await updateWorkflow.mutateAsync({
+                id: workflowId,
+                nodes: nodes.map(node => ({
+                    id: node.id,
+                    type: node.type,
+                    position: node.position,
+                    data: node.data
+                })),
+                edges: edges.map(edge => ({
+                    source: edge.source,
+                    target: edge.target,
+                    sourceHandle: edge.sourceHandle || "",
+                    targetHandle: edge.targetHandle || ""
+                }))
+            });
+            markClean();
+        } catch (error) {
+            console.error("Failed to save workflow", error);
         } finally {
             setIsSaving(false);
         }
@@ -179,7 +218,7 @@ export function EditorHeader({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={undo}
-                                disabled={!canUndo()}
+                                disabled={!canUndo}
                                 className="h-8 w-8"
                             >
                                 <Undo className="w-4 h-4" />
@@ -190,7 +229,7 @@ export function EditorHeader({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={redo}
-                                disabled={!canRedo()}
+                                disabled={!canRedo}
                                 className="h-8 w-8"
                             >
                                 <Redo className="w-4 h-4" />
@@ -198,7 +237,7 @@ export function EditorHeader({
                         </AppTooltip>
                     </div>
 
-                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
+                    <Separator orientation="vertical" className="h-6! mx-2 bg-border" />
 
                     {/* Import/Export */}
                     <div className="flex items-center gap-1">
@@ -224,7 +263,7 @@ export function EditorHeader({
                             </Button>
                         </AppTooltip>
                     </div>
-                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
+                    <Separator orientation="vertical" className="h-6! mx-2 bg-border" />
                     {/* Validation */}
                     <AppTooltip content={getValidationTooltip()}>
                         <Button

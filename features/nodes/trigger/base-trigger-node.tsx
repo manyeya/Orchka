@@ -7,13 +7,8 @@ import { memo, type ReactNode, useCallback } from "react"
 import { BaseNode, BaseNodeContent } from "@/components/react-flow/base-node"
 import { BaseHandle } from "@/components/react-flow/base-handle"
 import { WorkflowNode } from "@/components/workflow-node"
-
-enum NodeStatus {
-    IDLE = "idle",
-    LOADING = "loading",
-    SUCCESS = "success",
-    ERROR = "error",
-}
+import { useDeleteNode } from "@/features/editor/hooks/use-delete-node"
+import { NodeStatus, NodeStatusIndicator } from "@/components/react-flow/node-status-indicator"
 
 interface BaseTriggerNodeProps extends NodeProps {
     icon: LucideIcon | string;
@@ -27,28 +22,30 @@ interface BaseTriggerNodeProps extends NodeProps {
 
 export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
     const { icon: Icon, name, description, children, status, onSettingsClick, onDoubleClick } = props
+    const deleteNode = useDeleteNode()
     const handleRemoveClick = useCallback(() => {
-
-    }, [props.id])
+        deleteNode(props.id)
+    }, [props.id, deleteNode])
     return (
         <WorkflowNode name={name}
             description={description}
             onRemoveClick={handleRemoveClick}
             onSettingsClick={onSettingsClick}
             showToolbar={true}
-            
         >
-            <BaseNode onDoubleClick={onDoubleClick} className="rounded-l-2xl relative group">
-                <BaseNodeContent>
-                {typeof Icon === "string" ? (
-                    <Image src={Icon} alt={name} width={16} height={16} />
-                ) : (
-                    <Icon className="size-4 text-muted-foreground group-hover:text-primary"  />
-                )}
-                {children}
-                <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
-                </BaseNodeContent>
-            </BaseNode>
+            <NodeStatusIndicator variant="border" status={status} className="rounded-l-2xl">
+                <BaseNode onDoubleClick={onDoubleClick} className="rounded-l-2xl relative group">
+                    <BaseNodeContent>
+                        {typeof Icon === "string" ? (
+                            <Image src={Icon} alt={name} width={16} height={16} />
+                        ) : (
+                            <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
+                        )}
+                        {children}
+                        <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
+                    </BaseNodeContent>
+                </BaseNode>
+            </NodeStatusIndicator>
         </WorkflowNode>
     )
 })
