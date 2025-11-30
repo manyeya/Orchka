@@ -11,14 +11,13 @@ import {
 } from '@xyflow/react';
 import { validateConnection, validateWorkflowGraph, ValidationResult } from './utils/graph-validation';
 import { exportWorkflow, importWorkflow, downloadWorkflow, uploadWorkflow, ImportResult } from './utils/import-export';
+import { toast } from 'sonner';
 
 interface HistoryState {
   nodes: Node[];
   edges: Edge[];
   timestamp: number;
 }
-
-
 
 // ============================================================================
 // Primitive Atoms (Base State)
@@ -45,7 +44,6 @@ export const dragDataAtom = atom<{
 
 // Constants
 const MAX_HISTORY_SIZE = 50;
-
 
 // ============================================================================
 // Derived Atoms (Computed Values)
@@ -100,8 +98,7 @@ export const onConnectAtom = atom(
     });
 
     if (!validation.isValid) {
-      console.warn('Connection rejected:', validation.error);
-      // TODO: Show user notification
+      toast.error(validation.error);
       return;
     }
 
@@ -351,13 +348,3 @@ export const createExpressionFromDragAtom = atom(
     set(dragDataAtom, null);
   }
 );
-
-// ============================================================================
-// Development Logging
-// ============================================================================
-
-if (process.env.NODE_ENV === 'development') {
-  // You can use jotai-devtools or custom logging here if needed
-  // For now, we'll remove the subscription-based logging
-  console.log('Jotai store initialized');
-}
