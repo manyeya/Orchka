@@ -10,7 +10,7 @@ import {
   EdgeChange,
 } from '@xyflow/react';
 import { validateConnection, validateWorkflowGraph, ValidationResult } from './utils/graph-validation';
-import { exportWorkflow, importWorkflow, downloadWorkflow, uploadWorkflow, ImportResult } from './utils/import-export';
+import { downloadWorkflow, uploadWorkflow } from './utils/import-export';
 import { toast } from 'sonner';
 
 interface HistoryState {
