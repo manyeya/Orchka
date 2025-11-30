@@ -6,7 +6,7 @@ import { google } from "@ai-sdk/google";
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
   { event: "test/hello.world" },
-  async ({ event, step }) => {
+  async ({ event, step, }) => {
     await step.sleep("wait-a-moment", "15s");
 
     await step.run("send-email", async () => {
@@ -17,6 +17,17 @@ export const helloWorld = inngest.createFunction(
         }
       })
     });
+
+    await step.ai.wrap('gemini-generate-text', generateText, {
+      model: google('gemini-2.5-flash'),
+      system: "You are a helpful assistant",
+      prompt: "write a recipe for a pizza for 4 people",
+      experimental_telemetry: {
+        isEnabled: true,
+        recordInputs: true,
+        recordOutputs: true,
+      },
+    })
 
     return { message: `Hello ${event.data.email}!` };
   },

@@ -27,6 +27,7 @@ interface HistoryState {
 export const nodesAtom = atom<Node[]>([]);
 export const edgesAtom = atom<Edge[]>([]);
 export const selectedNodeIdAtom = atom<string | null>(null);
+export const activeSettingsNodeIdAtom = atom<string | null>(null);
 
 export const currentRunIdAtom = atom<string | null>(null);
 export const historyAtom = atom<HistoryState[]>([]);
