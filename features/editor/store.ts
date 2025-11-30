@@ -18,14 +18,7 @@ interface HistoryState {
   timestamp: number;
 }
 
-interface WorkflowContext {
-  workflowId: string;
-  workflowName: string;
-  versionId: string | null;
-  versionNumber: number;
-  versionStatus: string | null;
-  isActiveVersion: boolean;
-}
+
 
 // ============================================================================
 // Primitive Atoms (Base State)
@@ -34,7 +27,7 @@ interface WorkflowContext {
 export const nodesAtom = atom<Node[]>([]);
 export const edgesAtom = atom<Edge[]>([]);
 export const selectedNodeIdAtom = atom<string | null>(null);
-export const workflowContextAtom = atom<WorkflowContext | null>(null);
+
 export const currentRunIdAtom = atom<string | null>(null);
 export const historyAtom = atom<HistoryState[]>([]);
 export const historyIndexAtom = atom<number>(-1);
@@ -323,7 +316,7 @@ export const resetAtom = atom(
     set(nodesAtom, []);
     set(edgesAtom, []);
     set(selectedNodeIdAtom, null);
-    set(workflowContextAtom, null);
+
     set(currentRunIdAtom, null);
     set(historyAtom, []);
     set(historyIndexAtom, -1);

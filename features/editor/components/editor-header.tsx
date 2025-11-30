@@ -12,20 +12,10 @@ import {
     AlertTriangle,
     CheckCircle,
     Info,
-    Rocket,
     History,
     Check
 } from 'lucide-react';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -45,7 +35,6 @@ import {
     importWorkflowAtom,
     validateGraphAtom,
     validationResultAtom,
-    workflowContextAtom,
     nodesAtom,
     edgesAtom,
 } from '../store';
@@ -67,8 +56,7 @@ export function EditorHeader({
     const nodes = useAtomValue(nodesAtom);
     const edges = useAtomValue(edgesAtom);
 
-    // Read-write state
-    const [workflowContext, setWorkflowContext] = useAtom(workflowContextAtom);
+
 
     // Actions
     const undo = useSetAtom(undoAtom);
@@ -81,8 +69,6 @@ export function EditorHeader({
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isTestRunning, setIsTestRunning] = useState(false);
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [showPublishDialog, setShowPublishDialog] = useState(false);
 
     const updateWorkflow = useUpdateWorkflow();
 
@@ -165,13 +151,7 @@ export function EditorHeader({
 
     };
 
-    const handlePublishClick = () => {
 
-    };
-
-    const handlePublishConfirm = async () => {
-
-    };
 
     //   const getVersionBadge = () => {
     //     if (!workflowContext) return null;
@@ -311,71 +291,19 @@ export function EditorHeader({
                     </AppTooltip>
 
                     {/* Test Run */}
-                    <AppTooltip content={isTestRunning ? 'Starting...' : !workflowContext?.versionId ? 'Save first' : 'Test run'}>
+                    <AppTooltip content={isTestRunning ? 'Starting...' : 'Test run (not implemented)'}>
                         <Button
                             variant="ghost"
                             size="icon-sm"
                             onClick={handleTestRun}
-                            disabled={isTestRunning || !workflowContext?.versionId}
+                            disabled={true}
                             className="h-8 w-8"
                         >
                             <Play className="w-4 h-4" />
                         </Button>
                     </AppTooltip>
-
-                    {/* Publish Toggle Switch - Only show for draft versions */}
-                    {workflowContext?.versionStatus === 'DRAFT' && (
-                        <div className="flex items-center gap-2 pl-2 ml-2 border-l border-border">
-                            <span className="text-xs text-muted-foreground">Publish</span>
-                            <AppTooltip content={isPublishing ? 'Publishing...' : isDirty ? 'Save changes first' : 'Click to publish draft'}>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handlePublishClick}
-                                    disabled={isPublishing || isDirty}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors p-0 hover:bg-transparent ${isPublishing || isDirty
-                                        ? 'opacity-50 cursor-not-allowed bg-muted'
-                                        : 'bg-muted hover:bg-muted/80'
-                                        }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background shadow-sm transition-transform ml-0.5 ${false ? 'translate-x-5' : 'translate-x-0'
-                                            }`}
-                                    />
-                                </Button>
-                            </AppTooltip>
-                        </div>
-                    )}
                 </div>
             </TooltipProvider>
-
-            {/* Publish Confirmation Dialog */}
-            <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Publish Draft Version?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will promote draft version {workflowContext?.versionNumber} to be the active version.
-                            {workflowContext?.isActiveVersion === false && (
-                                <> The current active version will be archived.</>
-                            )}
-                            <br /><br />
-                            <strong>This action will affect production workflow executions.</strong>
-                            <br /><br />
-                            Are you sure you want to continue?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handlePublishConfirm}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            Publish Version
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }
