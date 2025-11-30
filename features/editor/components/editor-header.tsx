@@ -12,20 +12,10 @@ import {
     AlertTriangle,
     CheckCircle,
     Info,
-    Rocket,
     History,
     Check
 } from 'lucide-react';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -33,8 +23,23 @@ import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
 import { AppTooltip } from '@/components/entity-component';
-import { useWorkflowBuilder } from '../store';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import {
+    isDirtyAtom,
+    canUndoAtom,
+    canRedoAtom,
+    undoAtom,
+    redoAtom,
+    markCleanAtom,
+    exportWorkflowAtom,
+    importWorkflowAtom,
+    validateGraphAtom,
+    validationResultAtom,
+    nodesAtom,
+    edgesAtom,
+} from '../store';
 import EditorBreadcrum from './editor-breadcrum';
+import { useUpdateWorkflow } from '@/features/workflows/hooks/use-workflows';
 
 interface EditorHeaderProps {
     workflowId: string;
@@ -43,31 +48,51 @@ interface EditorHeaderProps {
 export function EditorHeader({
     workflowId,
 }: EditorHeaderProps) {
-    const {
-        isDirty,
-        canUndo,
-        canRedo,
-        undo,
-        redo,
-        save,
-        exportWorkflow,
-        importWorkflow,
-        validateGraph,
-        validationResult,
-        workflowContext,
-        setWorkflowContext,
-    } = useWorkflowBuilder();
+    // Read-only state
+    const isDirty = useAtomValue(isDirtyAtom);
+    const canUndo = useAtomValue(canUndoAtom);
+    const canRedo = useAtomValue(canRedoAtom);
+    const validationResult = useAtomValue(validationResultAtom);
+    const nodes = useAtomValue(nodesAtom);
+    const edges = useAtomValue(edgesAtom);
+
+
+
+    // Actions
+    const undo = useSetAtom(undoAtom);
+    const redo = useSetAtom(redoAtom);
+    const markClean = useSetAtom(markCleanAtom);
+    const exportWorkflow = useSetAtom(exportWorkflowAtom);
+    const importWorkflow = useSetAtom(importWorkflowAtom);
+    const validateGraph = useSetAtom(validateGraphAtom);
 
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isTestRunning, setIsTestRunning] = useState(false);
-    const [isPublishing, setIsPublishing] = useState(false);
-    const [showPublishDialog, setShowPublishDialog] = useState(false);
+
+    const updateWorkflow = useUpdateWorkflow();
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await save();
+            await updateWorkflow.mutateAsync({
+                id: workflowId,
+                nodes: nodes.map(node => ({
+                    id: node.id,
+                    type: node.type,
+                    position: node.position,
+                    data: node.data
+                })),
+                edges: edges.map(edge => ({
+                    source: edge.source,
+                    target: edge.target,
+                    sourceHandle: edge.sourceHandle || "",
+                    targetHandle: edge.targetHandle || ""
+                }))
+            });
+            markClean();
+        } catch (error) {
+            console.error("Failed to save workflow", error);
         } finally {
             setIsSaving(false);
         }
@@ -126,13 +151,7 @@ export function EditorHeader({
 
     };
 
-    const handlePublishClick = () => {
 
-    };
-
-    const handlePublishConfirm = async () => {
-
-    };
 
     //   const getVersionBadge = () => {
     //     if (!workflowContext) return null;
@@ -179,7 +198,7 @@ export function EditorHeader({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={undo}
-                                disabled={!canUndo()}
+                                disabled={!canUndo}
                                 className="h-8 w-8"
                             >
                                 <Undo className="w-4 h-4" />
@@ -190,7 +209,7 @@ export function EditorHeader({
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={redo}
-                                disabled={!canRedo()}
+                                disabled={!canRedo}
                                 className="h-8 w-8"
                             >
                                 <Redo className="w-4 h-4" />
@@ -198,7 +217,7 @@ export function EditorHeader({
                         </AppTooltip>
                     </div>
 
-                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
+                    <Separator orientation="vertical" className="h-6! mx-2 bg-border" />
 
                     {/* Import/Export */}
                     <div className="flex items-center gap-1">
@@ -224,7 +243,7 @@ export function EditorHeader({
                             </Button>
                         </AppTooltip>
                     </div>
-                    <Separator orientation="vertical" className="!h-6 mx-2 bg-border" />
+                    <Separator orientation="vertical" className="h-6! mx-2 bg-border" />
                     {/* Validation */}
                     <AppTooltip content={getValidationTooltip()}>
                         <Button
@@ -272,71 +291,19 @@ export function EditorHeader({
                     </AppTooltip>
 
                     {/* Test Run */}
-                    <AppTooltip content={isTestRunning ? 'Starting...' : !workflowContext?.versionId ? 'Save first' : 'Test run'}>
+                    <AppTooltip content={isTestRunning ? 'Starting...' : 'Test run (not implemented)'}>
                         <Button
                             variant="ghost"
                             size="icon-sm"
                             onClick={handleTestRun}
-                            disabled={isTestRunning || !workflowContext?.versionId}
+                            disabled={true}
                             className="h-8 w-8"
                         >
                             <Play className="w-4 h-4" />
                         </Button>
                     </AppTooltip>
-
-                    {/* Publish Toggle Switch - Only show for draft versions */}
-                    {workflowContext?.versionStatus === 'DRAFT' && (
-                        <div className="flex items-center gap-2 pl-2 ml-2 border-l border-border">
-                            <span className="text-xs text-muted-foreground">Publish</span>
-                            <AppTooltip content={isPublishing ? 'Publishing...' : isDirty ? 'Save changes first' : 'Click to publish draft'}>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handlePublishClick}
-                                    disabled={isPublishing || isDirty}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors p-0 hover:bg-transparent ${isPublishing || isDirty
-                                        ? 'opacity-50 cursor-not-allowed bg-muted'
-                                        : 'bg-muted hover:bg-muted/80'
-                                        }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background shadow-sm transition-transform ml-0.5 ${false ? 'translate-x-5' : 'translate-x-0'
-                                            }`}
-                                    />
-                                </Button>
-                            </AppTooltip>
-                        </div>
-                    )}
                 </div>
             </TooltipProvider>
-
-            {/* Publish Confirmation Dialog */}
-            <AlertDialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Publish Draft Version?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will promote draft version {workflowContext?.versionNumber} to be the active version.
-                            {workflowContext?.isActiveVersion === false && (
-                                <> The current active version will be archived.</>
-                            )}
-                            <br /><br />
-                            <strong>This action will affect production workflow executions.</strong>
-                            <br /><br />
-                            Are you sure you want to continue?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handlePublishConfirm}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            Publish Version
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }

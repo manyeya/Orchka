@@ -66,4 +66,21 @@ export const useUpdateWorkflowName = () => {
     }))
 }
 
+//update workflow
+export const useUpdateWorkflow = () => {
+    const trpc = useTRPC()
+    const queryClient = useQueryClient()
+    return useMutation(trpc.workflows.updateWorkflow.mutationOptions({
+        onSuccess: (data) => {
+            toast.success(`Workflow "${data.name}" updated successfully`)
+            queryClient.invalidateQueries(trpc.workflows.getWorkflows.queryOptions({}))
+            queryClient.invalidateQueries(trpc.workflows.getOneWorkflow.queryOptions({ id: data.id }))
+        },
+        onError: (error) => {
+            toast.error(`Failed to update workflow: ${error.message}`)
+        }
+    }))
+}
+
+
     

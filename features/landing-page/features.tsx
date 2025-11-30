@@ -1,7 +1,7 @@
 "use client";
 
 import { Zap, Share2, Shield, Box, Cpu, Activity } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 

@@ -4,6 +4,7 @@ import { NodeToolbar, Position } from "@xyflow/react"
 import { SettingsIcon, TrashIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Button } from "./ui/button"
+import { NodeStatusIndicator } from "./react-flow/node-status-indicator"
 
 interface WorkflowNodeProps {
     name?: string;
@@ -37,7 +38,8 @@ export const WorkflowNode = ({ name, description, children, showToolbar, onSetti
                         </p>
                     )}
                 </NodeToolbar>
-            )}
+            )
+            }
 
         </>
     )
