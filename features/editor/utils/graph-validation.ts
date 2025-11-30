@@ -182,7 +182,7 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
 
   // Check for trigger nodes
   const triggerNodes = nodes.filter(node =>
-    node.type?.includes('trigger') || (node.data as any)?.nodeType?.includes('trigger')
+    node.type?.toLowerCase().includes('trigger') || (node.data as any)?.nodeType?.toLowerCase().includes('trigger')
   );
 
   if (triggerNodes.length === 0) {

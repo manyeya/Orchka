@@ -22,6 +22,11 @@ import { Separator } from '@/components/ui/separator';
 import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { AppTooltip } from '@/components/entity-component';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
@@ -55,8 +60,6 @@ export function EditorHeader({
     const validationResult = useAtomValue(validationResultAtom);
     const nodes = useAtomValue(nodesAtom);
     const edges = useAtomValue(edgesAtom);
-
-
 
     // Actions
     const undo = useSetAtom(undoAtom);
@@ -135,48 +138,10 @@ export function EditorHeader({
         }
     };
 
-    const getValidationTooltip = () => {
-        if (!validationResult) return 'Click to validate workflow';
-
-        if (!validationResult.isValid) {
-            return `${validationResult.errors.length} error(s) found`;
-        } else if (validationResult.warnings.length > 0) {
-            return `${validationResult.warnings.length} warning(s) found`;
-        } else {
-            return 'Workflow is valid';
-        }
-    };
-
     const handleTestRun = async () => {
 
     };
 
-
-
-    //   const getVersionBadge = () => {
-    //     if (!workflowContext) return null;
-
-    //     if (workflowContext.versionStatus === 'DRAFT') {
-    //       return (
-    //         <span className="inline-flex items-center h-5 px-1.5 text-[10px] font-medium text-blue-700 dark:text-blue-400 bg-blue-500/12 rounded-sm">
-    //           DRAFT v{workflowContext.versionNumber}
-    //         </span>
-    //       );
-    //     } else if (workflowContext.versionStatus === 'ACTIVE') {
-    //       return (
-    //         <span className="inline-flex items-center h-5 px-1.5 text-[10px] font-medium text-green-700 dark:text-green-400 bg-green-500/12 rounded-sm">
-    //           ACTIVE v{workflowContext.versionNumber}
-    //         </span>
-    //       );
-    //     } else if (workflowContext.versionNumber === 0) {
-    //       return (
-    //         <span className="inline-flex items-center h-5 px-1.5 text-[10px] font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-700/50 rounded-sm">
-    //           New Workflow
-    //         </span>
-    //       );
-    //     }
-    //     return null;
-    //   };
 
     return (
         <div className="flex items-center justify-between h-14 px-4 border-b border-border bg-background">
@@ -245,37 +210,79 @@ export function EditorHeader({
                     </div>
                     <Separator orientation="vertical" className="h-6! mx-2 bg-border" />
                     {/* Validation */}
-                    <AppTooltip content={getValidationTooltip()}>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={handleValidate}
-                            className="h-8 w-8"
-                        >
-                            {getValidationIcon() || <Check className="w-4 h-4" />}
-                        </Button>
-                    </AppTooltip>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={handleValidate}
+                                className="h-8 w-8"
+                            >
+                                {getValidationIcon() || <Check className="w-4 h-4" />}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="end">
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <h4 className="font-semibold text-sm">Workflow Validation</h4>
+                                    <p className="text-xs text-muted-foreground">
+                                        {!validationResult
+                                            ? 'Click the button to validate your workflow'
+                                            : validationResult.isValid
+                                                ? 'Your workflow is valid and ready to run'
+                                                : 'Please fix the following issues'}
+                                    </p>
+                                </div>
 
-                    {/* Version History Toggle */}
-                    {/* {onToggleVersionHistory && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onToggleVersionHistory}
-                  className={`h-6 w-6 flex items-center justify-center rounded-sm transition-colors ${
-                    showVersionHistory 
-                      ? 'bg-neutral-100 dark:bg-neutral-800' 
-                      : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                  }`}
-                >
-                  <History className="w-3.5 h-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-[10px]">
-                Version history
-              </TooltipContent>
-            </Tooltip>
-          )} */}
+                                {validationResult && validationResult.errors.length > 0 && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                                            <span className="text-sm font-medium text-red-500">
+                                                Errors ({validationResult.errors.length})
+                                            </span>
+                                        </div>
+                                        <ul className="space-y-1 text-xs">
+                                            {validationResult.errors.map((error, index) => (
+                                                <li key={index} className="flex items-start gap-2 text-red-600 dark:text-red-400">
+                                                    <span className="mt-0.5">•</span>
+                                                    <span>{error.message}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {validationResult && validationResult.warnings.length > 0 && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <Info className="w-4 h-4 text-amber-500" />
+                                            <span className="text-sm font-medium text-amber-600 dark:text-amber-500">
+                                                Warnings ({validationResult.warnings.length})
+                                            </span>
+                                        </div>
+                                        <ul className="space-y-1 text-xs">
+                                            {validationResult.warnings.map((warning, index) => (
+                                                <li key={index} className="flex items-start gap-2 text-amber-600 dark:text-amber-400">
+                                                    <span className="mt-0.5">•</span>
+                                                    <span>{warning.message}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {validationResult && validationResult.isValid && validationResult.warnings.length === 0 && (
+                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">No issues found</span>
+                                    </div>
+                                )}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
+
 
                     {/* Save */}
                     <AppTooltip content={isSaving ? 'Saving...' : isDirty ? 'Save changes' : 'No changes'}>
