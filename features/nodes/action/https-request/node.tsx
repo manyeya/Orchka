@@ -2,12 +2,12 @@ import type { Node, NodeProps } from "@xyflow/react"
 import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
 import { memo, useCallback } from "react";
-import { SettingsSheet } from "@/features/editor/components/settings-sheet";
+import { SettingsPortal } from "@/features/editor/components/settings-portal";
 import { useState } from "react";
 import { NodeStatus } from "@/components/react-flow/node-status-indicator";
 import { HttpSettingsForm, type HttpSettingsFormValues } from "./http-settings-form";
 import { useSetAtom } from "jotai";
-import { updateNodeAtom } from "@/features/editor/store";
+import { updateNodeAtom, activeSettingsNodeIdAtom } from "@/features/editor/store";
 
 
 type HttpRequestNodeData = {
@@ -26,7 +26,7 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         ? `${nodeData.settings.method || "GET"} ${nodeData.settings.url}`
         : "Not Configured"
     const [status, setStatus] = useState<NodeStatus>("initial")
-    const [open, setOpen] = useState(false)
+    const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);
 
     const handleFormSubmit = useCallback((values: HttpSettingsFormValues) => {
@@ -43,16 +43,16 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
                 }
             }
         });
-        setOpen(false);
-    }, [props.id, props.data, updateNode])
+        setActiveNodeId(null);
+    }, [props.id, props.data, updateNode, setActiveNodeId])
 
     const handleCancel = useCallback(() => {
-        setOpen(false);
-    }, [])
+        setActiveNodeId(null);
+    }, [setActiveNodeId])
 
     return (
         <>
-            <SettingsSheet open={open} onOpenChange={setOpen}>
+            <SettingsPortal nodeId={props.id}>
                 <div className="p-6">
                     <div className="mb-6">
                         <h2 className="text-2xl font-semibold">HTTP Request Settings</h2>
@@ -66,7 +66,7 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
                         onCancel={handleCancel}
                     />
                 </div>
-            </SettingsSheet>
+            </SettingsPortal>
             <BaseActionNode
                 {...props}
                 id={props.id}
@@ -74,8 +74,8 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
                 name="HTTP Request"
                 description={description}
                 status={status}
-                onSettingsClick={() => { setOpen(true) }}
-                onDoubleClick={() => { setOpen(true) }}
+                onSettingsClick={() => { setActiveNodeId(props.id) }}
+                onDoubleClick={() => { setActiveNodeId(props.id) }}
             />
         </>
     )
