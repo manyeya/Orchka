@@ -54,12 +54,6 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         <>
             <SettingsPortal nodeId={props.id}>
                 <div className="p-6">
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-semibold">HTTP Request Settings</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Configure your HTTP request with headers, authentication, and more
-                        </p>
-                    </div>
                     <HttpSettingsForm
                         defaultValues={nodeData.settings}
                         onSubmit={handleFormSubmit}

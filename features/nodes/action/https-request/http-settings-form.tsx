@@ -159,12 +159,11 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                     {/* Basic Request Settings */}
                     <div className="space-y-4">
                         <div>
-                            <h3 className="text-lg font-semibold">Request Configuration</h3>
+                            <h3 className="text-lg font-semibold">HTTP Configurations</h3>
                             <p className="text-sm text-muted-foreground">
-                                Configure the basic HTTP request settings
+                                  Configure your HTTP request with headers, authentication, and more
                             </p>
                         </div>
-
                         <FormField
                             control={form.control}
                             name="url"
