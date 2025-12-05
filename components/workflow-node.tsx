@@ -17,13 +17,13 @@ interface WorkflowNodeProps {
 
 export const WorkflowNode = ({ name, description, children, showToolbar, onSettingsClick, onRemoveClick }: WorkflowNodeProps) => {
     return (
-        <>
+        <div className="cursor-pointer active:cursor-grabbing">
             {showToolbar && (
                 <NodeToolbar>
-                    <Button variant="ghost" onClick={onSettingsClick}>
+                    <Button className="cursor-pointer" variant="ghost" onClick={onSettingsClick}>
                         <SettingsIcon className="size-4" />
                     </Button>
-                    <Button variant="ghost" onClick={onRemoveClick}>
+                    <Button className="cursor-pointer" variant="ghost" onClick={onRemoveClick}>
                         <TrashIcon className="size-4" />
                     </Button>
                 </NodeToolbar>
@@ -31,9 +31,9 @@ export const WorkflowNode = ({ name, description, children, showToolbar, onSetti
             {children}
             {name && (
                 <NodeToolbar position={Position.Bottom} isVisible className="max-w-[200px] text-center">
-                    <p className="font-medium">{name}</p>
+                    <p className="font-medium text-sm">{name}</p>
                     {description && (
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                             {description}
                         </p>
                     )}
@@ -41,6 +41,6 @@ export const WorkflowNode = ({ name, description, children, showToolbar, onSetti
             )
             }
 
-        </>
+        </div>
     )
 }

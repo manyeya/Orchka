@@ -2,10 +2,10 @@
 import { ErrorView, LoadingView } from '@/components/entity-component';
 import { nodeComponents } from '@/config/node-components';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
-import { ReactFlow, type NodeChange, type EdgeChange, type Connection, Background, Controls, Panel, BackgroundVariant } from '@xyflow/react';
+import { ReactFlow, Background, Panel } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useEffect } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useEffect } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom } from '../store';
 import { AddNodeButton } from './add-node-button';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -29,8 +29,8 @@ function Editor({ workflowId }: { workflowId: string }) {
     const { data: workflow } = useSuspenseWorkflow(workflowId)
 
     // Use Jotai atoms instead of local state
-    const [nodes, setNodes] = useAtom(nodesAtom);
-    const [edges, setEdges] = useAtom(edgesAtom);
+    const nodes = useAtomValue(nodesAtom);
+    const edges = useAtomValue(edgesAtom);
     const onNodesChange = useSetAtom(onNodesChangeAtom);
     const onEdgesChange = useSetAtom(onEdgesChangeAtom);
     const onConnect = useSetAtom(onConnectAtom);

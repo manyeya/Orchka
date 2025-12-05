@@ -53,13 +53,11 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
     return (
         <>
             <SettingsPortal nodeId={props.id}>
-                <div className="p-6">
-                    <HttpSettingsForm
-                        defaultValues={nodeData.settings}
-                        onSubmit={handleFormSubmit}
-                        onCancel={handleCancel}
-                    />
-                </div>
+                <HttpSettingsForm
+                    defaultValues={nodeData.settings}
+                    onSubmit={handleFormSubmit}
+                    onCancel={handleCancel}
+                />
             </SettingsPortal>
             <BaseActionNode
                 {...props}

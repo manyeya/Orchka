@@ -4,11 +4,14 @@ import { type NodeProps, Position } from "@xyflow/react"
 import type { LucideIcon } from "lucide-react"
 import Image from "next/image"
 import { memo, type ReactNode, useCallback } from "react"
+
 import { BaseNode, BaseNodeContent } from "@/components/react-flow/base-node"
 import { BaseHandle } from "@/components/react-flow/base-handle"
 import { WorkflowNode } from "@/components/workflow-node"
 import { useDeleteNode } from "@/features/editor/hooks/use-delete-node"
 import { NodeStatus, NodeStatusIndicator } from "@/components/react-flow/node-status-indicator"
+import { activeSettingsNodeIdAtom } from "@/features/editor/store"
+import { useSetAtom } from "jotai";
 
 interface BaseActionNodeProps extends NodeProps {
     icon: LucideIcon | string;
@@ -23,9 +26,11 @@ interface BaseActionNodeProps extends NodeProps {
 export const BaseActionNode = memo((props: BaseActionNodeProps) => {
     const { icon: Icon, name, description, children, status, onSettingsClick, onDoubleClick } = props
     const deleteNode = useDeleteNode()
+    const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
     const handleRemoveClick = useCallback(() => {
         deleteNode(props.id)
-    }, [props.id, deleteNode])
+        setActiveNodeId(null)
+    }, [props.id, deleteNode, setActiveNodeId])
     return (
         <WorkflowNode name={name}
             description={description}
