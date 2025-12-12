@@ -10,20 +10,12 @@ import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeSettingsNodeIdAtom } from "@/features/editor/store";
 
 
-type HttpRequestNodeData = {
-    endpoint?: string;
-    method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
-    body?: string;
-    settings?: HttpSettingsFormValues;
-    [key: string]: unknown;
-}
-
-type HttpRequestNodeType = Node<HttpRequestNodeData>;
+type HttpRequestNodeType = Node<HttpSettingsFormValues>;
 
 export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
-    const nodeData = props.data as HttpRequestNodeData;
-    const description = nodeData.settings?.url
-        ? `${nodeData.settings.method || "GET"} ${nodeData.settings.url}`
+    const nodeData = props.data as HttpSettingsFormValues;
+    const description = nodeData.url
+        ? `${nodeData.method || "GET"} ${nodeData.url}`
         : "Not Configured"
     const [status, setStatus] = useState<NodeStatus>("initial")
     const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
@@ -34,17 +26,11 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         updateNode({
             id: props.id,
             updates: {
-                data: {
-                    ...props.data,
-                    settings: values,
-                    endpoint: values.url,
-                    method: values.method,
-                    body: values.body,
-                }
+                data: values
             }
         });
         setActiveNodeId(null);
-    }, [props.id, props.data, updateNode, setActiveNodeId])
+    }, [props.id, updateNode, setActiveNodeId])
 
     const handleCancel = useCallback(() => {
         setActiveNodeId(null);
@@ -53,19 +39,11 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
     return (
         <>
             <SettingsPortal nodeId={props.id}>
-                <div className="p-6">
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-semibold">HTTP Request Settings</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Configure your HTTP request with headers, authentication, and more
-                        </p>
-                    </div>
-                    <HttpSettingsForm
-                        defaultValues={nodeData.settings}
-                        onSubmit={handleFormSubmit}
-                        onCancel={handleCancel}
-                    />
-                </div>
+                <HttpSettingsForm
+                    defaultValues={nodeData}
+                    onSubmit={handleFormSubmit}
+                    onCancel={handleCancel}
+                />
             </SettingsPortal>
             <BaseActionNode
                 {...props}

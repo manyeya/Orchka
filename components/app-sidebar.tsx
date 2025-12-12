@@ -85,7 +85,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {/* <SidebarTrigger className="size-8" /> */}
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
@@ -93,7 +92,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

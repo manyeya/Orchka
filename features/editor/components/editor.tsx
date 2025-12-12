@@ -1,17 +1,18 @@
 'use client';
 import { ErrorView, LoadingView } from '@/components/entity-component';
-import { nodeComponents } from '@/config/node-components';
+import { nodeComponents, NodeType } from '@/config/node-components';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
-import { ReactFlow, type NodeChange, type EdgeChange, type Connection, Background, Controls, Panel, BackgroundVariant } from '@xyflow/react';
+import { ReactFlow, Background, Panel } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useEffect } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useEffect, useMemo } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom } from '../store';
 import { AddNodeButton } from './add-node-button';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { SettingsPanel } from './settings-panel';
 import { SettingsPortalContext } from './settings-context';
 import { useState } from 'react';
+import { ExecuteWorkflowButton } from './execute-workflow-butto';
 
 export const EditorLoadingView = () => {
     return (
@@ -29,13 +30,14 @@ function Editor({ workflowId }: { workflowId: string }) {
     const { data: workflow } = useSuspenseWorkflow(workflowId)
 
     // Use Jotai atoms instead of local state
-    const [nodes, setNodes] = useAtom(nodesAtom);
-    const [edges, setEdges] = useAtom(edgesAtom);
+    const nodes = useAtomValue(nodesAtom);
+    const edges = useAtomValue(edgesAtom,);
     const onNodesChange = useSetAtom(onNodesChangeAtom);
     const onEdgesChange = useSetAtom(onEdgesChangeAtom);
     const onConnect = useSetAtom(onConnectAtom);
     const loadWorkflow = useSetAtom(loadWorkflowAtom);
 
+    const hasManualTriggerNode = useMemo(() => nodes.some(node => node.type === NodeType.MANUAL_TRIGGER), [nodes]);
     // Load workflow data when component mounts or workflow changes
     useEffect(() => {
         if (workflow.nodes && workflow.edges) {
@@ -70,6 +72,11 @@ function Editor({ workflowId }: { workflowId: string }) {
                             <Panel position="top-left">
                                 <AddNodeButton />
                             </Panel>
+                            {hasManualTriggerNode && (
+                                <Panel position="bottom-center">
+                                    <ExecuteWorkflowButton workflowId={workflowId} />
+                                </Panel>
+                            )}
                         </ReactFlow>
                     </ResizablePanel>
                     <SettingsPanel setContainer={setPortalContainer} />

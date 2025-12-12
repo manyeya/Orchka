@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input'
 import { useSuspenseWorkflow, useUpdateWorkflowName } from '@/features/workflows/hooks/use-workflows'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 const EditorNameInput = ({ workflowId }: { workflowId: string }) => {
     const { data: workflow } = useSuspenseWorkflow(workflowId)

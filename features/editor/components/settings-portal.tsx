@@ -15,6 +15,6 @@ export const SettingsPortal = ({ nodeId, children }: SettingsPortalProps) => {
     const portalContainer = useSettingsPortal();
 
     if (!portalContainer || activeNodeId !== nodeId) return null;
-
-    return createPortal(children, portalContainer);
+    const childrenWithPadding = <div className="p-6">{children}</div>
+    return createPortal(childrenWithPadding, portalContainer);
 };

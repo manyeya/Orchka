@@ -9,6 +9,8 @@ import { BaseHandle } from "@/components/react-flow/base-handle"
 import { WorkflowNode } from "@/components/workflow-node"
 import { useDeleteNode } from "@/features/editor/hooks/use-delete-node"
 import { NodeStatus, NodeStatusIndicator } from "@/components/react-flow/node-status-indicator"
+import { activeSettingsNodeIdAtom } from "@/features/editor/store"
+import { useSetAtom } from "jotai"
 
 interface BaseTriggerNodeProps extends NodeProps {
     icon: LucideIcon | string;
@@ -23,9 +25,11 @@ interface BaseTriggerNodeProps extends NodeProps {
 export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
     const { icon: Icon, name, description, children, status, onSettingsClick, onDoubleClick } = props
     const deleteNode = useDeleteNode()
+    const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
     const handleRemoveClick = useCallback(() => {
         deleteNode(props.id)
-    }, [props.id, deleteNode])
+        setActiveNodeId(null)
+    }, [props.id, deleteNode, setActiveNodeId])
     return (
         <WorkflowNode name={name}
             description={description}

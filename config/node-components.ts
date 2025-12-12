@@ -1,5 +1,5 @@
-import InitialNode from "@/features/nodes/initial-node";
-import {ManualTriggerNode} from "@/features/nodes/trigger/manual/manual-trigger-node";
+import InitialNode from "@/features/nodes/utils/initial-node";
+import { ManualTriggerNode } from "@/features/nodes/trigger/manual/manual-trigger-node";
 import { HttpRequestNode } from "@/features/nodes/action/https-request/node";
 import type { NodeTypes } from "@xyflow/react";
 
