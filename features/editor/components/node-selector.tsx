@@ -9,6 +9,7 @@ import { NodeType } from "@/lib/generated/prisma/enums"
 import Image from "next/image"
 import { Item, ItemContent, ItemMedia, ItemTitle, ItemDescription } from "@/components/ui/item"
 import { Separator } from "@/components/ui/separator"
+import { generateUniqueNodeName, getNodeNames } from "@/features/editor/utils/graph-validation"
 
 interface NodeTypeOption {
     type: NodeType
@@ -59,12 +60,18 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
             const centerX = window.innerWidth / 2
             const centerY = window.innerHeight / 2
             const flowPosition = screenToFlowPosition({ x: centerX + (Math.random() - 0.5) * 200, y: centerY + (Math.random() - 0.5) * 200 })
+
+            // Generate unique name based on existing node names
+            const existingNames = getNodeNames(nodes)
+            const uniqueName = generateUniqueNodeName(selection.label, existingNames)
+
             const newNode = {
                 id: createId(),
                 type: selection.type,
                 position: flowPosition,
                 data: {
-                    label: selection.label
+                    label: selection.label,
+                    name: uniqueName
                 }
             }
 

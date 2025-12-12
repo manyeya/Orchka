@@ -487,3 +487,71 @@ export function validateConnection(
 
   return { isValid: true };
 }
+
+// ============================================================================
+// Node Naming Utilities
+// ============================================================================
+
+/**
+ * Generates a unique node name based on a base name and existing names.
+ * If the base name is already taken, appends a number (e.g., "HTTP Request 1", "HTTP Request 2").
+ * 
+ * @param baseName - The base name for the node (e.g., "HTTP Request", "Manual Trigger")
+ * @param existingNames - Array of names already in use in the workflow
+ * @returns A unique name for the node
+ */
+export function generateUniqueNodeName(baseName: string, existingNames: string[]): string {
+  // If the base name is not taken, use it
+  if (!existingNames.includes(baseName)) {
+    return baseName;
+  }
+
+  // Find the next available number
+  let counter = 1;
+  let candidateName = `${baseName} ${counter}`;
+
+  while (existingNames.includes(candidateName)) {
+    counter++;
+    candidateName = `${baseName} ${counter}`;
+  }
+
+  return candidateName;
+}
+
+/**
+ * Checks if a node name is unique within the workflow.
+ * 
+ * @param name - The name to check
+ * @param existingNames - Array of names already in use in the workflow
+ * @param excludeNodeId - Optional node ID to exclude from the check (useful when renaming)
+ * @param nodes - Optional array of nodes (used with excludeNodeId)
+ * @returns true if the name is unique, false otherwise
+ */
+export function isNodeNameUnique(
+  name: string,
+  existingNames: string[],
+  excludeNodeId?: string,
+  nodes?: Node[]
+): boolean {
+  if (excludeNodeId && nodes) {
+    // Filter out the name of the node being renamed
+    const nodeToExclude = nodes.find(n => n.id === excludeNodeId);
+    const currentName = (nodeToExclude?.data as any)?.name;
+    const filteredNames = existingNames.filter(n => n !== currentName);
+    return !filteredNames.includes(name);
+  }
+
+  return !existingNames.includes(name);
+}
+
+/**
+ * Gets all node names from an array of nodes.
+ * 
+ * @param nodes - Array of React Flow nodes
+ * @returns Array of node names (filtered for non-empty strings)
+ */
+export function getNodeNames(nodes: Node[]): string[] {
+  return nodes
+    .map(node => (node.data as any)?.name as string)
+    .filter((name): name is string => Boolean(name) && typeof name === 'string');
+}
