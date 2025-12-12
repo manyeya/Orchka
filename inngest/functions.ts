@@ -6,6 +6,10 @@ import { NonRetriableError } from "inngest";
 import { topologicalSortNodes } from "@/features/editor/utils/graph-validation";
 import { NodeType } from "@/lib/generated/prisma/enums";
 import { getExecutor } from "@/features/nodes/utils/execution/executors-registry";
+import {
+  resolveNodeExpressions,
+  buildExpressionContext
+} from "@/features/editor/utils/resolve-expressions";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
@@ -47,7 +51,7 @@ export const execute = inngest.createFunction(
       throw new NonRetriableError("Workflow ID is required");
     }
 
-    const sortedNodes = await step.run("get-nodes", async () => {
+    const workflowData = await step.run("get-workflow", async () => {
       const workflow = await prisma.workflow.findUniqueOrThrow({
         where: {
           id: workflowId,
@@ -56,20 +60,44 @@ export const execute = inngest.createFunction(
           nodes: true,
           connections: true,
         }
-      })
+      });
 
-      return topologicalSortNodes(workflow.nodes, workflow.connections);
+      return {
+        name: workflow.name,
+        nodes: workflow.nodes,
+        sortedNodes: topologicalSortNodes(workflow.nodes, workflow.connections),
+      };
     });
 
     let context = event.data.initialData || {};
 
-    for (const node of sortedNodes) {
+    for (const node of workflowData.sortedNodes) {
+      // Build expression context from accumulated results
+      const expressionContext = buildExpressionContext({
+        nodeResults: context,
+        nodes: workflowData.nodes.map(n => ({
+          id: n.id,
+          type: n.type,
+          data: n.data as Record<string, unknown>,
+        })),
+        workflowId,
+        workflowName: workflowData.name,
+        executionId: event.id ?? `exec_${Date.now()}`,
+      });
+
+      // Resolve all {{ }} expressions in node configuration
+      const resolvedData = resolveNodeExpressions(
+        node.data as Record<string, unknown>,
+        expressionContext
+      );
+
       const executor = getExecutor(node.type as NodeType);
       context = await executor({
-        data: node.data as Record<string, unknown>,
+        data: resolvedData,
         nodeId: node.id,
         context,
-        step
+        step,
+        expressionContext
       })
     }
 

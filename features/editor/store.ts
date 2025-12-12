@@ -336,8 +336,8 @@ export const setDragDataAtom = atom(
 export const createExpressionFromDragAtom = atom(
   null,
   (get, set, { inputId, dragData }: { inputId: string; dragData: { stepId: string; path: string; value: any; displayPath: string } }) => {
-    // Create expression using bracket notation for node IDs with special characters
-    const expression = `{{ $json["${dragData.stepId}"].${dragData.path} }}`;
+    // Create expression using the $json helper syntax for cleaner, more readable expressions
+    const expression = `{{ $json "${dragData.stepId}" "${dragData.path}" }}`;
 
     // Dispatch custom event that ExpressionInput components can listen to
     window.dispatchEvent(new CustomEvent('expressionDrop', {
