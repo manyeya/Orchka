@@ -1,3 +1,5 @@
+"use client"
+
 import { memo, useState, useCallback } from "react";
 import { BaseTriggerNode } from "../base-trigger-node";
 import { NodeProps } from "@xyflow/react";

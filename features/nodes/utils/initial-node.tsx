@@ -1,3 +1,5 @@
+"use client"
+
 import { memo } from "react";
 import { PlaceholderNode } from "@/components/react-flow/placeholder-node";
 import { NodeProps } from "@xyflow/react";

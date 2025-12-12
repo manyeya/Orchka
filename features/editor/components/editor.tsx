@@ -1,4 +1,5 @@
 'use client';
+
 import { ErrorView, LoadingView } from '@/components/entity-component';
 import { NODE_COMPONENTS, NodeType } from '@/config/node-components';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';

@@ -1,3 +1,5 @@
+"use client"
+
 import type { Node, NodeProps } from "@xyflow/react"
 import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
