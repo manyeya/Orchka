@@ -8,7 +8,6 @@ import {
   GalleryVerticalEnd,
   Map,
   PieChart,
-  PlusIcon,
   Settings2,
   SquareTerminal,
 } from "lucide-react"
@@ -23,7 +22,6 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 
 // This is sample data.

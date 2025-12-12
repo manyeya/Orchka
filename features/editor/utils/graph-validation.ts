@@ -1,3 +1,4 @@
+import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-components';
 import { Node, Edge } from '@xyflow/react';
 
 // ============================================================================
@@ -390,7 +391,7 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
   // Check for nodes with missing required configuration
   const nodesWithMissingConfig = nodes.filter(node => {
     const data = (node.data as any) || {};
-    return !data.name || (typeof data.name === 'string' && data.name.trim() === '');
+    return !isNodeConfigValid(node.type, data);
   });
 
   if (nodesWithMissingConfig.length > 0) {
@@ -486,6 +487,60 @@ export function validateConnection(
   }
 
   return { isValid: true };
+}
+
+// ============================================================================
+// Node Configuration Validation Registry
+// ============================================================================
+
+
+
+/**
+ * Checks if a node's configuration is valid based on its required fields.
+ * 
+ * @param nodeType - The type of the node (e.g., 'HTTP_REQUEST')
+ * @param data - The node's data object
+ * @returns true if all required fields are present and non-empty
+ */
+export function isNodeConfigValid(nodeType: string | undefined, data: Record<string, unknown>): boolean {
+  if (!nodeType) return true;
+
+  const requiredFields = NODE_REQUIRED_FIELDS[nodeType] ?? DEFAULT_REQUIRED_FIELDS;
+
+  // INITIAL nodes are placeholders, always valid
+  if (nodeType === 'INITIAL') return true;
+
+  return requiredFields.every(field => {
+    const value = data[field];
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return value !== undefined && value !== null;
+  });
+}
+
+/**
+ * Gets the list of missing required fields for a node.
+ * Useful for showing specific error messages.
+ * 
+ * @param nodeType - The type of the node
+ * @param data - The node's data object
+ * @returns Array of field names that are missing or empty
+ */
+export function getMissingRequiredFields(nodeType: string | undefined, data: Record<string, unknown>): string[] {
+  if (!nodeType) return [];
+
+  const requiredFields = NODE_REQUIRED_FIELDS[nodeType] ?? DEFAULT_REQUIRED_FIELDS;
+
+  if (nodeType === 'INITIAL') return [];
+
+  return requiredFields.filter(field => {
+    const value = data[field];
+    if (typeof value === 'string') {
+      return value.trim() === '';
+    }
+    return value === undefined || value === null;
+  });
 }
 
 // ============================================================================
