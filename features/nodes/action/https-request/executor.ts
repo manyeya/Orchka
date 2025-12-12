@@ -37,8 +37,12 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
         throw new NonRetriableError('URL is required');
     }
 
+    // Use the node name for step naming (fallback to nodeId if no name)
+    const nodeName = data.name || `HTTP Request`;
+    const stepName = `${nodeName} (${nodeId})`;
+
     // Execute the HTTP request within a step
-    const response = await step.run(`https-request-${nodeId}`, async (): Promise<HttpResponse> => {
+    const response = await step.run(stepName, async (): Promise<HttpResponse> => {
         // Build the complete URL with query parameters
         const url = buildUrlWithQueryParams(data.url, data.queryParams || []);
 
@@ -135,13 +139,15 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     });
 
     // Return WorkflowContext with response data
+    // Include both nodeId and nodeName for flexible access
     return {
         ...context,
-        [`${nodeId}_response`]: response,
-        [`${nodeId}_status`]: response.status,
-        [`${nodeId}_data`]: response.data,
-        [`${nodeId}_ok`]: response.ok,
-        [`${nodeId}_headers`]: response.headers,
+        [`${nodeName}_name`]: nodeName,
+        [`${nodeName}_response`]: response,
+        [`${nodeName}_status`]: response.status,
+        [`${nodeName}_data`]: response.data,
+        [`${nodeName}_ok`]: response.ok,
+        [`${nodeName}_headers`]: response.headers,
     };
 };
 

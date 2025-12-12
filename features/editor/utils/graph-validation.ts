@@ -1,3 +1,4 @@
+import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-components';
 import { Node, Edge } from '@xyflow/react';
 
 // ============================================================================
@@ -390,7 +391,7 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
   // Check for nodes with missing required configuration
   const nodesWithMissingConfig = nodes.filter(node => {
     const data = (node.data as any) || {};
-    return !data.name || (typeof data.name === 'string' && data.name.trim() === '');
+    return !isNodeConfigValid(node.type, data);
   });
 
   if (nodesWithMissingConfig.length > 0) {
@@ -486,4 +487,126 @@ export function validateConnection(
   }
 
   return { isValid: true };
+}
+
+// ============================================================================
+// Node Configuration Validation Registry
+// ============================================================================
+
+
+
+/**
+ * Checks if a node's configuration is valid based on its required fields.
+ * 
+ * @param nodeType - The type of the node (e.g., 'HTTP_REQUEST')
+ * @param data - The node's data object
+ * @returns true if all required fields are present and non-empty
+ */
+export function isNodeConfigValid(nodeType: string | undefined, data: Record<string, unknown>): boolean {
+  if (!nodeType) return true;
+
+  const requiredFields = NODE_REQUIRED_FIELDS[nodeType] ?? DEFAULT_REQUIRED_FIELDS;
+
+  // INITIAL nodes are placeholders, always valid
+  if (nodeType === 'INITIAL') return true;
+
+  return requiredFields.every(field => {
+    const value = data[field];
+    if (typeof value === 'string') {
+      return value.trim() !== '';
+    }
+    return value !== undefined && value !== null;
+  });
+}
+
+/**
+ * Gets the list of missing required fields for a node.
+ * Useful for showing specific error messages.
+ * 
+ * @param nodeType - The type of the node
+ * @param data - The node's data object
+ * @returns Array of field names that are missing or empty
+ */
+export function getMissingRequiredFields(nodeType: string | undefined, data: Record<string, unknown>): string[] {
+  if (!nodeType) return [];
+
+  const requiredFields = NODE_REQUIRED_FIELDS[nodeType] ?? DEFAULT_REQUIRED_FIELDS;
+
+  if (nodeType === 'INITIAL') return [];
+
+  return requiredFields.filter(field => {
+    const value = data[field];
+    if (typeof value === 'string') {
+      return value.trim() === '';
+    }
+    return value === undefined || value === null;
+  });
+}
+
+// ============================================================================
+// Node Naming Utilities
+// ============================================================================
+
+/**
+ * Generates a unique node name based on a base name and existing names.
+ * If the base name is already taken, appends a number (e.g., "HTTP Request 1", "HTTP Request 2").
+ * 
+ * @param baseName - The base name for the node (e.g., "HTTP Request", "Manual Trigger")
+ * @param existingNames - Array of names already in use in the workflow
+ * @returns A unique name for the node
+ */
+export function generateUniqueNodeName(baseName: string, existingNames: string[]): string {
+  // If the base name is not taken, use it
+  if (!existingNames.includes(baseName)) {
+    return baseName;
+  }
+
+  // Find the next available number
+  let counter = 1;
+  let candidateName = `${baseName} ${counter}`;
+
+  while (existingNames.includes(candidateName)) {
+    counter++;
+    candidateName = `${baseName} ${counter}`;
+  }
+
+  return candidateName;
+}
+
+/**
+ * Checks if a node name is unique within the workflow.
+ * 
+ * @param name - The name to check
+ * @param existingNames - Array of names already in use in the workflow
+ * @param excludeNodeId - Optional node ID to exclude from the check (useful when renaming)
+ * @param nodes - Optional array of nodes (used with excludeNodeId)
+ * @returns true if the name is unique, false otherwise
+ */
+export function isNodeNameUnique(
+  name: string,
+  existingNames: string[],
+  excludeNodeId?: string,
+  nodes?: Node[]
+): boolean {
+  if (excludeNodeId && nodes) {
+    // Filter out the name of the node being renamed
+    const nodeToExclude = nodes.find(n => n.id === excludeNodeId);
+    const currentName = (nodeToExclude?.data as any)?.name;
+    const filteredNames = existingNames.filter(n => n !== currentName);
+    return !filteredNames.includes(name);
+  }
+
+  return !existingNames.includes(name);
+}
+
+/**
+ * Gets all node names from an array of nodes.
+ * 
+ * @param nodes - Array of React Flow nodes
+ * @returns Array of node names (filtered for non-empty strings)
+ */
+export function getNodeNames(nodes: Node[]): string[] {
+  return nodes
+    .map(node => (node.data as any)?.name as string)
+    .filter((name): name is string => Boolean(name) && typeof name === 'string');
 }

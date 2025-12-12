@@ -44,6 +44,9 @@ const queryParamSchema = z.object({
 })
 
 const httpSettingsSchema = z.object({
+    // Node Name
+    name: z.string().min(1, "Name is required"),
+
     // Basic Settings
     url: z.string().url("Please enter a valid URL").min(1, "URL is required"),
     method: httpMethodSchema,
@@ -93,6 +96,7 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
     const form = useForm<HttpSettingsFormValues>({
         resolver: zodResolver(httpSettingsSchema),
         defaultValues: {
+            name: "",
             url: "",
             method: "GET",
             headers: [],
@@ -161,9 +165,25 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                         <div>
                             <h3 className="text-lg font-semibold">HTTP Configurations</h3>
                             <p className="text-sm text-muted-foreground">
-                                  Configure your HTTP request with headers, authentication, and more
+                                Configure your HTTP request with headers, authentication, and more
                             </p>
                         </div>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="HTTP Request" {...field} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        A unique name for this node in the workflow
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="url"

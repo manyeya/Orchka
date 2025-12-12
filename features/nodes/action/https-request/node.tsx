@@ -1,3 +1,5 @@
+"use client"
+
 import type { Node, NodeProps } from "@xyflow/react"
 import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
@@ -49,7 +51,7 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
                 {...props}
                 id={props.id}
                 icon={GlobeIcon}
-                name="HTTP Request"
+                name={nodeData.name || "HTTP Request"}
                 description={description}
                 status={status}
                 onSettingsClick={() => { setActiveNodeId(props.id) }}

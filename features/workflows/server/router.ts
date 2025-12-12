@@ -94,7 +94,7 @@ export const workflowsRouter = createTRPCRouter({
                 await tx.node.createMany({
                     data: nodes.map(node => ({
                         id: node.id,
-                        name: node.type || "unknown",
+                        name: (node.data?.name as string) || node.type || "unknown",
                         type: node.type as NodeType,
                         position: node.position,
                         data: node.data || {},
@@ -157,7 +157,10 @@ export const workflowsRouter = createTRPCRouter({
             id: node.id,
             type: node.type,
             position: node.position as { x: number; y: number },
-            data: node.data as Record<string, unknown>,
+            data: {
+                ...(node.data as Record<string, unknown>),
+                name: node.name,
+            },
         }))
 
         const edges: Edge[] = workflow.connections.map(connection => ({

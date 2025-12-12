@@ -1,6 +1,7 @@
 'use client';
+
 import { ErrorView, LoadingView } from '@/components/entity-component';
-import { nodeComponents, NodeType } from '@/config/node-components';
+import { NODE_COMPONENTS, NodeType } from '@/config/node-components';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
 import { ReactFlow, Background, Panel } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -59,7 +60,7 @@ function Editor({ workflowId }: { workflowId: string }) {
                             onEdgesChange={onEdgesChange}
                             onConnect={onConnect}
                             proOptions={{ hideAttribution: true }}
-                            nodeTypes={nodeComponents}
+                            nodeTypes={NODE_COMPONENTS}
                             defaultEdgeOptions={{
                                 animated: true,
                                 style: { stroke: 'var(--primary)' },
