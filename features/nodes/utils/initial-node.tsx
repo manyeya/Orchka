@@ -2,7 +2,7 @@ import { memo } from "react";
 import { PlaceholderNode } from "@/components/react-flow/placeholder-node";
 import { NodeProps } from "@xyflow/react";
 import { PlusIcon } from "lucide-react";
-import { WorkflowNode } from "../../components/workflow-node";
+import { WorkflowNode } from "../../../components/workflow-node";
 import { NodeSelector } from "@/features/editor/components/node-selector";
 import { useState } from "react";
 

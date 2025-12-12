@@ -10,20 +10,12 @@ import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeSettingsNodeIdAtom } from "@/features/editor/store";
 
 
-type HttpRequestNodeData = {
-    endpoint?: string;
-    method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD";
-    body?: string;
-    settings?: HttpSettingsFormValues;
-    [key: string]: unknown;
-}
-
-type HttpRequestNodeType = Node<HttpRequestNodeData>;
+type HttpRequestNodeType = Node<HttpSettingsFormValues>;
 
 export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
-    const nodeData = props.data as HttpRequestNodeData;
-    const description = nodeData.settings?.url
-        ? `${nodeData.settings.method || "GET"} ${nodeData.settings.url}`
+    const nodeData = props.data as HttpSettingsFormValues;
+    const description = nodeData.url
+        ? `${nodeData.method || "GET"} ${nodeData.url}`
         : "Not Configured"
     const [status, setStatus] = useState<NodeStatus>("initial")
     const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
@@ -34,17 +26,11 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         updateNode({
             id: props.id,
             updates: {
-                data: {
-                    ...props.data,
-                    settings: values,
-                    endpoint: values.url,
-                    method: values.method,
-                    body: values.body,
-                }
+                data: values
             }
         });
         setActiveNodeId(null);
-    }, [props.id, props.data, updateNode, setActiveNodeId])
+    }, [props.id, updateNode, setActiveNodeId])
 
     const handleCancel = useCallback(() => {
         setActiveNodeId(null);
@@ -54,7 +40,7 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         <>
             <SettingsPortal nodeId={props.id}>
                 <HttpSettingsForm
-                    defaultValues={nodeData.settings}
+                    defaultValues={nodeData}
                     onSubmit={handleFormSubmit}
                     onCancel={handleCancel}
                 />

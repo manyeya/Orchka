@@ -28,7 +28,7 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { AppTooltip } from '@/components/entity-component';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import {
     isDirtyAtom,
     canUndoAtom,
