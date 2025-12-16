@@ -2,6 +2,7 @@ import { NonRetriableError } from "inngest";
 import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import { HttpSettingsFormValues } from "./http-settings-form";
 import ky, { Options as KyOptions, HTTPError } from 'ky';
+import { httpNodeChannel } from "./channel";
 
 /**
  * Response structure from the HTTP request
@@ -30,10 +31,20 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     data,
     nodeId,
     context,
-    step
+    step,
+    publish
 }): Promise<WorkflowContext> => {
+    await publish(httpNodeChannel().status({
+        nodeId,
+        status: "loading"
+    }))
+
     // Validate required URL
     if (!data.url) {
+        await publish(httpNodeChannel().status({
+            nodeId,
+            status: "error"
+        }))
         throw new NonRetriableError('URL is required');
     }
 
@@ -102,6 +113,10 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
                 url: res.url,
             };
         } catch (error) {
+            await publish(httpNodeChannel().status({
+                nodeId,
+                status: "error"
+            }))
             // Handle ky-specific errors
             if (error instanceof HTTPError) {
                 const res = error.response;
@@ -130,6 +145,11 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
 
             // Handle timeout errors
             if (error instanceof Error && error.name === 'TimeoutError') {
+                await publish(httpNodeChannel().status({
+                    nodeId,
+                    status: "error"
+                }))
+
                 throw new NonRetriableError(`Request timed out after ${data.timeout || 30000}ms`);
             }
 
@@ -138,6 +158,10 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
         }
     });
 
+    await publish(httpNodeChannel().status({
+        nodeId,
+        status: "success"
+    }))
     // Return WorkflowContext with response data
     // Include both nodeId and nodeName for flexible access
     return {
@@ -238,6 +262,7 @@ function buildRequestBody(data: HttpSettingsFormValues): { body?: string | FormD
                 const parsed = JSON.parse(data.body);
                 return { json: parsed };
             } catch {
+                
                 // If parsing fails, return as text body
                 return { body: data.body };
             }
