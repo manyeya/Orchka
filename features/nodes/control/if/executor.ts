@@ -139,15 +139,15 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
     const conditionResult = (result.branchDecision.data as { conditionResult?: boolean })?.conditionResult;
 
     // Return the context following the standard structure: { [nodeName]: { branch, condition, result } }
+    // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
     return {
-
+      ...context,
       [`${nodeName}`]: {
         branch: result.branchDecision.branch,
         condition: data.condition,
         result: conditionResult,
       },
-      // __branchDecision: result.branchDecision,
-      ...context,
+      __branchDecision: result.branchDecision,
     };
   } catch (error) {
     // Publish error status

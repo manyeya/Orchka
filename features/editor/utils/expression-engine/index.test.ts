@@ -39,7 +39,7 @@ describe("Expression Engine - JSONata Implementation", () => {
       expect(isExpression(null)).toBe(false);
     });
 
-    it("should detect n8n-style expressions with ={{ }}", () => {
+    it("should detect expressions with ={{ }}", () => {
       expect(isExpression("={{ json.name }}")).toBe(true);
       expect(isExpression("={{ $uppercase(json.name) }}")).toBe(true);
     });
@@ -62,13 +62,13 @@ describe("Expression Engine - JSONata Implementation", () => {
       expect(result).toBe("John");
     });
 
-    it("should evaluate n8n-style ={{ }} expressions", async () => {
+    it("should evaluate ={{ }} expressions", async () => {
       context.$json = { name: "John", age: 30 };
       const result = await evaluate("={{ json.name }}", context);
       expect(result).toBe("John");
     });
 
-    it("should evaluate n8n-style expressions with functions", async () => {
+    it("should evaluate expressions with functions", async () => {
       context.$json = { name: "john" };
       const result = await evaluate("={{ $uppercase(json.name) }}", context);
       expect(result).toBe("JOHN");

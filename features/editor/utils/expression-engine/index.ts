@@ -166,7 +166,7 @@ const EXPRESSION_PATTERN = /=?\{\{[\s\S]*?\}\}/;
 
 /**
  * Single expression pattern - matches entire string being just {{ ... }}
- * Also handles ={{ ... }} pattern (n8n style) for compatibility
+ * Also handles ={{ ... }} pattern for compatibility
  */
 const SINGLE_EXPRESSION_PATTERN = /^=?\{\{\s*([\s\S]+?)\s*\}\}$/;
 

@@ -35,7 +35,7 @@ const PanelHeader = ({ title, className }: { title: string; className?: string }
 );
 
 /**
- * N8n-style node detail modal with resizable Input, Settings, and Output panels.
+ * node detail modal with resizable Input, Settings, and Output panels.
  * Opens when clicking on a node and displays:
  * - Left panel: Input data from previous nodes
  * - Center panel: Node settings form
