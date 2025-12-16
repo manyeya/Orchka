@@ -151,12 +151,12 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     // Return WorkflowContext with response data
     // Include both nodeId and nodeName for flexible access
     return {
+        ...context,
         [`${nodeName}`]: {
             [`status`]: response.status,
             [`data`]: response.data,
             [`headers`]: response.headers,
         },
-        ...context,
     };
 };
 

@@ -141,15 +141,16 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
     } | undefined;
 
     // Return the context following the standard structure: { [nodeName]: { branch, expression, value, matchedCase } }
+    // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
     return {
+      ...context,
       [`${nodeName}`]: {
         branch: result.branchDecision.branch,
         expression: data.expression,
         value: branchData?.evaluatedExpression,
         matchedCase: branchData?.matchedValue,
       },
-      // __branchDecision: result.branchDecision,
-        ...context,
+      __branchDecision: result.branchDecision,
     };
   } catch (error) {
     // Publish error status

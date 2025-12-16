@@ -75,25 +75,37 @@ function getSkippedNodes(
   // Find all connections from this control node
   const outgoingConnections = connections.filter(c => c.fromNodeId === controlNodeId);
   
+  console.log(`[getSkippedNodes] Control node: ${controlNodeId}`);
+  console.log(`[getSkippedNodes] Branch decision: "${branchDecision.branch}"`);
+  console.log(`[getSkippedNodes] Outgoing connections:`, outgoingConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
+  
   // Find connections that are NOT on the taken branch
   const nonTakenConnections = outgoingConnections.filter(
     c => c.fromOutput !== branchDecision.branch
   );
   
+  console.log(`[getSkippedNodes] Non-taken connections:`, nonTakenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
+  
   // For each non-taken connection, find all nodes reachable only through that path
   for (const conn of nonTakenConnections) {
     const reachableFromNonTaken = findReachableNodes(conn.toNodeId, connections);
+    
+    console.log(`[getSkippedNodes] Reachable from non-taken (${conn.fromOutput}):`, Array.from(reachableFromNonTaken));
     
     // Check if each reachable node is also reachable from the taken branch
     const takenConnections = outgoingConnections.filter(
       c => c.fromOutput === branchDecision.branch
     );
     
+    console.log(`[getSkippedNodes] Taken connections:`, takenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
+    
     const reachableFromTaken = new Set<string>();
     for (const takenConn of takenConnections) {
       const reachable = findReachableNodes(takenConn.toNodeId, connections);
       reachable.forEach(nodeId => reachableFromTaken.add(nodeId));
     }
+    
+    console.log(`[getSkippedNodes] Reachable from taken:`, Array.from(reachableFromTaken));
     
     // Skip nodes that are only reachable from non-taken branches
     for (const nodeId of reachableFromNonTaken) {
@@ -102,6 +114,8 @@ function getSkippedNodes(
       }
     }
   }
+  
+  console.log(`[getSkippedNodes] Final skipped nodes:`, Array.from(skippedNodes));
   
   return skippedNodes;
 }
@@ -209,11 +223,15 @@ export const execute = inngest.createFunction(
     const branchDecisions: Record<string, BranchDecision> = {};
 
     for (const node of workflowData.sortedNodes) {
+      console.log(`[execute] Processing node ${node.id} (${node.type}), skippedNodes:`, Array.from(skippedNodes));
+      
       // Skip nodes that are only reachable through non-taken branches
       if (skippedNodes.has(node.id)) {
-        console.log(`Skipping node ${node.id} - not on active branch`);
+        console.log(`[execute] Skipping node ${node.id} - not on active branch`);
         continue;
       }
+      
+      console.log(`[execute] Executing node ${node.id}`);
       
       // Capture current context as this node's input
       const inputData = { ...context };
@@ -266,6 +284,11 @@ export const execute = inngest.createFunction(
           __branchDecisions: branchDecisions,
         };
         
+        // Debug: log connections from this control node
+        const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
+        console.log(`Control node ${node.id} connections:`, outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
+        console.log(`Branch decision: "${branchDecision.branch}"`);
+        
         // Determine which nodes to skip based on branch decision
         // Requirements 5.2: Skip nodes only reachable through non-taken branches
         const nodesToSkip = getSkippedNodes(
@@ -282,11 +305,12 @@ export const execute = inngest.createFunction(
 
       // Filter out internal fields (prefixed with __) for client display
       const cleanOutput = filterInternalFields(context);
+      const cleanInput = filterInternalFields(inputData);
 
       // Publish node data for client display (input/output panels)
       await publish(workflowNodeChannel().data({
         nodeId: node.id,
-        input: inputData,
+        input: cleanInput,
         output: cleanOutput,
         nodeType: node.type,
       }));

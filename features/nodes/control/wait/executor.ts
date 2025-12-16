@@ -169,16 +169,16 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
     await publishNodeStatus(publish, nodeId, "success", NodeType.WAIT);
 
     // Return the context following the standard structure: { [nodeName]: { completed, mode, duration?, until? } }
+    // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
     return {
-
+      ...context,
       [`${nodeName}`]: {
         completed: true,
         mode: waitInfo.mode,
         ...(waitInfo.duration && { duration: waitInfo.duration }),
         ...(waitInfo.until && { until: waitInfo.until }),
       },
-      // __branchDecision: branchDecision,
-      ...context,
+      __branchDecision: branchDecision,
     };
   } catch (error) {
     // Publish error status

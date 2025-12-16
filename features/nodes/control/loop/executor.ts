@@ -190,8 +190,9 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
     await publishNodeStatus(publish, nodeId, "success", NodeType.LOOP);
 
     // Return the context following the standard structure: { [nodeName]: { results, total, mode, $item, $index, $total } }
+    // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
     return {
-
+      ...context,
       [`${nodeName}`]: {
         results,
         total,
@@ -201,8 +202,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
         $index: items.length - 1, // Last index
         $total: total,
       },
-      // __branchDecision: branchDecision,
-      ...context,
+      __branchDecision: branchDecision,
     };
   } catch (error) {
     // Publish error status
