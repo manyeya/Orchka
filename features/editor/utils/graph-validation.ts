@@ -183,12 +183,28 @@ export function topologicalSort(nodes: Node[], edges: Edge[]): {
 }
 
 /**
+ * Extended edge interface that includes branch information
+ */
+export interface BranchAwareEdge extends GenericEdge {
+  fromOutput?: string;
+  toInput?: string;
+}
+
+/**
  * Performs topological sort and returns sorted nodes array.
  * Throws an error if a cycle is detected.
  * 
  * Works with both React Flow types and Prisma types:
  * - React Flow: Node[] with Edge[] (source/target)
  * - Prisma: Node[] with Connection[] (fromNodeId/toNodeId)
+ * 
+ * This implementation is branch-aware and correctly handles:
+ * - Control nodes with multiple output branches
+ * - Convergence points where multiple branches merge
+ * - Proper execution order respecting branch dependencies
+ * 
+ * Requirements:
+ * - 5.4: Maintain correct execution order respecting branch dependencies
  * 
  * @param nodes - Array of workflow nodes (React Flow or Prisma)
  * @param edges - Array of workflow edges/connections (React Flow or Prisma)
@@ -210,6 +226,8 @@ export function topologicalSortNodes<N extends GenericNode, E extends GenericEdg
   }
 
   // Build adjacency list and calculate in-degrees
+  // For branch-aware sorting, we treat all edges equally in terms of dependencies
+  // The branch filtering happens at runtime in the executor
   for (const edge of edges) {
     const { source, target } = normalizeEdge(edge);
     const neighbors = adjacencyList.get(source) || [];
@@ -258,6 +276,111 @@ export function topologicalSortNodes<N extends GenericNode, E extends GenericEdg
   return sorted
     .map(nodeId => nodeMap.get(nodeId))
     .filter((node): node is N => node !== undefined);
+}
+
+/**
+ * Gets the branch information for edges from a specific node.
+ * Useful for understanding which branches exist from a control node.
+ * 
+ * @param nodeId - The source node ID
+ * @param edges - Array of edges/connections
+ * @returns Map of branch name to target node IDs
+ */
+export function getBranchesFromNode<E extends BranchAwareEdge>(
+  nodeId: string,
+  edges: E[]
+): Map<string, string[]> {
+  const branches = new Map<string, string[]>();
+  
+  for (const edge of edges) {
+    const { source, target } = normalizeEdge(edge);
+    if (source !== nodeId) continue;
+    
+    const branchName = edge.fromOutput || 'main';
+    const targets = branches.get(branchName) || [];
+    targets.push(target);
+    branches.set(branchName, targets);
+  }
+  
+  return branches;
+}
+
+/**
+ * Finds all nodes that are downstream of a specific branch from a control node.
+ * This is useful for determining which nodes should be skipped when a branch is not taken.
+ * 
+ * @param controlNodeId - The control node ID
+ * @param branchName - The branch name (e.g., "true", "false", "case-1")
+ * @param edges - Array of edges/connections
+ * @returns Set of node IDs reachable from this branch
+ */
+export function getNodesOnBranch<E extends BranchAwareEdge>(
+  controlNodeId: string,
+  branchName: string,
+  edges: E[]
+): Set<string> {
+  const reachable = new Set<string>();
+  
+  // Find initial nodes on this branch
+  const branchEdges = edges.filter(edge => {
+    const { source } = normalizeEdge(edge);
+    return source === controlNodeId && (edge.fromOutput || 'main') === branchName;
+  });
+  
+  const queue: string[] = branchEdges.map(edge => normalizeEdge(edge).target);
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (reachable.has(current)) continue;
+    
+    reachable.add(current);
+    
+    // Find all downstream nodes
+    for (const edge of edges) {
+      const { source, target } = normalizeEdge(edge);
+      if (source === current && !reachable.has(target)) {
+        queue.push(target);
+      }
+    }
+  }
+  
+  return reachable;
+}
+
+/**
+ * Identifies convergence points in a workflow - nodes that have incoming edges
+ * from multiple branches of a control node.
+ * 
+ * Requirements:
+ * - 5.3: Execute convergence nodes only after all active incoming branches complete
+ * 
+ * @param nodes - Array of workflow nodes
+ * @param edges - Array of edges/connections
+ * @returns Map of node ID to array of source branch info
+ */
+export function findConvergencePoints<N extends GenericNode, E extends BranchAwareEdge>(
+  nodes: N[],
+  edges: E[]
+): Map<string, Array<{ sourceNodeId: string; branch: string }>> {
+  const convergencePoints = new Map<string, Array<{ sourceNodeId: string; branch: string }>>();
+  
+  for (const node of nodes) {
+    const incomingEdges = edges.filter(edge => {
+      const { target } = normalizeEdge(edge);
+      return target === node.id;
+    });
+    
+    // A convergence point has multiple incoming edges
+    if (incomingEdges.length > 1) {
+      const sources = incomingEdges.map(edge => ({
+        sourceNodeId: normalizeEdge(edge).source,
+        branch: (edge as BranchAwareEdge).fromOutput || 'main',
+      }));
+      convergencePoints.set(node.id, sources);
+    }
+  }
+  
+  return convergencePoints;
 }
 
 /**

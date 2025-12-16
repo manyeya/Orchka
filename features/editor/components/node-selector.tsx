@@ -3,7 +3,7 @@ import { createId } from "@paralleldrive/cuid2"
 import { useReactFlow } from "@xyflow/react"
 import { useCallback } from "react"
 import { toast } from "sonner"
-import { GlobeIcon, MousePointerIcon } from 'lucide-react'
+import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
 import { NodeType } from "@/lib/generated/prisma/enums"
 import Image from "next/image"
@@ -33,6 +33,33 @@ const ACTION_NODES: NodeTypeOption[] = [
         label: "HTTP Request",
         description: "Make an HTTP request",
         icon: GlobeIcon
+    }
+]
+
+const CONTROL_NODES: NodeTypeOption[] = [
+    {
+        type: NodeType.IF_CONDITION,
+        label: "If",
+        description: "Branch based on a condition",
+        icon: GitBranch
+    },
+    {
+        type: NodeType.SWITCH,
+        label: "Switch",
+        description: "Route to multiple paths based on a value",
+        icon: GitMerge
+    },
+    {
+        type: NodeType.LOOP,
+        label: "Loop",
+        description: "Iterate over an array or count",
+        icon: Repeat
+    },
+    {
+        type: NodeType.WAIT,
+        label: "Wait",
+        description: "Pause execution for a duration or until a time",
+        icon: Clock
     }
 ]
 
@@ -131,6 +158,37 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                         </SheetDescription>
                     </SheetHeader>
                     {ACTION_NODES.map((node) => {
+                        const Icon = node.icon
+                        return (
+                            <Item className="hover:bg-accent/50 cursor-pointer" onClick={() => { handleNodeSelect(node) }} key={node.type}>
+                                <ItemMedia>
+                                    {typeof Icon === 'string' ? (
+                                        <Image src={Icon} alt={node.label} objectFit="contain" className="size-6" />
+                                    ) : (
+                                        <Icon className="size-6" />
+                                    )}
+                                </ItemMedia>
+                                <ItemContent>
+                                    <ItemTitle>{node.label}</ItemTitle>
+                                    {node.description && (
+                                        <ItemDescription>{node.description}</ItemDescription>
+                                    )}
+                                </ItemContent>
+                            </Item>
+                        )
+                    })}
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="flex flex-col gap-4">
+                    <SheetHeader>
+                        <SheetTitle>Control Flow</SheetTitle>
+                        <SheetDescription>
+                            Control the flow of your workflow
+                        </SheetDescription>
+                    </SheetHeader>
+                    {CONTROL_NODES.map((node) => {
                         const Icon = node.icon
                         return (
                             <Item className="hover:bg-accent/50 cursor-pointer" onClick={() => { handleNodeSelect(node) }} key={node.type}>

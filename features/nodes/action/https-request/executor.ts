@@ -152,12 +152,11 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     // Include both nodeId and nodeName for flexible access
     return {
         ...context,
-        [`${nodeName}_name`]: nodeName,
-        [`${nodeName}_response`]: response,
-        [`${nodeName}_status`]: response.status,
-        [`${nodeName}_data`]: response.data,
-        [`${nodeName}_ok`]: response.ok,
-        [`${nodeName}_headers`]: response.headers,
+        [`${nodeName}`]: {
+            [`status`]: response.status,
+            [`data`]: response.data,
+            [`headers`]: response.headers,
+        }
     };
 };
 

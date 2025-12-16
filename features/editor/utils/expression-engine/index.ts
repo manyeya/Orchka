@@ -94,6 +94,33 @@ export interface ExpressionContext {
     $today: string;
     /** Input data (alias for $json) */
     $input: { item: Item; all: () => Item[]; first: () => Item };
+    /** 
+     * Branch decisions from control nodes
+     * Requirements 5.5: Include selected branch identifier in context for downstream nodes
+     */
+    $branch?: {
+        /** The most recent branch decision */
+        last?: BranchDecisionInfo;
+        /** All branch decisions keyed by control node ID */
+        all: Record<string, BranchDecisionInfo>;
+    };
+}
+
+/**
+ * Branch decision information from control nodes
+ * Requirements 5.5: Include selected branch identifier in context for downstream nodes
+ */
+export interface BranchDecisionInfo {
+    /** The output handle ID that was taken (e.g., "true", "false", "case-1", "default") */
+    branch: string;
+    /** Optional data associated with the branch decision */
+    data?: unknown;
+    /** For loop nodes: iteration context */
+    iteration?: {
+        index: number;
+        total: number;
+        item: unknown;
+    };
 }
 
 /**
@@ -408,6 +435,11 @@ export function createExpressionContext(options: CreateContextOptions): Expressi
         first: () => inputItems[0] || { json: undefined }
     };
 
+    // Extract branch decisions from nodeResults if present
+    // Requirements 5.5: Include selected branch identifier in context for downstream nodes
+    const branchDecisions = (nodeResults.__branchDecisions as Record<string, BranchDecisionInfo>) || {};
+    const lastBranchDecision = nodeResults.__lastBranchDecision as BranchDecisionInfo | undefined;
+
     return {
         $json,
         $: $func,
@@ -424,6 +456,10 @@ export function createExpressionContext(options: CreateContextOptions): Expressi
         $now: now,
         $today: today,
         $input,
+        $branch: {
+            last: lastBranchDecision,
+            all: branchDecisions,
+        },
     };
 }
 

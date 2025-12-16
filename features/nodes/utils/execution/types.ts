@@ -2,9 +2,9 @@ import type { ExpressionContext } from "@/features/editor/utils/expression-engin
 import type { Realtime } from "@inngest/realtime";
 import { GetStepTools, Inngest } from "inngest";
 
-
 export type WorkflowContext = Record<string, unknown>;
 export type WorkflowStepTools = GetStepTools<Inngest.Any>;
+
 export interface NodeExecutorParams<TData = Record<string, unknown>> {
     data: TData;
     nodeId: string;
@@ -17,3 +17,23 @@ export interface NodeExecutorParams<TData = Record<string, unknown>> {
 
 export type NodeExecutor<TData = Record<string, unknown>>
     = (params: NodeExecutorParams<TData>) => Promise<WorkflowContext>;
+
+/** Result from control node execution indicating which branch to take */
+export interface BranchDecision {
+    /** The output handle ID to follow (e.g., "true", "false", "case-1", "default", "loop", "done") */
+    branch: string;
+    /** Optional data to pass to the branch */
+    data?: unknown;
+    /** For loop nodes: iteration context */
+    iteration?: {
+        index: number;
+        total: number;
+        item: unknown;
+    };
+}
+
+/** Extended executor result for control nodes */
+export interface ControlNodeResult {
+    context: WorkflowContext;
+    branchDecision?: BranchDecision;
+}

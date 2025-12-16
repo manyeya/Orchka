@@ -73,6 +73,10 @@ enum NodeType {
   INITIAL
   MANUAL_TRIGGER
   HTTP_REQUEST
+  IF_CONDITION
+  SWITCH
+  LOOP
+  WAIT
 }
 
 model Workflow {

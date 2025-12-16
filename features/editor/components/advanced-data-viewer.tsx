@@ -243,7 +243,7 @@ export const AdvancedDataViewer = memo(
         // Empty state
         if (data === null || data === undefined) {
             return (
-                <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4">
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4 text-center">
                     {emptyMessage}
                 </div>
             );
