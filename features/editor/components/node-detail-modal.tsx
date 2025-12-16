@@ -40,7 +40,7 @@ const PanelHeader = ({ title, className }: { title: string; className?: string }
 const JsonDataViewer = memo(({ data, emptyMessage }: { data: unknown; emptyMessage: string }) => {
     if (data === null || data === undefined) {
         return (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4">
                 {emptyMessage}
             </div>
         );
