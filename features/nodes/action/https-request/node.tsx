@@ -5,12 +5,12 @@ import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
 import { memo, useCallback } from "react";
 import { SettingsPortal } from "@/features/editor/components/settings-portal";
-import { useState } from "react";
-import { NodeStatus } from "@/components/react-flow/node-status-indicator";
 import { HttpSettingsForm, type HttpSettingsFormValues } from "./http-settings-form";
 import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeSettingsNodeIdAtom } from "@/features/editor/store";
-
+import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
+import { getHTTPRequestToken } from "./token";
+import { httpNodeChannel } from "./channel";
 
 type HttpRequestNodeType = Node<HttpSettingsFormValues>;
 
@@ -19,7 +19,12 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
     const description = nodeData.url
         ? `${nodeData.method || "GET"} ${nodeData.url}`
         : "Not Configured"
-    const [status, setStatus] = useState<NodeStatus>("initial")
+    const status = useNodeStatus({
+        nodeId: props.id,
+        channel: httpNodeChannel().name,
+        topic: 'status',
+        refreshToken: getHTTPRequestToken
+    })
     const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);
 

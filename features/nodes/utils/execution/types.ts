@@ -1,4 +1,5 @@
 import type { ExpressionContext } from "@/features/editor/utils/expression-engine/index";
+import type { Realtime } from "@inngest/realtime";
 import { GetStepTools, Inngest } from "inngest";
 
 
@@ -11,6 +12,7 @@ export interface NodeExecutorParams<TData = Record<string, unknown>> {
     step: WorkflowStepTools;
     /** Expression context for evaluating dynamic expressions in node data */
     expressionContext?: ExpressionContext;
+    publish: Realtime.PublishFn
 }
 
 export type NodeExecutor<TData = Record<string, unknown>>

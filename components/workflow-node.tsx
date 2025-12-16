@@ -1,10 +1,12 @@
 'use client'
 
 import { NodeToolbar, Position } from "@xyflow/react"
-import { SettingsIcon, TrashIcon } from "lucide-react"
+import { CheckIcon, SettingsIcon, TrashIcon, XIcon } from "lucide-react"
 import type { ReactNode } from "react"
 import { Button } from "./ui/button"
-import { NodeStatusIndicator } from "./react-flow/node-status-indicator"
+import { Spinner } from "./ui/spinner"
+
+export type WorkflowNodeStatus = "loading" | "success" | "error" | "initial";
 
 interface WorkflowNodeProps {
     name?: string;
@@ -13,9 +15,26 @@ interface WorkflowNodeProps {
     showToolbar?: boolean;
     onSettingsClick?: () => void;
     onRemoveClick?: () => void;
+    status?: WorkflowNodeStatus;
+
 }
 
-export const WorkflowNode = ({ name, description, children, showToolbar, onSettingsClick, onRemoveClick }: WorkflowNodeProps) => {
+const StatusIcon = ({ status }: { status: WorkflowNodeStatus }) => {
+    switch (status) {
+        case "loading":
+            return <Spinner className="text-primary"/>
+        case "success":
+            return <CheckIcon className="size-4 text-green-500" />
+        case "error":
+            return <XIcon className="size-4 text-red-500" />
+        case "initial":
+            return null
+        default:
+            return null
+    }
+}
+
+export const WorkflowNode = ({ name, description, children, showToolbar, onSettingsClick, onRemoveClick, status }: WorkflowNodeProps) => {
     return (
         <div className="cursor-pointer active:cursor-grabbing">
             {showToolbar && (
@@ -29,18 +48,22 @@ export const WorkflowNode = ({ name, description, children, showToolbar, onSetti
                 </NodeToolbar>
             )}
             {children}
-            {name && (
-                <NodeToolbar position={Position.Bottom} isVisible className="max-w-[200px] text-center">
+            <NodeToolbar position={Position.Bottom} isVisible className="max-w-[200px] text-center">
+                {name && (<>
                     <p className="font-medium text-sm">{name}</p>
                     {description && (
                         <p className="text-xs text-muted-foreground truncate">
                             {description}
                         </p>
                     )}
-                </NodeToolbar>
-            )
-            }
-
+                </>
+                )}
+                {status && (
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                        <StatusIcon status={status} />
+                    </div>
+                )}
+            </NodeToolbar>
         </div>
     )
 }

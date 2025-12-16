@@ -4,48 +4,8 @@
 
 import { registerHelper } from "..";
 
-/**
- * Access node output by name and optional path
- * Usage: {{ $json "HTTP Request" "data.users" }}
- */
-registerHelper('$json', function (nodeName: string, path?: string) {
-    // @ts-expect-error - Handlebars context
-    const context = this;
-    const nodeData = context.$json?.[nodeName];
-
-    if (!nodeData) return undefined;
-    if (!path || typeof path !== 'string') return nodeData;
-
-    // Navigate path
-    const parts = path.split('.');
-    let result: unknown = nodeData;
-
-    for (const part of parts) {
-        if (result === null || result === undefined) return undefined;
-        if (typeof result === 'object') {
-            result = (result as Record<string, unknown>)[part];
-        } else {
-            return undefined;
-        }
-    }
-
-    return result;
-});
-
-/**
- * Access node metadata
- * Usage: {{ $node "HTTP Request" "name" }}
- */
-registerHelper('$node', function (nodeName: string, property?: string) {
-    // @ts-expect-error - Handlebars context
-    const context = this;
-    const node = context.$node?.[nodeName];
-
-    if (!node) return undefined;
-    if (!property) return node;
-
-    return node[property as keyof typeof node];
-});
+// $json and $node helpers removed to allow direct context access via Handlebars standard syntax
+// e.g. {{ $json.["Node Name"].data }}
 
 /**
  * Get first item from array

@@ -6,9 +6,8 @@ import Image from "next/image"
 import { memo, type ReactNode, useCallback } from "react"
 import { BaseNode, BaseNodeContent } from "@/components/react-flow/base-node"
 import { BaseHandle } from "@/components/react-flow/base-handle"
-import { WorkflowNode } from "@/components/workflow-node"
+import { WorkflowNode, WorkflowNodeStatus } from "@/components/workflow-node"
 import { useDeleteNode } from "@/features/editor/hooks/use-delete-node"
-import { NodeStatus, NodeStatusIndicator } from "@/components/react-flow/node-status-indicator"
 import { activeSettingsNodeIdAtom } from "@/features/editor/store"
 import { useSetAtom } from "jotai"
 
@@ -17,7 +16,7 @@ interface BaseTriggerNodeProps extends NodeProps {
     name: string;
     description?: string;
     children?: ReactNode;
-    status?: NodeStatus;
+    status?: WorkflowNodeStatus;
     onSettingsClick?: () => void;
     onDoubleClick?: () => void;
 }
@@ -36,8 +35,8 @@ export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
             onRemoveClick={handleRemoveClick}
             onSettingsClick={onSettingsClick}
             showToolbar={true}
+            status={status}
         >
-            <NodeStatusIndicator variant="border" status={status} className="rounded-l-2xl">
                 <BaseNode onDoubleClick={onDoubleClick} className="rounded-l-2xl relative group">
                     <BaseNodeContent>
                         {typeof Icon === "string" ? (
@@ -49,7 +48,6 @@ export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
                         <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
                     </BaseNodeContent>
                 </BaseNode>
-            </NodeStatusIndicator>
         </WorkflowNode>
     )
 })
