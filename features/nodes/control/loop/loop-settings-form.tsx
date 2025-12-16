@@ -144,22 +144,23 @@ export function LoopSettingsForm({
                   <FormLabel>Array Expression</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='{{ $json.items }}'
+                      placeholder='{{ json.items }}'
                       className="font-mono text-sm min-h-[100px]"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    An expression that evaluates to an array. Use{" "}
+                    A JSONata expression that evaluates to an array. Use{" "}
                     <code className="text-xs bg-muted px-1 py-0.5 rounded">
                       {"{{ }}"}
                     </code>{" "}
-                    syntax. Each item will be available as{" "}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">$item</code>,
-                    with{" "}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">$index</code>{" "}
-                    and{" "}
-                    <code className="text-xs bg-muted px-1 py-0.5 rounded">$total</code>.
+                    syntax. Examples:{" "}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      {"{{ json.users }}"}
+                    </code>,{" "}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      {'{{ $node("HTTP Request").data }}'}
+                    </code>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -49,15 +49,15 @@ export function calculateDurationMs(
  * 
  * @param until - The timestamp expression or ISO string
  * @param expressionContext - The expression context for evaluation
- * @returns ISO timestamp string or Date object
+ * @returns Promise resolving to Date object
  * 
  * Requirements:
  * - 4.5: Use Inngest's step.sleepUntil for durable waiting
  */
-export function resolveUntilTimestamp(
+export async function resolveUntilTimestamp(
   until: string,
   expressionContext?: ExpressionContext
-): Date {
+): Promise<Date> {
   // Empty until expression
   if (!until || until.trim() === "") {
     throw new Error("Wait Node: Empty 'until' expression");
@@ -71,7 +71,7 @@ export function resolveUntilTimestamp(
       throw new Error("Wait Node: No expression context provided for 'until' expression");
     }
     try {
-      resolved = evaluate(until, expressionContext);
+      resolved = await evaluate(until, expressionContext);
     } catch (error) {
       throw new Error(`Wait Node: Error evaluating 'until' expression: ${error}`);
     }
@@ -136,11 +136,11 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
       }
 
       const durationMs = calculateDurationMs(data.duration.value, data.duration.unit);
-      
+
       // Inngest step.sleep expects a duration string like "5m" or milliseconds
       // Convert to a human-readable format for the step name
       const durationStr = `${data.duration.value}${data.duration.unit.charAt(0)}`;
-      
+
       await step.sleep(`${stepName} - sleep ${durationStr}`, durationMs);
 
       waitInfo = {
@@ -149,8 +149,8 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
       };
     } else {
       // Until mode: use step.sleepUntil
-      const untilDate = resolveUntilTimestamp(data.until || "", expressionContext);
-      
+      const untilDate = await resolveUntilTimestamp(data.until || "", expressionContext);
+
       await step.sleepUntil(`${stepName} - sleep until`, untilDate);
 
       waitInfo = {
@@ -170,14 +170,15 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
 
     // Return the context following the standard structure: { [nodeName]: { completed, mode, duration?, until? } }
     return {
-      ...context,
+
       [`${nodeName}`]: {
         completed: true,
         mode: waitInfo.mode,
         ...(waitInfo.duration && { duration: waitInfo.duration }),
         ...(waitInfo.until && { until: waitInfo.until }),
       },
-      __branchDecision: branchDecision,
+      // __branchDecision: branchDecision,
+      ...context,
     };
   } catch (error) {
     // Publish error status

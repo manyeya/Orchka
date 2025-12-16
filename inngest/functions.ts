@@ -236,7 +236,7 @@ export const execute = inngest.createFunction(
       });
 
       // Resolve all {{ }} expressions in node configuration
-      const resolvedData = resolveNodeExpressions(
+      const resolvedData = await resolveNodeExpressions(
         node.data as Record<string, unknown>,
         expressionContext
       );

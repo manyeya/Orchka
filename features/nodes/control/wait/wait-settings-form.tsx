@@ -27,7 +27,7 @@ const waitSettingsSchema = z.object({
   name: z.string().min(1, "Name is required"),
   mode: z.enum(["duration", "until"]),
   duration: z.object({
-    value: z.coerce.number().min(1, "Duration must be at least 1"),
+    value: z.number().min(1, "Duration must be at least 1"),
     unit: z.enum(["seconds", "minutes", "hours", "days"]),
   }).optional(),
   until: z.string().optional(),
@@ -156,6 +156,7 @@ export function WaitSettingsForm({
                         min={1}
                         placeholder="5"
                         {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -198,17 +199,23 @@ export function WaitSettingsForm({
                   <FormLabel>Timestamp Expression</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='{{ $json.scheduledTime }} or 2024-12-31T23:59:59Z'
+                      placeholder='{{ json.scheduledTime }} or 2024-12-31T23:59:59Z'
                       className="font-mono text-sm min-h-[100px]"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    An ISO timestamp or expression that evaluates to a timestamp. Use{" "}
+                    An ISO timestamp or JSONata expression. Use{" "}
                     <code className="text-xs bg-muted px-1 py-0.5 rounded">
                       {"{{ }}"}
                     </code>{" "}
-                    syntax for dynamic values.
+                    syntax. Examples:{" "}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      {"{{ json.dueDate }}"}
+                    </code>,{" "}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      {"{{ $fromMillis(now + 3600000) }}"}
+                    </code>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

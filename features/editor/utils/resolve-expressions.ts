@@ -10,22 +10,22 @@ import {
  * Resolve all expressions in node configuration data before execution
  * 
  * This function recursively traverses the node data object and evaluates
- * any Handlebars expressions it finds (strings matching {{ ... }}).
+ * any JSONata expressions it finds (strings matching {{ ... }}).
  * 
  * @param data - Node configuration with potential expressions
  * @param context - Expression evaluation context with $json, $node, etc.
- * @returns Resolved data with all expressions evaluated
+ * @returns Promise resolving to data with all expressions evaluated
  * 
  * @example
  * ```typescript
  * const nodeData = {
- *   url: '{{ $json "Config" "apiUrl" }}/users',
+ *   url: '{{ json.apiUrl }}/users',
  *   headers: {
- *     Authorization: 'Bearer {{ $json "Auth" "token" }}'
+ *     Authorization: 'Bearer {{ json.token }}'
  *   }
  * };
  * 
- * const resolved = resolveNodeExpressions(nodeData, context);
+ * const resolved = await resolveNodeExpressions(nodeData, context);
  * // {
  * //   url: 'https://api.example.com/users',
  * //   headers: {
@@ -34,10 +34,10 @@ import {
  * // }
  * ```
  */
-export function resolveNodeExpressions<T>(
+export async function resolveNodeExpressions<T>(
     data: T,
     context: ExpressionContext
-): T {
+): Promise<T> {
     return evaluateObject(data, context);
 }
 
