@@ -13,9 +13,9 @@ import {
     ResizableHandle,
 } from "@/components/ui/resizable";
 import { useAtom } from "jotai";
-import { activeNodeModalIdAtom, nodesAtom } from "@/features/editor/store";
+import { activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeExecutionData } from "@/features/nodes/utils/use-node-execution-data";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { AdvancedDataViewer } from "./advanced-data-viewer";
 import { cn } from "@/lib/utils";
 
 interface NodeDetailModalProps {
@@ -33,28 +33,6 @@ const PanelHeader = ({ title, className }: { title: string; className?: string }
         {title}
     </div>
 );
-
-/**
- * JSON data viewer component for input/output panels
- */
-const JsonDataViewer = memo(({ data, emptyMessage }: { data: unknown; emptyMessage: string }) => {
-    if (data === null || data === undefined) {
-        return (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4">
-                {emptyMessage}
-            </div>
-        );
-    }
-
-    return (
-        <ScrollArea className="h-full">
-            <pre className="p-4 text-xs font-mono whitespace-pre-wrap break-all">
-                {JSON.stringify(data, null, 2)}
-            </pre>
-        </ScrollArea>
-    );
-});
-JsonDataViewer.displayName = "JsonDataViewer";
 
 /**
  * N8n-style node detail modal with resizable Input, Settings, and Output panels.
@@ -100,7 +78,7 @@ export const NodeDetailModal = memo(({
                             <div className="h-full flex flex-col">
                                 <PanelHeader title="Input" />
                                 <div className="flex-1 min-h-0">
-                                    <JsonDataViewer
+                                    <AdvancedDataViewer
                                         data={input}
                                         emptyMessage="No input data. Execute the workflow to see input."
                                     />
@@ -129,7 +107,7 @@ export const NodeDetailModal = memo(({
                             <div className="h-full flex flex-col">
                                 <PanelHeader title="Output" />
                                 <div className="flex-1 min-h-0">
-                                    <JsonDataViewer
+                                    <AdvancedDataViewer
                                         data={output}
                                         emptyMessage="No output data. Execute the workflow to see output."
                                     />
