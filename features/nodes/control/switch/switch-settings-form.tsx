@@ -113,18 +113,24 @@ export function SwitchSettingsForm({
                 <FormLabel>Expression</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder='{{ $json.type }}'
+                    placeholder='{{ json.type }}'
                     className="font-mono text-sm min-h-[80px]"
                     {...field}
                   />
                 </FormControl>
                 <FormDescription>
-                  An expression that evaluates to a value to match against cases.
+                  A JSONata expression that evaluates to a value to match against cases.
                   Use{" "}
                   <code className="text-xs bg-muted px-1 py-0.5 rounded">
                     {"{{ }}"}
                   </code>{" "}
-                  syntax for dynamic values.
+                  syntax. Examples:{" "}
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                    {"{{ json.status }}"}
+                  </code>,{" "}
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                    {"{{ json.user.role }}"}
+                  </code>
                 </FormDescription>
                 <FormMessage />
               </FormItem>

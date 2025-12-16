@@ -87,17 +87,23 @@ export function IfSettingsForm({
                 <FormLabel>Condition</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder='{{ $json.status === "active" }}'
+                    placeholder='{{ json.status = "active" }}'
                     className="font-mono text-sm min-h-[100px]"
                     {...field}
                   />
                 </FormControl>
                 <FormDescription>
-                  An expression that evaluates to true or false. Use{" "}
+                  A JSONata expression that evaluates to true or false. Use{" "}
                   <code className="text-xs bg-muted px-1 py-0.5 rounded">
                     {"{{ }}"}
                   </code>{" "}
-                  syntax for dynamic values.
+                  syntax. Examples:{" "}
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                    {"{{ json.count > 0 }}"}
+                  </code>,{" "}
+                  <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                    {'{{ json.type = "premium" }}'}
+                  </code>
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -16,22 +16,43 @@ export interface IfNodeResult {
  * Evaluates a condition expression and returns a boolean result.
  * Handles empty/invalid conditions by returning false.
  * 
- * @param condition - The condition expression to evaluate
+ * @param condition - The condition expression to evaluate (may already be resolved)
  * @param expressionContext - The expression context for evaluation
- * @returns boolean result of the condition evaluation
+ * @returns Promise resolving to boolean result of the condition evaluation
  */
-export function evaluateIfCondition(
-  condition: string,
+export async function evaluateIfCondition(
+  condition: unknown,
   expressionContext: ExpressionContext
-): boolean {
-  // Empty condition evaluates to false
-  if (!condition || condition.trim() === "") {
+): Promise<boolean> {
+  // Handle null/undefined conditions
+  if (condition === null || condition === undefined) {
+    console.warn("If Node: Empty condition, treating as false");
+    return false;
+  }
+
+  // If condition is already a boolean (pre-resolved), return it directly
+  if (typeof condition === "boolean") {
+    return condition;
+  }
+
+  // If condition is a number, use truthy conversion
+  if (typeof condition === "number") {
+    return condition !== 0;
+  }
+
+  // If condition is not a string, convert to boolean
+  if (typeof condition !== "string") {
+    return Boolean(condition);
+  }
+
+  // Empty string condition evaluates to false
+  if (condition.trim() === "") {
     console.warn("If Node: Empty condition, treating as false");
     return false;
   }
 
   try {
-    const result = evaluate(condition, expressionContext);
+    const result = await evaluate(condition, expressionContext);
     
     // Convert result to boolean
     // Explicit boolean values
@@ -96,8 +117,8 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
         };
       }
 
-      // Evaluate the condition
-      const conditionResult = evaluateIfCondition(data.condition, expressionContext);
+      // Evaluate the condition (may already be resolved by resolveNodeExpressions)
+      const conditionResult = await evaluateIfCondition(data.condition as unknown, expressionContext);
 
       // Determine which branch to take
       const branch = conditionResult ? "true" : "false";
@@ -119,13 +140,14 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
 
     // Return the context following the standard structure: { [nodeName]: { branch, condition, result } }
     return {
-      ...context,
+
       [`${nodeName}`]: {
         branch: result.branchDecision.branch,
         condition: data.condition,
         result: conditionResult,
       },
-      __branchDecision: result.branchDecision,
+      // __branchDecision: result.branchDecision,
+      ...context,
     };
   } catch (error) {
     // Publish error status

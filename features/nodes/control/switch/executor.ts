@@ -16,28 +16,37 @@ export interface SwitchNodeResult {
  * Evaluates a switch expression and finds the matching case.
  * Returns the case ID if a match is found, or "default" if no match.
  * 
- * @param expression - The expression to evaluate
+ * @param expression - The expression to evaluate (may already be resolved)
  * @param cases - The cases to match against
  * @param expressionContext - The expression context for evaluation
- * @returns The matching case ID or "default"
+ * @returns Promise resolving to the matching case ID or "default"
  */
-export function evaluateSwitchExpression(
-  expression: string,
+export async function evaluateSwitchExpression(
+  expression: unknown,
   cases: SwitchCase[],
   expressionContext: ExpressionContext
-): { branch: string; matchedValue: unknown; evaluatedExpression: unknown } {
-  // Empty expression routes to default
-  if (!expression || expression.trim() === "") {
+): Promise<{ branch: string; matchedValue: unknown; evaluatedExpression: unknown }> {
+  // Handle null/undefined expression
+  if (expression === null || expression === undefined) {
     console.warn("Switch Node: Empty expression, routing to default");
     return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
   }
 
   let evaluatedValue: unknown;
-  try {
-    evaluatedValue = evaluate(expression, expressionContext);
-  } catch (error) {
-    console.warn("Switch Node: Error evaluating expression, routing to default:", error);
+
+  // If expression is already a non-string value (pre-resolved), use it directly
+  if (typeof expression !== "string") {
+    evaluatedValue = expression;
+  } else if (expression.trim() === "") {
+    console.warn("Switch Node: Empty expression, routing to default");
     return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
+  } else {
+    try {
+      evaluatedValue = await evaluate(expression, expressionContext);
+    } catch (error) {
+      console.warn("Switch Node: Error evaluating expression, routing to default:", error);
+      return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
+    }
   }
 
   // Find matching case
@@ -102,9 +111,9 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
         };
       }
 
-      // Evaluate the expression and find matching case
-      const { branch, matchedValue, evaluatedExpression } = evaluateSwitchExpression(
-        data.expression,
+      // Evaluate the expression and find matching case (may already be resolved)
+      const { branch, matchedValue, evaluatedExpression } = await evaluateSwitchExpression(
+        data.expression as unknown,
         data.cases || [],
         expressionContext
       );
@@ -133,14 +142,14 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
 
     // Return the context following the standard structure: { [nodeName]: { branch, expression, value, matchedCase } }
     return {
-      ...context,
       [`${nodeName}`]: {
         branch: result.branchDecision.branch,
         expression: data.expression,
         value: branchData?.evaluatedExpression,
         matchedCase: branchData?.matchedValue,
       },
-      __branchDecision: result.branchDecision,
+      // __branchDecision: result.branchDecision,
+        ...context,
     };
   } catch (error) {
     // Publish error status

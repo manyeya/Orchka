@@ -25,27 +25,44 @@ export interface LoopIterationContext {
  * Evaluates the array expression and returns an array to iterate over.
  * Handles non-array values by wrapping them in a single-element array.
  * 
- * @param expression - The array expression to evaluate
+ * @param expression - The array expression to evaluate (may already be resolved)
  * @param expressionContext - The expression context for evaluation
- * @returns Array to iterate over
+ * @returns Promise resolving to array to iterate over
  * 
  * Requirements:
  * - 3.3: Iterate over each element in the resolved array expression
  * - 3.7: Treat non-array values as single-element arrays
  */
-export function evaluateLoopArray(
-  expression: string,
+export async function evaluateLoopArray(
+  expression: unknown,
   expressionContext: ExpressionContext
-): unknown[] {
-  // Empty expression returns empty array
-  if (!expression || expression.trim() === "") {
+): Promise<unknown[]> {
+  // Handle null/undefined expression
+  if (expression === null || expression === undefined) {
+    console.warn("Loop Node: Empty array expression, returning empty array");
+    return [];
+  }
+
+  // If expression is already an array (pre-resolved), return it
+  if (Array.isArray(expression)) {
+    return expression;
+  }
+
+  // If expression is not a string, wrap it in an array
+  if (typeof expression !== "string") {
+    console.warn("Loop Node: Array expression resolved to non-array value, wrapping in array");
+    return [expression];
+  }
+
+  // Empty string expression returns empty array
+  if (expression.trim() === "") {
     console.warn("Loop Node: Empty array expression, returning empty array");
     return [];
   }
 
   let result: unknown;
   try {
-    result = evaluate(expression, expressionContext);
+    result = await evaluate(expression, expressionContext);
   } catch (error) {
     console.warn("Loop Node: Error evaluating array expression, returning empty array:", error);
     return [];
@@ -118,14 +135,14 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
   try {
     // Determine the items to iterate over
     let items: unknown[];
-    
+
     if (data.mode === "array") {
       // Array mode: evaluate the array expression
       if (!expressionContext) {
         console.warn("Loop Node: No expression context provided, using empty array");
         items = [];
       } else {
-        items = evaluateLoopArray(data.arrayExpression || "", expressionContext);
+        items = await evaluateLoopArray(data.arrayExpression as unknown, expressionContext);
       }
     } else {
       // Count mode: generate array of indices
@@ -174,7 +191,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
 
     // Return the context following the standard structure: { [nodeName]: { results, total, mode, $item, $index, $total } }
     return {
-      ...context,
+
       [`${nodeName}`]: {
         results,
         total,
@@ -184,7 +201,8 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
         $index: items.length - 1, // Last index
         $total: total,
       },
-      __branchDecision: branchDecision,
+      // __branchDecision: branchDecision,
+      ...context,
     };
   } catch (error) {
     // Publish error status
