@@ -29,20 +29,21 @@
  * 
  * @example Server-side publishing (in executor):
  * ```typescript
- * import { publishNodeStatus } from "@/features/nodes/utils/realtime";
+ * import { publishNodeStatus, publishNodeData } from "@/features/nodes/utils/realtime";
  * 
  * await publishNodeStatus(publish, nodeId, "loading", NodeType.MY_NODE);
  * // ... do work ...
  * await publishNodeStatus(publish, nodeId, "success", NodeType.MY_NODE);
+ * await publishNodeData(publish, nodeId, inputContext, outputResult, NodeType.MY_NODE);
  * ```
  */
 
 // Channel exports
 export { workflowNodeChannel } from "./channel";
-export type { NodeStatusPayload } from "./channel";
+export type { NodeStatusPayload, NodeDataPayload } from "./channel";
 
 // Token exports
 export { getWorkflowNodeToken, type WorkflowNodeToken } from "./token";
 
 // Publishing helpers
-export { publishNodeStatus, createNodeStatusPublisher } from "./publish-status";
+export { publishNodeStatus, publishNodeData, createNodeStatusPublisher } from "./publish-status";

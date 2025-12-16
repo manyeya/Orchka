@@ -26,7 +26,10 @@ interface HistoryState {
 export const nodesAtom = atom<Node[]>([]);
 export const edgesAtom = atom<Edge[]>([]);
 export const selectedNodeIdAtom = atom<string | null>(null);
-export const activeSettingsNodeIdAtom = atom<string | null>(null);
+/** ID of the node whose modal is currently open */
+export const activeNodeModalIdAtom = atom<string | null>(null);
+/** @deprecated Use activeNodeModalIdAtom instead */
+export const activeSettingsNodeIdAtom = activeNodeModalIdAtom;
 
 export const currentRunIdAtom = atom<string | null>(null);
 export const historyAtom = atom<HistoryState[]>([]);
@@ -41,6 +44,14 @@ export const dragDataAtom = atom<{
   value: any;
   displayPath: string;
 } | null>(null);
+
+/** Stores execution data (input/output) per node, keyed by nodeId */
+export interface NodeExecutionData {
+  input: unknown;
+  output: unknown;
+  timestamp: number;
+}
+export const nodeExecutionDataAtom = atom<Record<string, NodeExecutionData>>({});
 
 // Constants
 const MAX_HISTORY_SIZE = 50;

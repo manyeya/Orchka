@@ -73,6 +73,9 @@ export const execute = inngest.createFunction(
     let context = event.data.initialData || {};
 
     for (const node of workflowData.sortedNodes) {
+      // Capture current context as this node's input
+      const inputData = { ...context };
+
       // Build expression context from accumulated results
       const expressionContext = buildExpressionContext({
         nodeResults: context,
@@ -101,6 +104,14 @@ export const execute = inngest.createFunction(
         expressionContext,
         publish,
       })
+
+      // Publish node data for client display (input/output panels)
+      await publish(workflowNodeChannel().data({
+        nodeId: node.id,
+        input: inputData,
+        output: context,
+        nodeType: node.type,
+      }));
     }
 
     return {
