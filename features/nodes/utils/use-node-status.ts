@@ -1,4 +1,4 @@
-import { NodeStatus } from "@/components/react-flow/node-status-indicator";
+import { WorkflowNodeStatus } from "@/components/workflow-node";
 import type { Realtime } from "@inngest/realtime";
 import { useInngestSubscription } from "@inngest/realtime/hooks";
 import { useEffect, useState } from "react";
@@ -16,7 +16,7 @@ export const useNodeStatus = ({
     topic,
     refreshToken
 }: UseNodeStatusOptions) => {
-    const [status, setStatus] = useState<NodeStatus>('initial');
+    const [status, setStatus] = useState<WorkflowNodeStatus>('initial');
     const { data } = useInngestSubscription({
         refreshToken,
         enabled: true,
@@ -40,7 +40,7 @@ export const useNodeStatus = ({
             })[0];
 
             if(latestMessage && latestMessage.kind === "data") {
-                setStatus(latestMessage.data.status as NodeStatus);
+                setStatus(latestMessage.data.status as WorkflowNodeStatus);
             }
     
     }, [data, nodeId, channel, topic]);

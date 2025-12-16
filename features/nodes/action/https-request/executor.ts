@@ -2,7 +2,8 @@ import { NonRetriableError } from "inngest";
 import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import { HttpSettingsFormValues } from "./http-settings-form";
 import ky, { Options as KyOptions, HTTPError } from 'ky';
-import { httpNodeChannel } from "./channel";
+import { publishNodeStatus } from "../../utils/realtime";
+import { NodeType } from "@/lib/generated/prisma/enums";
 
 /**
  * Response structure from the HTTP request
@@ -34,17 +35,11 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     step,
     publish
 }): Promise<WorkflowContext> => {
-    await publish(httpNodeChannel().status({
-        nodeId,
-        status: "loading"
-    }))
+    await publishNodeStatus(publish, nodeId, "loading", NodeType.HTTP_REQUEST)
 
     // Validate required URL
     if (!data.url) {
-        await publish(httpNodeChannel().status({
-            nodeId,
-            status: "error"
-        }))
+        await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
         throw new NonRetriableError('URL is required');
     }
 
@@ -113,10 +108,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
                 url: res.url,
             };
         } catch (error) {
-            await publish(httpNodeChannel().status({
-                nodeId,
-                status: "error"
-            }))
+            await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
             // Handle ky-specific errors
             if (error instanceof HTTPError) {
                 const res = error.response;
@@ -145,10 +137,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
 
             // Handle timeout errors
             if (error instanceof Error && error.name === 'TimeoutError') {
-                await publish(httpNodeChannel().status({
-                    nodeId,
-                    status: "error"
-                }))
+                await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
 
                 throw new NonRetriableError(`Request timed out after ${data.timeout || 30000}ms`);
             }
@@ -158,10 +147,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
         }
     });
 
-    await publish(httpNodeChannel().status({
-        nodeId,
-        status: "success"
-    }))
+    await publishNodeStatus(publish, nodeId, "success", NodeType.HTTP_REQUEST);
     // Return WorkflowContext with response data
     // Include both nodeId and nodeName for flexible access
     return {
@@ -262,7 +248,7 @@ function buildRequestBody(data: HttpSettingsFormValues): { body?: string | FormD
                 const parsed = JSON.parse(data.body);
                 return { json: parsed };
             } catch {
-                
+
                 // If parsing fails, return as text body
                 return { body: data.body };
             }

@@ -10,7 +10,7 @@ import {
   resolveNodeExpressions,
   buildExpressionContext
 } from "@/features/editor/utils/resolve-expressions";
-import { httpNodeChannel } from "@/features/nodes/action/https-request/channel";
+import { workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
@@ -44,7 +44,7 @@ export const helloWorld = inngest.createFunction(
 
 export const execute = inngest.createFunction(
   { id: "execute-workflow" },
-  { event: "workflow/execute", channels: [httpNodeChannel] },
+  { event: "workflow/execute", channels: [workflowNodeChannel] },
   async ({ event, step, publish }) => {
     const workflowId = event.data.workflowId;
 

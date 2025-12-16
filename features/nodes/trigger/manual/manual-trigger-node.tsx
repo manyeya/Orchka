@@ -5,12 +5,14 @@ import { BaseTriggerNode } from "../base-trigger-node";
 import { NodeProps } from "@xyflow/react";
 import { MousePointerIcon } from "lucide-react";
 import { SettingsPortal } from "@/features/editor/components/settings-portal";
-import { NodeStatus } from "@/components/react-flow/node-status-indicator";
+import { WorkflowNodeStatus } from "@/components/workflow-node"
 import { useSetAtom } from "jotai";
 import { activeSettingsNodeIdAtom, updateNodeAtom } from "@/features/editor/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useNodeStatus } from "../../utils/use-node-status";
+import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 interface ManualTriggerData {
     name?: string;
@@ -21,7 +23,12 @@ export const ManualTriggerNode = memo((props: NodeProps) => {
     const nodeData = props.data as ManualTriggerData;
     const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);
-    const [status, setStatus] = useState<NodeStatus>("initial");
+    const status = useNodeStatus({
+        nodeId: props.id,
+        channel: workflowNodeChannel().name,
+        topic: 'status',
+        refreshToken: getWorkflowNodeToken
+    });
     const [name, setName] = useState(nodeData.name || "Manual Trigger");
 
     const handleSave = useCallback(() => {
