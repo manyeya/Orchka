@@ -1,8 +1,14 @@
 "use client";
 
 import { memo, useState, useCallback, useMemo } from "react";
-import JsonView from "@uiw/react-json-view";
-import { darkTheme } from "@uiw/react-json-view/dark";
+import {
+    UncontrolledTreeEnvironment,
+    Tree,
+    StaticTreeDataProvider,
+    TreeItem,
+    TreeItemIndex,
+} from "react-complex-tree";
+import "react-complex-tree/lib/style-modern.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +32,6 @@ import {
     ChevronDownIcon,
     ChevronRightIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type ViewMode = "tree" | "json" | "table";
 
@@ -84,26 +89,305 @@ function formatCellValue(value: unknown): string {
     return String(value);
 }
 
+interface TreeItemData {
+    key: string;
+    value?: unknown;
+    type: "string" | "number" | "boolean" | "null" | "undefined" | "array" | "object";
+    count?: number;
+}
+
 /**
- * Tree View Component using @uiw/react-json-view
+ * Convert arbitrary data to react-complex-tree format with type info for syntax highlighting
+ */
+function convertToTreeItems(
+    data: unknown
+): Record<TreeItemIndex, TreeItem<TreeItemData>> {
+    const items: Record<TreeItemIndex, TreeItem<TreeItemData>> = {};
+
+    const processValue = (
+        value: unknown,
+        key: string,
+        path: string
+    ): TreeItemIndex[] => {
+        const itemId = path;
+
+        if (value === null) {
+            items[itemId] = {
+                index: itemId,
+                data: { key, value: null, type: "null" },
+                children: [],
+                isFolder: false,
+            };
+            return [itemId];
+        }
+
+        if (value === undefined) {
+            items[itemId] = {
+                index: itemId,
+                data: { key, value: undefined, type: "undefined" },
+                children: [],
+                isFolder: false,
+            };
+            return [itemId];
+        }
+
+        if (Array.isArray(value)) {
+            const childIds: TreeItemIndex[] = [];
+            value.forEach((item, index) => {
+                const childPath = `${path}[${index}]`;
+                const childKeys = processValue(item, `[${index}]`, childPath);
+                childIds.push(...childKeys);
+            });
+            items[itemId] = {
+                index: itemId,
+                data: { key, type: "array", count: value.length },
+                children: childIds,
+                isFolder: true,
+            };
+            return [itemId];
+        }
+
+        if (typeof value === "object") {
+            const childIds: TreeItemIndex[] = [];
+            Object.entries(value as Record<string, unknown>).forEach(
+                ([k, v]) => {
+                    const childPath = `${path}.${k}`;
+                    const childKeys = processValue(v, k, childPath);
+                    childIds.push(...childKeys);
+                }
+            );
+            items[itemId] = {
+                index: itemId,
+                data: { key, type: "object", count: Object.keys(value as object).length },
+                children: childIds,
+                isFolder: true,
+            };
+            return [itemId];
+        }
+
+        // Primitive values
+        const type = typeof value as "string" | "number" | "boolean";
+        items[itemId] = {
+            index: itemId,
+            data: { key, value, type },
+            children: [],
+            isFolder: false,
+        };
+        return [itemId];
+    };
+
+    // Process root
+    if (data === null || data === undefined) {
+        items.root = {
+            index: "root",
+            data: { key: "root", value: data, type: data === null ? "null" : "undefined" },
+            children: [],
+            isFolder: false,
+        };
+    } else if (Array.isArray(data)) {
+        const childIds: TreeItemIndex[] = [];
+        data.forEach((item, index) => {
+            const childPath = `root[${index}]`;
+            const childKeys = processValue(item, `[${index}]`, childPath);
+            childIds.push(...childKeys);
+        });
+        items.root = {
+            index: "root",
+            data: { key: "root", type: "array", count: data.length },
+            children: childIds,
+            isFolder: true,
+        };
+    } else if (typeof data === "object") {
+        const childIds: TreeItemIndex[] = [];
+        Object.entries(data as Record<string, unknown>).forEach(([k, v]) => {
+            const childPath = `root.${k}`;
+            const childKeys = processValue(v, k, childPath);
+            childIds.push(...childKeys);
+        });
+        items.root = {
+            index: "root",
+            data: { key: "root", type: "object", count: Object.keys(data as object).length },
+            children: childIds,
+            isFolder: true,
+        };
+    } else {
+        const type = typeof data as "string" | "number" | "boolean";
+        items.root = {
+            index: "root",
+            data: { key: "root", value: data, type },
+            children: [],
+            isFolder: false,
+        };
+    }
+
+    return items;
+}
+
+/**
+ * Render syntax-highlighted tree item
+ */
+function renderTreeItemTitle(itemData: TreeItemData): React.ReactElement {
+    const { key, value, type, count } = itemData;
+
+    // Color classes matching common JSON syntax highlighting
+    const keyClass = "text-foreground";
+    const stringClass = "text-green-400";
+    const numberClass = "text-orange-400";
+    const booleanClass = "text-purple-400";
+    const nullClass = "text-muted-foreground italic";
+    const bracketClass = "text-muted-foreground";
+
+    if (type === "array") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}> [{count}]</span>
+            </span>
+        );
+    }
+
+    if (type === "object") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}> {`{${count}}`}</span>
+            </span>
+        );
+    }
+
+    if (type === "null") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}>: </span>
+                <span className={nullClass}>null</span>
+            </span>
+        );
+    }
+
+    if (type === "undefined") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}>: </span>
+                <span className={nullClass}>undefined</span>
+            </span>
+        );
+    }
+
+    if (type === "string") {
+        let displayValue = String(value);
+        if (displayValue.length > 80) {
+            displayValue = displayValue.slice(0, 80) + "…";
+        }
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}>: </span>
+                <span className={stringClass}>"{displayValue}"</span>
+            </span>
+        );
+    }
+
+    if (type === "number") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}>: </span>
+                <span className={numberClass}>{String(value)}</span>
+            </span>
+        );
+    }
+
+    if (type === "boolean") {
+        return (
+            <span className="truncate">
+                <span className={keyClass}>{key}</span>
+                <span className={bracketClass}>: </span>
+                <span className={booleanClass}>{String(value)}</span>
+            </span>
+        );
+    }
+
+    return <span>{key}: {String(value)}</span>;
+}
+
+/**
+ * Tree View Component using react-complex-tree
  */
 const TreeViewPanel = memo(
     ({ data, collapsed }: { data: unknown; collapsed: boolean }) => {
+        const treeItems = useMemo(() => convertToTreeItems(data), [data]);
+
+        const dataProvider = useMemo(
+            () => new StaticTreeDataProvider(treeItems),
+            [treeItems]
+        );
+
+        const expandedItems = useMemo(() => {
+            if (collapsed) return [];
+            return Object.keys(treeItems).filter(
+                (key) => treeItems[key].isFolder
+            );
+        }, [treeItems, collapsed]);
+
         return (
-            <JsonView
-                value={data as object}
-                collapsed={collapsed ? 1 : false}
-                displayDataTypes={false}
-                displayObjectSize={true}
-                enableClipboard={true}
-                style={{
-                    ...darkTheme,
-                    backgroundColor: "transparent",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "12px",
-                    padding: "16px",
-                }}
-            />
+            <div className="rct-tree-container p-4 text-xs font-mono">
+                <style>{`
+                    .rct-tree-container {
+                        --rct-color-tree-bg: transparent;
+                        --rct-color-tree-focus-outline: transparent;
+                        --rct-color-focustree-item-selected-bg: var(--accent);
+                        --rct-color-focustree-item-selected-text: var(--foreground);
+                        --rct-color-focustree-item-hover-bg: var(--muted);
+                        --rct-color-focustree-item-hover-text: var(--foreground);
+                        --rct-color-focustree-item-active-bg: var(--accent);
+                        --rct-color-focustree-item-active-text: var(--foreground);
+                        --rct-color-focustree-item-focused-border: var(--border);
+                        --rct-color-nonfocustree-item-selected-bg: var(--muted);
+                        --rct-color-nonfocustree-item-selected-text: var(--foreground);
+                        --rct-color-nonfocustree-item-focused-border: var(--border);
+                        --rct-color-arrow: var(--muted-foreground);
+                        --rct-color-drag-between-line-bg: var(--primary);
+                        --rct-color-search-highlight-bg: var(--muted);
+                        --rct-bar-color: var(--primary);
+                        --rct-focus-outline: transparent;
+                        --rct-item-height: 24px;
+                        --rct-item-padding: 6px;
+                        --rct-radius: 0px;
+                        --rct-cursor: pointer;
+                        --rct-arrow-size: 12px;
+                    }
+                    .rct-tree-container .rct-tree-item-button {
+                        font-family: var(--font-mono);
+                        font-size: 12px;
+                        max-width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .rct-tree-container .rct-tree-item-li {
+                        max-width: 100%;
+                    }
+                `}</style>
+                <UncontrolledTreeEnvironment<TreeItemData>
+                    key={collapsed ? "collapsed" : "expanded"}
+                    dataProvider={dataProvider}
+                    getItemTitle={(item) => item.data.key}
+                    renderItemTitle={({ item }) => renderTreeItemTitle(item.data)}
+                    viewState={{
+                        "data-tree": {
+                            expandedItems,
+                        },
+                    }}
+                >
+                    <Tree
+                        treeId="data-tree"
+                        rootItem="root"
+                        treeLabel="Data Tree"
+                    />
+                </UncontrolledTreeEnvironment>
+            </div>
         );
     }
 );
@@ -212,7 +496,6 @@ export const AdvancedDataViewer = memo(
         emptyMessage = "No data available",
         defaultView = "tree",
         showViewToggle = true,
-        maxHeight,
     }: AdvancedDataViewerProps) => {
         const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
         const [copied, setCopied] = useState(false);
@@ -290,7 +573,7 @@ export const AdvancedDataViewer = memo(
                         )}
 
                         {itemCount !== null && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge className="text-xs bg-primary text-primary-foreground">
                                 {itemCount} {itemCount === 1 ? "item" : "items"}
                             </Badge>
                         )}
