@@ -9,10 +9,6 @@ import { useEffect, useMemo } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom } from '../store';
 import { AddNodeButton } from './add-node-button';
-import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { SettingsPanel } from './settings-panel';
-import { SettingsPortalContext } from './settings-context';
-import { useState } from 'react';
 import { ExecuteWorkflowButton } from './execute-workflow-butto';
 
 export const EditorLoadingView = () => {
@@ -46,43 +42,33 @@ function Editor({ workflowId }: { workflowId: string }) {
         }
     }, [workflow.nodes, workflow.edges, loadWorkflow]);
 
-    // Portal container state
-    const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
-
     return (
         <div style={{ width: '100%', height: '100%' }}>
-            <SettingsPortalContext.Provider value={portalContainer}>
-                <ResizablePanelGroup direction="horizontal">
-                    <ResizablePanel defaultSize={100} minSize={30}>
-                        <ReactFlow nodes={nodes}
-                            edges={edges}
-                            onNodesChange={onNodesChange}
-                            onEdgesChange={onEdgesChange}
-                            onConnect={onConnect}
-                            proOptions={{ hideAttribution: true }}
-                            nodeTypes={NODE_COMPONENTS}
-                            defaultEdgeOptions={{
-                                animated: true,
-                                style: { stroke: 'var(--primary)' },
-                            }}
-                            connectionLineStyle={{ stroke: 'var(--primary)', strokeWidth: 2 }}
-                            snapToGrid
-                            snapGrid={[10, 10]}
-                            fitView>
-                            <Background gap={20} />
-                            <Panel position="top-left">
-                                <AddNodeButton />
-                            </Panel>
-                            {hasManualTriggerNode && (
-                                <Panel position="bottom-center">
-                                    <ExecuteWorkflowButton workflowId={workflowId} />
-                                </Panel>
-                            )}
-                        </ReactFlow>
-                    </ResizablePanel>
-                    <SettingsPanel setContainer={setPortalContainer} />
-                </ResizablePanelGroup>
-            </SettingsPortalContext.Provider>
+            <ReactFlow nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                proOptions={{ hideAttribution: true }}
+                nodeTypes={NODE_COMPONENTS}
+                defaultEdgeOptions={{
+                    animated: true,
+                    style: { stroke: 'var(--primary)' },
+                }}
+                connectionLineStyle={{ stroke: 'var(--primary)', strokeWidth: 2 }}
+                snapToGrid
+                snapGrid={[10, 10]}
+                fitView>
+                <Background gap={20} />
+                <Panel position="top-left">
+                    <AddNodeButton />
+                </Panel>
+                {hasManualTriggerNode && (
+                    <Panel position="bottom-center">
+                        <ExecuteWorkflowButton workflowId={workflowId} />
+                    </Panel>
+                )}
+            </ReactFlow>
         </div>
     )
 }

@@ -1,5 +1,5 @@
 import { WorkflowNodeStatus } from "@/components/workflow-node";
-import { workflowNodeChannel, type NodeStatusPayload } from "./channel";
+import { workflowNodeChannel, type NodeStatusPayload, type NodeDataPayload } from "./channel";
 import type { Realtime } from "@inngest/realtime";
 
 /**
@@ -41,6 +41,32 @@ export async function publishNodeStatus(
     };
 
     await publish(workflowNodeChannel().status(payload));
+}
+
+/**
+ * Helper function to publish node execution data (input/output).
+ * Used to display node input and output in the UI modal.
+ * 
+ * @example
+ * ```typescript
+ * await publishNodeData(publish, nodeId, inputContext, outputResult, "HTTP_REQUEST");
+ * ```
+ */
+export async function publishNodeData(
+    publish: Realtime.PublishFn,
+    nodeId: string,
+    input: unknown,
+    output: unknown,
+    nodeType?: string
+): Promise<void> {
+    const payload: NodeDataPayload = {
+        nodeId,
+        input,
+        output,
+        ...(nodeType && { nodeType }),
+    };
+
+    await publish(workflowNodeChannel().data(payload));
 }
 
 /**

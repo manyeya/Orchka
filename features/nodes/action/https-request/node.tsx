@@ -4,10 +4,10 @@ import type { Node, NodeProps } from "@xyflow/react"
 import { BaseActionNode } from "../base-action-node";
 import { GlobeIcon } from "lucide-react";
 import { memo, useCallback } from "react";
-import { SettingsPortal } from "@/features/editor/components/settings-portal";
+import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { HttpSettingsForm, type HttpSettingsFormValues } from "./http-settings-form";
 import { useSetAtom } from "jotai";
-import { updateNodeAtom, activeSettingsNodeIdAtom } from "@/features/editor/store";
+import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
 import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
@@ -24,7 +24,7 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         topic: 'status',
         refreshToken: getWorkflowNodeToken
     })
-    const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
+    const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);
 
     const handleFormSubmit = useCallback((values: HttpSettingsFormValues) => {
@@ -42,15 +42,23 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         setActiveNodeId(null);
     }, [setActiveNodeId])
 
+    const openModal = useCallback(() => {
+        setActiveNodeId(props.id);
+    }, [props.id, setActiveNodeId]);
+
     return (
         <>
-            <SettingsPortal nodeId={props.id}>
+            <NodeDetailModal
+                nodeId={props.id}
+                nodeName={nodeData.name || "HTTP Request"}
+                nodeIcon={<GlobeIcon className="size-5" />}
+            >
                 <HttpSettingsForm
                     defaultValues={nodeData}
                     onSubmit={handleFormSubmit}
                     onCancel={handleCancel}
                 />
-            </SettingsPortal>
+            </NodeDetailModal>
             <BaseActionNode
                 {...props}
                 id={props.id}
@@ -58,8 +66,8 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
                 name={nodeData.name || "HTTP Request"}
                 description={description}
                 status={status}
-                onSettingsClick={() => { setActiveNodeId(props.id) }}
-                onDoubleClick={() => { setActiveNodeId(props.id) }}
+                onSettingsClick={openModal}
+                onDoubleClick={openModal}
             />
         </>
     )

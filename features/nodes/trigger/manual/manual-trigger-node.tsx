@@ -4,10 +4,9 @@ import { memo, useState, useCallback } from "react";
 import { BaseTriggerNode } from "../base-trigger-node";
 import { NodeProps } from "@xyflow/react";
 import { MousePointerIcon } from "lucide-react";
-import { SettingsPortal } from "@/features/editor/components/settings-portal";
-import { WorkflowNodeStatus } from "@/components/workflow-node"
+import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { useSetAtom } from "jotai";
-import { activeSettingsNodeIdAtom, updateNodeAtom } from "@/features/editor/store";
+import { activeNodeModalIdAtom, updateNodeAtom } from "@/features/editor/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,7 +20,7 @@ interface ManualTriggerData {
 
 export const ManualTriggerNode = memo((props: NodeProps) => {
     const nodeData = props.data as ManualTriggerData;
-    const setActiveNodeId = useSetAtom(activeSettingsNodeIdAtom);
+    const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);
     const status = useNodeStatus({
         nodeId: props.id,
@@ -49,10 +48,18 @@ export const ManualTriggerNode = memo((props: NodeProps) => {
         setActiveNodeId(null);
     }, [nodeData.name, setActiveNodeId]);
 
+    const openModal = useCallback(() => {
+        setActiveNodeId(props.id);
+    }, [props.id, setActiveNodeId]);
+
     return (
         <>
-            <SettingsPortal nodeId={props.id}>
-                <div className="p-4 space-y-4">
+            <NodeDetailModal
+                nodeId={props.id}
+                nodeName={nodeData.name || "Manual Trigger"}
+                nodeIcon={<MousePointerIcon className="size-5" />}
+            >
+                <div className="space-y-4">
                     <div>
                         <h3 className="text-lg font-semibold">Trigger Settings</h3>
                         <p className="text-sm text-muted-foreground">
@@ -80,14 +87,14 @@ export const ManualTriggerNode = memo((props: NodeProps) => {
                         </Button>
                     </div>
                 </div>
-            </SettingsPortal>
+            </NodeDetailModal>
             <BaseTriggerNode
                 {...props}
                 id={props.id}
                 icon={MousePointerIcon}
                 name={nodeData.name || "Manual Trigger"}
-                onSettingsClick={() => { setActiveNodeId(props.id) }}
-                onDoubleClick={() => { setActiveNodeId(props.id) }}
+                onSettingsClick={openModal}
+                onDoubleClick={openModal}
                 status={status}
             />
         </>
