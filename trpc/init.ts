@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { headers } from 'next/headers';
 import { polarClient } from '@/lib/polar';
 import superjson from 'superjson';
+
 export const createTRPCContext = cache(async () => {
     /**
      * @see: https://trpc.io/docs/server/context
@@ -16,11 +17,14 @@ export const createTRPCContext = cache(async () => {
         auth: session,
     };
 });
+
+export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
+
 // Avoid exporting the entire t-object
 // since it's not very descriptive.
 // For instance, the use of a t variable
 // is common in i18n libraries.
-const t = initTRPC.create({
+const t = initTRPC.context<TRPCContext>().create({
     /**
      * @see https://trpc.io/docs/server/data-transformers
      */
@@ -32,12 +36,8 @@ export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
-
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
-
-    if (!session) {
+    // Reuse session from context instead of fetching again
+    if (!ctx.auth) {
         throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: 'Unauthorized',
@@ -47,7 +47,7 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
     return next({
         ctx: {
             ...ctx,
-            auth: session,
+            auth: ctx.auth, // Narrow the type to non-null
         },
     });
 });

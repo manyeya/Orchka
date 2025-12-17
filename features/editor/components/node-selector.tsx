@@ -3,7 +3,7 @@ import { createId } from "@paralleldrive/cuid2"
 import { useReactFlow } from "@xyflow/react"
 import { useCallback } from "react"
 import { toast } from "sonner"
-import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock } from 'lucide-react'
+import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock, Bot } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
 import { NodeType } from "@/lib/generated/prisma/enums"
 import Image from "next/image"
@@ -33,6 +33,12 @@ const ACTION_NODES: NodeTypeOption[] = [
         label: "HTTP Request",
         description: "Make an HTTP request",
         icon: GlobeIcon
+    },
+    {
+        type: NodeType.AI_AGENT,
+        label: "AI Agent",
+        description: "LLM-powered agent with tools",
+        icon: Bot
     }
 ]
 

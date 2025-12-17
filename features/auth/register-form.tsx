@@ -123,7 +123,7 @@ export function RegisterForm() {
             callbackURL: "/",   
         }, {
                 onSuccess: () => {
-                    router.push("/");
+                      router.push("/workflows");
                 },
                 onError: (ctx) => {
                     toast.error(ctx.error.message);

@@ -2,6 +2,7 @@ import { NodeType } from "@/lib/generated/prisma/enums";
 import { NodeExecutor } from "./types";
 import { manualTriggerExecutor } from "../../trigger/manual/executor";
 import { httpsRequestExecutor } from "../../action/https-request/executor";
+import { aiAgentExecutor } from "../../action/ai-agent/executor";
 import { ifNodeExecutor } from "../../control/if/executor";
 import { switchNodeExecutor } from "../../control/switch/executor";
 import { loopNodeExecutor } from "../../control/loop/executor";
@@ -11,6 +12,7 @@ export const executorsRegistry: Record<NodeType, NodeExecutor<any>> = {
     [NodeType.INITIAL]: () => Promise.resolve({}),
     [NodeType.MANUAL_TRIGGER]: manualTriggerExecutor,
     [NodeType.HTTP_REQUEST]: httpsRequestExecutor,
+    [NodeType.AI_AGENT]: aiAgentExecutor,
     [NodeType.IF_CONDITION]: ifNodeExecutor,
     [NodeType.SWITCH]: switchNodeExecutor,
     [NodeType.LOOP]: loopNodeExecutor,

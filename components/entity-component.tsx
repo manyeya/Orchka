@@ -190,10 +190,34 @@ interface LoadingViewProps extends StateViewProps {
 
 export const LoadingView = ({ message, entity }: LoadingViewProps) => {
     return (
-        <div className="flex flex-col h-full gap-y-4 justify-center items-center">
-            <Spinner />
-            <p>{message || `Loading ${entity}...`}</p>
-        </div>
+        <Empty className="h-full">
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <Loader2Icon className="animate-spin" />
+                </EmptyMedia>
+                <EmptyTitle>{message || `Loading ${entity}`}</EmptyTitle>
+                <EmptyDescription>Please wait...</EmptyDescription>
+            </EmptyHeader>
+        </Empty>
+    )
+}
+
+interface EntityLoaderProps {
+    title?: string
+    description?: string
+}
+
+export const EntityLoader = ({ title = "Loading", description = "Please wait..." }: EntityLoaderProps) => {
+    return (
+        <Empty className="h-full">
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <Loader2Icon className="animate-spin" />
+                </EmptyMedia>
+                <EmptyTitle>{title}</EmptyTitle>
+                <EmptyDescription>{description}</EmptyDescription>
+            </EmptyHeader>
+        </Empty>
     )
 }
 
@@ -330,8 +354,8 @@ export const EntityItem = ({
                 <Link href={href} prefetch>
                     <ItemMedia>
                         <Avatar className="size-10">
-                            <AvatarImage src={image} />
-                            <AvatarFallback>{title.slice(0, 2)}</AvatarFallback>
+                            {image?.startsWith('http') && <AvatarImage src={image} />}
+                            <AvatarFallback>{title.slice(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                     </ItemMedia>
                     <ItemContent>
