@@ -12,7 +12,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "inngest": "pnpm dlx inngest-cli@latest dev",
-    "dev:all": "mprocs"
+    "dev:all": "mprocs",
+    "docs:dev": "cd docs-site && bun dev",
+    "docs:build": "cd docs-site && bun run build",
+    "docs:deploy": "cd docs-site && sh deploy.sh"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.29",

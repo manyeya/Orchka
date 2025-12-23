@@ -1,0 +1,185 @@
+---
+title: AI Agent
+description: Build intelligent workflows with AI-powered agents
+---
+
+# AI Agent
+
+The AI Agent node enables you to integrate large language models into your workflows for intelligent automation, content generation, and decision-making.
+
+## Overview
+
+AI Agents in Orchka are powered by **LangChain**, providing access to multiple AI providers and the ability to use tools for complex tasks.
+
+```mermaid
+graph LR
+    A[Input Data] --> B[AI Agent]
+    C[AI Tools] --> B
+    B --> D[Response]
+```
+
+## Configuration
+
+### Model Selection
+
+Choose from supported AI providers:
+
+| Provider | Models | API Key Required |
+|----------|--------|------------------|
+| OpenAI | GPT-4, GPT-4 Turbo, GPT-3.5 | `OPENAI_API_KEY` |
+| Anthropic | Claude 3 Opus, Sonnet, Haiku | `ANTHROPIC_API_KEY` |
+| Google | Gemini Pro, Gemini Ultra | `GOOGLE_API_KEY` |
+| Groq | Mixtral, LLaMA | `GROQ_API_KEY` |
+
+### System Prompt
+
+Define the AI agent's behavior and personality:
+
+```
+You are a helpful assistant that analyzes customer feedback and extracts key insights.
+Always respond in JSON format with the following structure:
+{
+  "sentiment": "positive" | "negative" | "neutral",
+  "topics": ["array", "of", "topics"],
+  "summary": "brief summary"
+}
+```
+
+### Input Message
+
+The user message sent to the AI, typically using expressions:
+
+```
+Analyze this customer review: {{ $input.reviewText }}
+```
+
+## Using AI Tools
+
+AI Agents can use connected **AI Tool** nodes to perform actions. This enables:
+
+- Fetching external data
+- Making calculations
+- Calling APIs
+- Database lookups
+
+### Connecting Tools
+
+1. Create an **AI Tool** node on the canvas
+2. Connect it to the AI Agent's **tools handle** (bottom)
+3. Configure the tool's name, description, and parameters
+
+### Tool Configuration Example
+
+**Tool: Weather Lookup**
+
+```yaml
+Name: get_weather
+Description: Get current weather for a location
+Parameters:
+  type: object
+  properties:
+    location:
+      type: string
+      description: City name or coordinates
+  required:
+    - location
+```
+
+The AI will automatically call this tool when it needs weather information.
+
+## Response Handling
+
+### Structured Output
+
+To get structured JSON responses:
+
+1. Include format instructions in the system prompt
+2. Use json parsing in subsequent nodes:
+
+```
+{{ $parse($input.response) }}
+```
+
+### Streaming (Coming Soon)
+
+Real-time streaming of AI responses for long-form content generation.
+
+## Best Practices
+
+### 1. Clear Instructions
+
+Be specific in your system prompt:
+
+```
+❌ "Summarize the text"
+✅ "Summarize the following text in exactly 3 bullet points, each under 20 words"
+```
+
+### 2. Handle Errors
+
+Add a Condition node after AI Agent to handle failures:
+
+```
+{{ $exists($input.error) }}
+```
+
+### 3. Cost Optimization
+
+- Use GPT-3.5 for simple tasks
+- Reserve GPT-4 for complex reasoning
+- Set appropriate `max_tokens` limits
+
+### 4. Temperature Settings
+
+| Temperature | Use Case |
+|-------------|----------|
+| 0.0 - 0.3 | Factual, deterministic tasks |
+| 0.4 - 0.7 | Balanced creativity |
+| 0.8 - 1.0 | Creative, varied outputs |
+
+## Example Workflows
+
+### Customer Support Triage
+
+```
+[Email Webhook] → [AI Agent] → [Condition] → [Route to Team]
+                      ↑
+              [Priority Classifier Tool]
+```
+
+### Content Generation Pipeline
+
+```
+[Topic Input] → [AI Agent: Research] → [AI Agent: Write] → [AI Agent: Edit] → [Output]
+```
+
+### Data Extraction
+
+```
+[File Upload] → [Parse PDF] → [AI Agent: Extract Fields] → [Save to Database]
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**"API key not configured"**
+- Ensure the correct environment variable is set
+- Restart the server after adding keys
+
+**"Rate limit exceeded"**
+- Add Wait nodes between AI calls
+- Implement retry logic with exponential backoff
+
+**"Response truncated"**
+- Increase `max_tokens` setting
+- Break complex tasks into smaller prompts
+
+<Cards>
+  <Card title="Expressions" href="/docs/expressions">
+    Pass dynamic data to AI prompts.
+  </Card>
+  <Card title="Node Types" href="/docs/nodes">
+    Back to all node types.
+  </Card>
+</Cards>

@@ -1,0 +1,164 @@
+---
+title: Expression Engine
+description: Transform data dynamically using JSONata expressions
+---
+
+# Expression Engine
+
+Orchka uses **JSONata** as its expression language, allowing you to transform and manipulate data as it flows between nodes.
+
+## Syntax
+
+Expressions are written inside double curly braces:
+
+```
+{{ expression }}
+```
+
+## Accessing Data
+
+### Input Data (`$input`)
+
+Access data from the previous node using `$input`:
+
+```
+{{ $input.propertyName }}
+```
+
+**Examples:**
+```
+{{ $input.user.name }}          // Nested property
+{{ $input.items[0] }}           // Array index
+{{ $input.items[0].id }}        // Nested array access
+{{ $input.response.data.users }} // Deep nesting
+```
+
+### Previous Nodes
+
+Access data from any previous node by name:
+
+```
+{{ $nodes.HTTP_Request.data.result }}
+{{ $nodes.AI_Agent.response }}
+```
+
+## Common Operations
+
+### String Operations
+
+```
+{{ $uppercase($input.name) }}              // JOHN
+{{ $lowercase($input.name) }}              // john
+{{ $trim($input.text) }}                   // Remove whitespace
+{{ $substring($input.text, 0, 10) }}       // First 10 chars
+{{ $replace($input.text, "old", "new") }}  // Replace text
+{{ $input.first & " " & $input.last }}     // Concatenation
+```
+
+### Numeric Operations
+
+```
+{{ $input.price * 1.1 }}                   // Multiply
+{{ $sum($input.items.price) }}             // Sum array
+{{ $average($input.scores) }}              // Average
+{{ $round($input.value, 2) }}              // Round to 2 decimals
+{{ $floor($input.num) }}                   // Floor
+{{ $ceil($input.num) }}                    // Ceiling
+```
+
+### Array Operations
+
+```
+{{ $count($input.items) }}                 // Array length
+{{ $filter($input.items, function($v) { $v.active = true }) }}
+{{ $map($input.items, function($v) { $v.name }) }}
+{{ $sort($input.items, function($a, $b) { $a.date > $b.date }) }}
+{{ $append($input.arr1, $input.arr2) }}    // Merge arrays
+{{ $distinct($input.tags) }}               // Unique values
+```
+
+### Conditional Logic
+
+```
+{{ $input.status = "active" ? "Yes" : "No" }}
+{{ $exists($input.email) ? $input.email : "N/A" }}
+{{ $input.score >= 90 ? "A" : $input.score >= 80 ? "B" : "C" }}
+```
+
+### Date & Time
+
+```
+{{ $now() }}                               // Current timestamp
+{{ $toMillis($input.date) }}               // To milliseconds
+{{ $fromMillis($input.timestamp) }}        // From milliseconds
+```
+
+### Object Operations
+
+```
+{{ $keys($input.user) }}                   // Get object keys
+{{ $lookup($input.users, "id") }}          // Lookup by key
+{{ $merge([$input.defaults, $input.custom]) }} // Merge objects
+{{ $spread($input.items) }}                // Spread array to object
+```
+
+## Real-World Examples
+
+### API Response Transformation
+
+```json
+// Input from HTTP Request
+{
+  "data": {
+    "users": [
+      { "id": 1, "name": "Alice", "email": "alice@example.com" },
+      { "id": 2, "name": "Bob", "email": "bob@example.com" }
+    ]
+  }
+}
+```
+
+**Expression to extract names:**
+```
+{{ $map($input.data.users, function($u) { $u.name }) }}
+// Result: ["Alice", "Bob"]
+```
+
+### Building API Request Body
+
+```json
+{
+  "user": "{{ $input.username }}",
+  "timestamp": "{{ $now() }}",
+  "items": "{{ $filter($input.products, function($p) { $p.inStock = true }) }}"
+}
+```
+
+### Conditional Message
+
+```
+{{ $input.count > 0 ? "Found " & $string($input.count) & " results" : "No results found" }}
+```
+
+## Best Practices
+
+1. **Use descriptive paths** - `$input.user.profile.name` is clearer than `$input.a.b.c`
+2. **Handle missing data** - Use `$exists()` or default values
+3. **Test expressions** - Use the expression preview in the settings panel
+4. **Keep it simple** - Break complex transformations into multiple nodes
+
+## Debugging
+
+Use the **Node Detail Modal** to:
+- View input data from previous nodes
+- Preview expression results
+- See the actual output after execution
+
+<Cards>
+  <Card title="JSONata Reference" href="https://docs.jsonata.org/">
+    Full JSONata documentation.
+  </Card>
+  <Card title="Node Types" href="/docs/nodes">
+    Configure nodes with expressions.
+  </Card>
+</Cards>

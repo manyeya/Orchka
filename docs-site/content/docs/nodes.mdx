@@ -1,0 +1,180 @@
+---
+title: Node Types
+description: Reference for all available node types in Orchka
+---
+
+# Node Types
+
+Orchka provides a variety of node types organized into categories. Each node serves a specific purpose in your workflow.
+
+## Triggers
+
+Triggers are the starting points of your workflows. They define when and how a workflow begins execution.
+
+### Manual Trigger
+
+The default trigger that allows manual execution of workflows.
+
+```yaml
+Type: MANUAL_TRIGGER
+Category: Triggers
+```
+
+**Use Cases:**
+- Testing workflows during development
+- On-demand automation tasks
+- Debugging and troubleshooting
+
+### Webhook Trigger
+
+Starts a workflow when an HTTP request is received.
+
+```yaml
+Type: WEBHOOK_TRIGGER
+Category: Triggers
+```
+
+**Configuration:**
+- **URL**: The unique webhook endpoint
+- **Method**: HTTP method to accept (GET, POST, etc.)
+- **Headers**: Expected headers for validation
+
+---
+
+## Actions
+
+Action nodes perform operations and can transform data.
+
+### HTTP Request
+
+Makes HTTP requests to external APIs and services.
+
+```yaml
+Type: HTTP_REQUEST
+Category: Actions
+```
+
+**Configuration:**
+
+| Field | Description |
+|-------|-------------|
+| URL | Target endpoint |
+| Method | GET, POST, PUT, DELETE, PATCH |
+| Headers | Request headers (JSON) |
+| Body | Request body for POST/PUT |
+
+**Example Configuration:**
+```json
+{
+  "url": "https://api.example.com/data",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer {{ $input.token }}"
+  },
+  "body": {
+    "name": "{{ $input.name }}"
+  }
+}
+```
+
+### AI Agent
+
+Executes AI-powered tasks using LangChain.
+
+```yaml
+Type: AI_AGENT
+Category: Actions
+```
+
+**Configuration:**
+- **Model**: AI model to use (GPT-4, Claude, Gemini, etc.)
+- **System Prompt**: Instructions for the AI agent
+- **Tools**: Connected AI Tool nodes for function calling
+
+**Supported Providers:**
+- OpenAI (GPT-4, GPT-3.5)
+- Anthropic (Claude)
+- Google (Gemini)
+- Groq
+
+### AI Tool
+
+Defines a tool that can be used by AI Agent nodes.
+
+```yaml
+Type: AI_TOOL
+Category: Actions
+```
+
+**Configuration:**
+- **Name**: Tool identifier
+- **Description**: What the tool does (used by AI)
+- **Parameters**: JSON Schema for tool inputs
+- **Implementation**: The action to perform
+
+---
+
+## Control
+
+Control nodes manage the flow of execution.
+
+### Condition (If)
+
+Branches workflow based on an expression.
+
+```yaml
+Type: CONDITION
+Category: Control
+```
+
+**Configuration:**
+- **Expression**: JSONata expression that evaluates to boolean
+- **True Branch**: Path when expression is true
+- **False Branch**: Path when expression is false
+
+**Example Expressions:**
+```
+$input.status = "success"
+$input.count > 10
+$exists($input.email)
+```
+
+### Wait
+
+Pauses workflow execution for a specified duration.
+
+```yaml
+Type: WAIT
+Category: Control
+```
+
+**Configuration:**
+- **Duration**: Time to wait
+- **Unit**: seconds, minutes, hours, days
+
+### Loop
+
+Iterates over an array of items.
+
+```yaml
+Type: LOOP
+Category: Control
+```
+
+**Configuration:**
+- **Items**: Array expression to iterate
+- **Variable**: Name for current item
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Expressions" href="/docs/expressions">
+    Learn to transform data between nodes.
+  </Card>
+  <Card title="AI Agent Deep Dive" href="/docs/nodes/ai-agent">
+    Master AI-powered automation.
+  </Card>
+</Cards>

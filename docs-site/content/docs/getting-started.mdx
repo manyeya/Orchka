@@ -1,0 +1,87 @@
+---
+title: Getting Started
+description: Learn how to create your first workflow in Orchka
+---
+
+# Getting Started
+
+This guide will walk you through creating your first workflow in Orchka.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A running Orchka instance
+- A web browser (Chrome, Firefox, or Safari recommended)
+
+## Creating Your First Workflow
+
+### Step 1: Access the Dashboard
+
+Navigate to the Orchka dashboard. You'll see a list of your existing workflows (if any) and a button to create new ones.
+
+### Step 2: Create a New Workflow
+
+Click the **"New Workflow"** button. This will:
+
+1. Generate a unique workflow with a random name
+2. Redirect you to the workflow editor
+3. Add a default **Manual Trigger** node to the canvas
+
+### Step 3: Understanding the Editor
+
+The workflow editor consists of:
+
+| Area | Description |
+|------|-------------|
+| **Canvas** | The main drag-and-drop area where you build your workflow |
+| **Sidebar** | Contains all available nodes organized by category |
+| **Toolbar** | Execute, save, and manage your workflow |
+| **Settings Panel** | Configure the selected node |
+
+### Step 4: Add Your First Action Node
+
+1. Open the node selector by clicking the **+** button or right-clicking on the canvas
+2. Browse the available categories:
+   - **Triggers** - Start points for workflows
+   - **Actions** - Perform operations (HTTP requests, AI agents, etc.)
+   - **Control** - Flow control (conditions, loops, waits)
+3. Click on a node to add it to the canvas
+
+### Step 5: Connect Nodes
+
+Drag from the **output handle** (right side) of one node to the **input handle** (left side) of another to create a connection.
+
+```
+[Manual Trigger] ──→ [HTTP Request] ──→ [AI Agent]
+```
+
+### Step 6: Configure Nodes
+
+Click on any node to open its settings panel:
+
+- **HTTP Request**: Set the URL, method, headers, and body
+- **AI Agent**: Configure the AI model and available tools
+- **Condition**: Define the expression to evaluate
+
+### Step 7: Execute Your Workflow
+
+Click the **"Execute"** button in the toolbar. Watch as:
+
+1. Each node executes in sequence
+2. Status indicators show success/failure
+3. Output data flows between nodes
+
+## Next Steps
+
+<Cards>
+  <Card title="Node Types" href="/docs/nodes">
+    Learn about all available node types.
+  </Card>
+  <Card title="Expressions" href="/docs/expressions">
+    Master the expression engine for dynamic data.
+  </Card>
+  <Card title="AI Agents" href="/docs/nodes/ai-agent">
+    Build intelligent workflows with AI.
+  </Card>
+</Cards>
