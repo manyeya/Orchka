@@ -10,13 +10,17 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "clsx": "^2.1.1",
     "fumadocs-core": "16.3.2",
     "fumadocs-mdx": "14.2.2",
     "fumadocs-ui": "16.3.2",
+    "gsap": "^3.14.2",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

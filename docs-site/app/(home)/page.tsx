@@ -1,16 +1,15 @@
-import Link from 'next/link';
+import { Hero } from '@/components/landing/hero';
+import { Features } from '@/components/landing/features';
+import { WorkflowPreview } from '@/components/landing/workflow-preview';
+import { Footer } from '@/components/landing/footer';
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col justify-center text-center flex-1">
-      <h1 className="text-2xl font-bold mb-4">Hello World</h1>
-      <p>
-        You can open{' '}
-        <Link href="/docs" className="font-medium underline">
-          /docs
-        </Link>{' '}
-        and see the documentation.
-      </p>
-    </div>
+    <main className="flex min-h-screen flex-col items-center bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+      <Hero />
+      <Features />
+      <WorkflowPreview />
+      <Footer />
+    </main>
   );
 }
