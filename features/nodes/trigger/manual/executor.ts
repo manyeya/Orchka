@@ -1,4 +1,4 @@
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 import { NodeExecutor } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 

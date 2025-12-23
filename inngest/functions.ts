@@ -4,7 +4,7 @@ import prisma from "@/lib/db";
 import { google } from "@ai-sdk/google";
 import { NonRetriableError } from "inngest";
 import { topologicalSortNodes } from "@/features/editor/utils/graph-validation";
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 import { getExecutor } from "@/features/nodes/utils/execution/executors-registry";
 import {
   resolveNodeExpressions,
@@ -71,42 +71,42 @@ function getSkippedNodes(
   _allNodes: { id: string; type: NodeType }[]
 ): Set<string> {
   const skippedNodes = new Set<string>();
-  
+
   // Find all connections from this control node
   const outgoingConnections = connections.filter(c => c.fromNodeId === controlNodeId);
-  
+
   console.log(`[getSkippedNodes] Control node: ${controlNodeId}`);
   console.log(`[getSkippedNodes] Branch decision: "${branchDecision.branch}"`);
   console.log(`[getSkippedNodes] Outgoing connections:`, outgoingConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
-  
+
   // Find connections that are NOT on the taken branch
   const nonTakenConnections = outgoingConnections.filter(
     c => c.fromOutput !== branchDecision.branch
   );
-  
+
   console.log(`[getSkippedNodes] Non-taken connections:`, nonTakenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
-  
+
   // For each non-taken connection, find all nodes reachable only through that path
   for (const conn of nonTakenConnections) {
     const reachableFromNonTaken = findReachableNodes(conn.toNodeId, connections);
-    
+
     console.log(`[getSkippedNodes] Reachable from non-taken (${conn.fromOutput}):`, Array.from(reachableFromNonTaken));
-    
+
     // Check if each reachable node is also reachable from the taken branch
     const takenConnections = outgoingConnections.filter(
       c => c.fromOutput === branchDecision.branch
     );
-    
+
     console.log(`[getSkippedNodes] Taken connections:`, takenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
-    
+
     const reachableFromTaken = new Set<string>();
     for (const takenConn of takenConnections) {
       const reachable = findReachableNodes(takenConn.toNodeId, connections);
       reachable.forEach(nodeId => reachableFromTaken.add(nodeId));
     }
-    
+
     console.log(`[getSkippedNodes] Reachable from taken:`, Array.from(reachableFromTaken));
-    
+
     // Skip nodes that are only reachable from non-taken branches
     for (const nodeId of reachableFromNonTaken) {
       if (!reachableFromTaken.has(nodeId)) {
@@ -114,9 +114,9 @@ function getSkippedNodes(
       }
     }
   }
-  
+
   console.log(`[getSkippedNodes] Final skipped nodes:`, Array.from(skippedNodes));
-  
+
   return skippedNodes;
 }
 
@@ -129,13 +129,13 @@ function findReachableNodes(
 ): Set<string> {
   const reachable = new Set<string>();
   const queue = [startNodeId];
-  
+
   while (queue.length > 0) {
     const current = queue.shift()!;
     if (reachable.has(current)) continue;
-    
+
     reachable.add(current);
-    
+
     // Find all nodes connected from this node
     const outgoing = connections.filter(c => c.fromNodeId === current);
     for (const conn of outgoing) {
@@ -144,7 +144,7 @@ function findReachableNodes(
       }
     }
   }
-  
+
   return reachable;
 }
 
@@ -213,26 +213,26 @@ export const execute = inngest.createFunction(
     });
 
     let context = event.data.initialData || {};
-    
+
     // Track nodes to skip due to branch decisions
     // Requirements 5.2: Skip all nodes only reachable through non-taken branches
     const skippedNodes = new Set<string>();
-    
+
     // Track branch decisions for context propagation
     // Requirements 5.5: Include selected branch identifier in execution context
     const branchDecisions: Record<string, BranchDecision> = {};
 
     for (const node of workflowData.sortedNodes) {
       console.log(`[execute] Processing node ${node.id} (${node.type}), skippedNodes:`, Array.from(skippedNodes));
-      
+
       // Skip nodes that are only reachable through non-taken branches
       if (skippedNodes.has(node.id)) {
         console.log(`[execute] Skipping node ${node.id} - not on active branch`);
         continue;
       }
-      
+
       console.log(`[execute] Executing node ${node.id}`);
-      
+
       // Capture current context as this node's input
       const inputData = { ...context };
 
@@ -273,22 +273,22 @@ export const execute = inngest.createFunction(
       // Requirements 5.1: Determine which output handle(s) to follow
       if (isControlNode(node.type as NodeType) && context.__branchDecision) {
         const branchDecision = context.__branchDecision as BranchDecision;
-        
+
         // Store branch decision for context propagation (Requirement 5.5)
         branchDecisions[node.id] = branchDecision;
-        
+
         // Add branch decision to context for downstream nodes
         context = {
           ...context,
           __lastBranchDecision: branchDecision,
           __branchDecisions: branchDecisions,
         };
-        
+
         // Debug: log connections from this control node
         const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
         console.log(`Control node ${node.id} connections:`, outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })));
         console.log(`Branch decision: "${branchDecision.branch}"`);
-        
+
         // Determine which nodes to skip based on branch decision
         // Requirements 5.2: Skip nodes only reachable through non-taken branches
         const nodesToSkip = getSkippedNodes(
@@ -297,9 +297,9 @@ export const execute = inngest.createFunction(
           workflowData.connections,
           workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType }))
         );
-        
+
         nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
-        
+
         console.log(`Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes:`, Array.from(nodesToSkip));
       }
 

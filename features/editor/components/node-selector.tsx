@@ -5,7 +5,7 @@ import { useCallback } from "react"
 import { toast } from "sonner"
 import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock, Bot } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
-import { NodeType } from "@/lib/generated/prisma/enums"
+import { NodeType } from "@/features/nodes/types"
 import Image from "next/image"
 import { Item, ItemContent, ItemMedia, ItemTitle, ItemDescription } from "@/components/ui/item"
 import { Separator } from "@/components/ui/separator"

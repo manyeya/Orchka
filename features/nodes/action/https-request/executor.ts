@@ -3,7 +3,7 @@ import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import { HttpSettingsFormValues } from "./http-settings-form";
 import ky, { Options as KyOptions, HTTPError } from 'ky';
 import { publishNodeStatus } from "../../utils/realtime";
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 
 /**
  * Response structure from the HTTP request

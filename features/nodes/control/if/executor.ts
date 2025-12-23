@@ -1,4 +1,4 @@
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -53,20 +53,20 @@ export async function evaluateIfCondition(
 
   try {
     const result = await evaluate(condition, expressionContext);
-    
+
     // Convert result to boolean
     // Explicit boolean values
     if (typeof result === "boolean") {
       return result;
     }
-    
+
     // String "true"/"false"
     if (typeof result === "string") {
       const lower = result.toLowerCase().trim();
       if (lower === "true") return true;
       if (lower === "false") return false;
     }
-    
+
     // Truthy/falsy conversion for other types
     return Boolean(result);
   } catch (error) {

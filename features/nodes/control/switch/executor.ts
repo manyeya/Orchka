@@ -1,4 +1,4 @@
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -52,14 +52,14 @@ export async function evaluateSwitchExpression(
   // Find matching case
   // Convert evaluated value to string for comparison (case values are strings)
   const stringValue = String(evaluatedValue);
-  
+
   for (const switchCase of cases) {
     // Compare both as strings and with loose equality for flexibility
     if (switchCase.value === stringValue || switchCase.value === evaluatedValue) {
-      return { 
-        branch: switchCase.id, 
-        matchedValue: switchCase.value, 
-        evaluatedExpression: evaluatedValue 
+      return {
+        branch: switchCase.id,
+        matchedValue: switchCase.value,
+        evaluatedExpression: evaluatedValue
       };
     }
   }
@@ -122,8 +122,8 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
         context,
         branchDecision: {
           branch,
-          data: { 
-            evaluatedExpression, 
+          data: {
+            evaluatedExpression,
             matchedValue,
             casesCount: data.cases?.length || 0,
           },
@@ -135,8 +135,8 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
     await publishNodeStatus(publish, nodeId, "success", NodeType.SWITCH);
 
     // Extract values from the step result
-    const branchData = result.branchDecision.data as { 
-      evaluatedExpression?: unknown; 
+    const branchData = result.branchDecision.data as {
+      evaluatedExpression?: unknown;
       matchedValue?: unknown;
     } | undefined;
 

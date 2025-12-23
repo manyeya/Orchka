@@ -66,7 +66,7 @@ export function LoopSettingsForm({
   onCancel,
 }: LoopSettingsFormProps) {
   const form = useForm<LoopSettingsFormValues>({
-    resolver: zodResolver(loopSettingsSchema),
+    resolver: zodResolver(loopSettingsSchema) as any,
     defaultValues: {
       name: "",
       mode: "array",

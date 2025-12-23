@@ -2,12 +2,12 @@ import { NonRetriableError } from "inngest";
 import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import { AIAgentSettings } from "./types";
 import { publishNodeStatus } from "../../utils/realtime";
-import { NodeType } from "@/lib/generated/prisma/enums";
+import { NodeType } from "@/features/nodes/types";
 import { createAgent, tool } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ChatGroq,} from "@langchain/groq";
+import { ChatGroq, } from "@langchain/groq";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import * as z from "zod";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
@@ -44,7 +44,7 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
 
     // 4. Get input - use prompt directly, or resolve from context
     let input: unknown;
-    
+
     if (data.prompt && data.prompt.trim()) {
       // Use direct prompt
       input = data.prompt;

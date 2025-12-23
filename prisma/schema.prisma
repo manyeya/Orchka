@@ -69,17 +69,6 @@ model Verification {
   @@map("verification")
 }
 
-enum NodeType {
-  INITIAL
-  MANUAL_TRIGGER
-  HTTP_REQUEST
-  IF_CONDITION
-  SWITCH
-  LOOP
-  WAIT
-  AI_AGENT
-}
-
 model Workflow {
   id          String       @id @default(cuid())
   name        String
@@ -100,7 +89,7 @@ model Node {
   updatedAt         DateTime     @updatedAt
   workflowId        String
   workflow          Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  type              NodeType
+  type              String
   position          Json
   data              Json         @default("{}")
   inputConnections  Connection[] @relation("FromNode")
