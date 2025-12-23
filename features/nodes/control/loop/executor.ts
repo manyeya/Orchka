@@ -1,4 +1,5 @@
 import { NodeType } from "@/features/nodes/types";
+import { logger } from "@/lib/logger";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -39,7 +40,7 @@ export async function evaluateLoopArray(
 ): Promise<unknown[]> {
   // Handle null/undefined expression
   if (expression === null || expression === undefined) {
-    console.warn("Loop Node: Empty array expression, returning empty array");
+    logger.warn("Loop Node: Empty array expression, returning empty array");
     return [];
   }
 
@@ -50,13 +51,13 @@ export async function evaluateLoopArray(
 
   // If expression is not a string, wrap it in an array
   if (typeof expression !== "string") {
-    console.warn("Loop Node: Array expression resolved to non-array value, wrapping in array");
+    logger.warn("Loop Node: Array expression resolved to non-array value, wrapping in array");
     return [expression];
   }
 
   // Empty string expression returns empty array
   if (expression.trim() === "") {
-    console.warn("Loop Node: Empty array expression, returning empty array");
+    logger.warn("Loop Node: Empty array expression, returning empty array");
     return [];
   }
 
@@ -64,7 +65,7 @@ export async function evaluateLoopArray(
   try {
     result = await evaluate(expression, expressionContext);
   } catch (error) {
-    console.warn("Loop Node: Error evaluating array expression, returning empty array:", error);
+    logger.warn({ err: error }, "Loop Node: Error evaluating array expression, returning empty array");
     return [];
   }
 
@@ -75,12 +76,12 @@ export async function evaluateLoopArray(
 
   // If result is null or undefined, return empty array
   if (result === null || result === undefined) {
-    console.warn("Loop Node: Array expression resolved to null/undefined, returning empty array");
+    logger.warn("Loop Node: Array expression resolved to null/undefined, returning empty array");
     return [];
   }
 
   // Wrap non-array values in a single-element array
-  console.warn("Loop Node: Array expression resolved to non-array value, wrapping in array");
+  logger.warn("Loop Node: Array expression resolved to non-array value, wrapping in array");
   return [result];
 }
 
@@ -96,7 +97,7 @@ export async function evaluateLoopArray(
  */
 export function generateCountArray(count: number): number[] {
   if (count <= 0 || !Number.isFinite(count)) {
-    console.warn("Loop Node: Invalid count, returning empty array");
+    logger.warn("Loop Node: Invalid count, returning empty array");
     return [];
   }
   return Array.from({ length: count }, (_, i) => i);
@@ -139,7 +140,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
     if (data.mode === "array") {
       // Array mode: evaluate the array expression
       if (!expressionContext) {
-        console.warn("Loop Node: No expression context provided, using empty array");
+        logger.warn("Loop Node: No expression context provided, using empty array");
         items = [];
       } else {
         items = await evaluateLoopArray(data.arrayExpression as unknown, expressionContext);

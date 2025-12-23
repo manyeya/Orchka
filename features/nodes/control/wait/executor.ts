@@ -1,4 +1,5 @@
 import { NodeType } from "@/features/nodes/types";
+import { logger } from "@/lib/logger";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -38,7 +39,7 @@ export function calculateDurationMs(
 ): number {
   const multiplier = UNIT_MULTIPLIERS[unit];
   if (!multiplier) {
-    console.warn(`Wait Node: Unknown unit "${unit}", defaulting to seconds`);
+    logger.warn(`Wait Node: Unknown unit "${unit}", defaulting to seconds`);
     return value * 1000;
   }
   return value * multiplier;

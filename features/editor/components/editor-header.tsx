@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { logger } from "@/lib/logger";
 import {
     Save,
     Undo,
@@ -95,7 +96,7 @@ export function EditorHeader({
             });
             markClean();
         } catch (error) {
-            console.error("Failed to save workflow", error);
+            logger.error({ err: error }, "Failed to save workflow");
         } finally {
             setIsSaving(false);
         }

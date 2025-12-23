@@ -12,6 +12,7 @@ import "react-complex-tree/lib/style-modern.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logger } from "@/lib/logger";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import {
@@ -515,7 +516,7 @@ export const AdvancedDataViewer = memo(
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
             } catch (error) {
-                console.error("Failed to copy:", error);
+                logger.error({ err: error }, "Failed to copy:");
             }
         }, [data]);
 

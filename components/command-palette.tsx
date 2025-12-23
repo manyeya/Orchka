@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useCreateWorkflow } from "@/features/workflows/hooks/use-workflows"
+import { logger } from "@/lib/logger"
 
 interface CommandPaletteProps {
   open: boolean
@@ -142,7 +143,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           <CommandItem
             onSelect={() => runCommand(() => {
               // Handle logout - you might want to implement this
-              console.log("Logout")
+              logger.debug("Logout")
             })}
           >
             <LogOut className="mr-2 h-4 w-4" />

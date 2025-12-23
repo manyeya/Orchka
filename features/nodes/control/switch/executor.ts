@@ -1,4 +1,5 @@
 import { NodeType } from "@/features/nodes/types";
+import { logger } from "@/lib/logger";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -28,7 +29,7 @@ export async function evaluateSwitchExpression(
 ): Promise<{ branch: string; matchedValue: unknown; evaluatedExpression: unknown }> {
   // Handle null/undefined expression
   if (expression === null || expression === undefined) {
-    console.warn("Switch Node: Empty expression, routing to default");
+    logger.warn("Switch Node: Empty expression, routing to default");
     return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
   }
 
@@ -38,13 +39,13 @@ export async function evaluateSwitchExpression(
   if (typeof expression !== "string") {
     evaluatedValue = expression;
   } else if (expression.trim() === "") {
-    console.warn("Switch Node: Empty expression, routing to default");
+    logger.warn("Switch Node: Empty expression, routing to default");
     return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
   } else {
     try {
       evaluatedValue = await evaluate(expression, expressionContext);
     } catch (error) {
-      console.warn("Switch Node: Error evaluating expression, routing to default:", error);
+      logger.warn({ err: error }, "Switch Node: Error evaluating expression, routing to default");
       return { branch: "default", matchedValue: undefined, evaluatedExpression: undefined };
     }
   }
@@ -101,7 +102,7 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
     const result = await step.run(stepName, async (): Promise<SwitchNodeResult> => {
       // Ensure we have an expression context
       if (!expressionContext) {
-        console.warn("Switch Node: No expression context provided, routing to default");
+        logger.warn("Switch Node: No expression context provided, routing to default");
         return {
           context,
           branchDecision: {

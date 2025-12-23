@@ -1,4 +1,5 @@
 import { NodeType } from "@/features/nodes/types";
+import { logger } from "@/lib/logger";
 import type { NodeExecutor, WorkflowContext, BranchDecision } from "../../utils/execution/types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { evaluate, type ExpressionContext } from "@/features/editor/utils/expression-engine";
@@ -26,7 +27,7 @@ export async function evaluateIfCondition(
 ): Promise<boolean> {
   // Handle null/undefined conditions
   if (condition === null || condition === undefined) {
-    console.warn("If Node: Empty condition, treating as false");
+    logger.warn("If Node: Empty condition, treating as false");
     return false;
   }
 
@@ -47,7 +48,7 @@ export async function evaluateIfCondition(
 
   // Empty string condition evaluates to false
   if (condition.trim() === "") {
-    console.warn("If Node: Empty condition, treating as false");
+    logger.warn("If Node: Empty condition, treating as false");
     return false;
   }
 
@@ -70,7 +71,7 @@ export async function evaluateIfCondition(
     // Truthy/falsy conversion for other types
     return Boolean(result);
   } catch (error) {
-    console.warn("If Node: Error evaluating condition, treating as false:", error);
+    logger.warn({ err: error }, "If Node: Error evaluating condition, treating as false");
     return false;
   }
 }
@@ -107,7 +108,7 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
     const result = await step.run(stepName, async (): Promise<IfNodeResult> => {
       // Ensure we have an expression context
       if (!expressionContext) {
-        console.warn("If Node: No expression context provided, treating condition as false");
+        logger.warn("If Node: No expression context provided, treating condition as false");
         return {
           context,
           branchDecision: {
