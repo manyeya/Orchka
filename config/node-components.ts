@@ -36,16 +36,15 @@ export const NODE_COMPONENTS = {
  * All nodes require a 'name' field by default.
  */
 export const NODE_REQUIRED_FIELDS: Record<string, string[]> = {
+    [NodeType.INITIAL]: [],
+    [NodeType.MANUAL_TRIGGER]: ['name'],
     [NodeType.HTTP_REQUEST]: ['name', 'url'],
     [NodeType.AI_AGENT]: ['name', 'model'],
-    [NodeType.MANUAL_TRIGGER]: ['name'],
-    [NodeType.INITIAL]: [],
     [NodeType.IF_CONDITION]: ['name', 'condition'],
     [NodeType.SWITCH]: ['name', 'expression'],
     [NodeType.LOOP]: ['name', 'mode'],
     [NodeType.WAIT]: ['name', 'mode'],
 };
-
 
 export const DEFAULT_REQUIRED_FIELDS = ['name'];
 

@@ -8,13 +8,13 @@ Expressions are wrapped in double curly braces `{{ }}` and can be used in any te
 
 ```js
 // Access data from previous node
-{{ json.userName }}
+{{ input.userName }}
 
 // Access specific node's output
 {{ $node("HTTP Request").users[0].name }}
 
 // Use built-in functions
-{{ $uppercase(json.name) }}
+{{ $uppercase(input.name) }}
 ```
 
 ---
@@ -23,23 +23,23 @@ Expressions are wrapped in double curly braces `{{ }}` and can be used in any te
 
 The expression engine uses [JSONata](https://jsonata.org/), a lightweight query and transformation language for JSON data. JSONata provides XPath-like navigation with powerful built-in functions.
 
-### 1. Direct Data Access (`json`)
+### 1. Direct Data Access (`input`)
 
 Access the previous node's output data directly:
 
 ```js
 // Simple field access
-{{ json.email }}
+{{ input.email }}
 
 // Nested objects
-{{ json.user.profile.name }}
+{{ input.user.profile.name }}
 
 // Array access
-{{ json.items[0].id }}
-{{ json.users[2].email }}
+{{ input.items[0].id }}
+{{ input.users[2].email }}
 
 // Mixed notation
-{{ json.data.results[0].metadata.tags[1] }}
+{{ input.data.results[0].metadata.tags[1] }}
 ```
 
 ### 2. Special Character Property Access
@@ -48,13 +48,13 @@ When property names contain special characters (hyphens, spaces, dots), use back
 
 ```js
 // Property with hyphen
-{{ json.`field-name` }}
+{{ input.`field-name` }}
 
 // Property with space
-{{ json.`my field` }}
+{{ input.`my field` }}
 
 // Property with dot
-{{ json.`file.name` }}
+{{ input.`file.name` }}
 ```
 
 ### 3. Node References (`$node`)
@@ -83,7 +83,7 @@ Access output from any specific node by name:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `json` | Previous node's output | `{{ json.id }}` |
+| `input` | Previous node's output | `{{ input.id }}` |
 | `workflow.id` | Current workflow ID | `{{ workflow.id }}` |
 | `workflow.name` | Workflow name | `{{ workflow.name }}` |
 | `execution.id` | Execution ID | `{{ execution.id }}` |
@@ -102,50 +102,50 @@ Access output from any specific node by name:
 
 ```js
 // Equality
-{{ json.status = "active" }}
-{{ json.count != 0 }}
+{{ input.status = "active" }}
+{{ input.count != 0 }}
 
 // Numeric comparisons
-{{ json.price > 100 }}
-{{ json.quantity >= 10 }}
-{{ json.age < 18 }}
-{{ json.score <= 50 }}
+{{ input.price > 100 }}
+{{ input.quantity >= 10 }}
+{{ input.age < 18 }}
+{{ input.score <= 50 }}
 ```
 
 ### Logical Operators
 
 ```js
 // AND - both conditions must be true
-{{ json.active and json.verified }}
+{{ input.active and input.verified }}
 
 // OR - at least one condition must be true
-{{ json.admin or json.moderator }}
+{{ input.admin or input.moderator }}
 
 // NOT - negates the condition
-{{ not json.disabled }}
+{{ not input.disabled }}
 
 // Combined
-{{ (json.role = "admin" or json.role = "owner") and json.active }}
+{{ (input.role = "admin" or input.role = "owner") and input.active }}
 ```
 
 ### Ternary Operator
 
 ```js
 // condition ? trueValue : falseValue
-{{ json.active ? "Active" : "Inactive" }}
+{{ input.active ? "Active" : "Inactive" }}
 
 // Nested ternary
-{{ json.score > 90 ? "A" : json.score > 80 ? "B" : "C" }}
+{{ input.score > 90 ? "A" : input.score > 80 ? "B" : "C" }}
 ```
 
 ### Array Membership (`in`)
 
 ```js
 // Check if value exists in array
-{{ json.status in ["pending", "processing"] }}
+{{ input.status in ["pending", "processing"] }}
 
 // Check if item is in a list
-{{ "admin" in json.roles }}
+{{ "admin" in input.roles }}
 ```
 
 ---
@@ -158,28 +158,28 @@ JSONata provides a rich set of built-in functions. Here are the most commonly us
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `$uppercase(str)` | Convert to uppercase | `{{ $uppercase(json.name) }}` → `"JOHN"` |
-| `$lowercase(str)` | Convert to lowercase | `{{ $lowercase(json.email) }}` → `"john@example.com"` |
-| `$trim(str)` | Remove leading/trailing whitespace | `{{ $trim(json.input) }}` |
-| `$substring(str, start, length)` | Extract substring | `{{ $substring(json.text, 0, 10) }}` |
-| `$replace(str, pattern, replacement)` | Replace text | `{{ $replace(json.text, "old", "new") }}` |
-| `$split(str, separator)` | Split string to array | `{{ $split(json.csv, ",") }}` |
-| `$join(array, separator)` | Join array to string | `{{ $join(json.tags, ", ") }}` |
-| `$contains(str, substring)` | Check if contains | `{{ $contains(json.email, "@") }}` |
-| `$length(str)` | String length | `{{ $length(json.name) }}` |
+| `$uppercase(str)` | Convert to uppercase | `{{ $uppercase(input.name) }}` → `"JOHN"` |
+| `$lowercase(str)` | Convert to lowercase | `{{ $lowercase(input.email) }}` → `"john@example.com"` |
+| `$trim(str)` | Remove leading/trailing whitespace | `{{ $trim(input.input) }}` |
+| `$substring(str, start, length)` | Extract substring | `{{ $substring(input.text, 0, 10) }}` |
+| `$replace(str, pattern, replacement)` | Replace text | `{{ $replace(input.text, "old", "new") }}` |
+| `$split(str, separator)` | Split string to array | `{{ $split(input.csv, ",") }}` |
+| `$join(array, separator)` | Join array to string | `{{ $join(input.tags, ", ") }}` |
+| `$contains(str, substring)` | Check if contains | `{{ $contains(input.email, "@") }}` |
+| `$length(str)` | String length | `{{ $length(input.name) }}` |
 
 ### Math Functions
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `$sum(array)` | Sum of numbers | `{{ $sum(json.prices) }}` |
-| `$average(array)` | Average of numbers | `{{ $average(json.scores) }}` |
-| `$min(array)` | Minimum value | `{{ $min(json.values) }}` |
-| `$max(array)` | Maximum value | `{{ $max(json.values) }}` |
-| `$round(num, precision)` | Round number | `{{ $round(json.price, 2) }}` |
-| `$floor(num)` | Round down | `{{ $floor(json.value) }}` |
-| `$ceil(num)` | Round up | `{{ $ceil(json.value) }}` |
-| `$abs(num)` | Absolute value | `{{ $abs(json.delta) }}` |
+| `$sum(array)` | Sum of numbers | `{{ $sum(input.prices) }}` |
+| `$average(array)` | Average of numbers | `{{ $average(input.scores) }}` |
+| `$min(array)` | Minimum value | `{{ $min(input.values) }}` |
+| `$max(array)` | Maximum value | `{{ $max(input.values) }}` |
+| `$round(num, precision)` | Round number | `{{ $round(input.price, 2) }}` |
+| `$floor(num)` | Round down | `{{ $floor(input.value) }}` |
+| `$ceil(num)` | Round up | `{{ $ceil(input.value) }}` |
+| `$abs(num)` | Absolute value | `{{ $abs(input.delta) }}` |
 | `$power(base, exp)` | Exponentiation | `{{ $power(2, 8) }}` → `256` |
 | `$sqrt(num)` | Square root | `{{ $sqrt(16) }}` → `4` |
 
@@ -187,24 +187,24 @@ JSONata provides a rich set of built-in functions. Here are the most commonly us
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `$count(array)` | Array length | `{{ $count(json.items) }}` |
-| `$append(arr1, arr2)` | Concatenate arrays | `{{ $append(json.list1, json.list2) }}` |
-| `$sort(array)` | Sort array | `{{ $sort(json.names) }}` |
-| `$reverse(array)` | Reverse array | `{{ $reverse(json.items) }}` |
-| `$distinct(array)` | Remove duplicates | `{{ $distinct(json.tags) }}` |
-| `$shuffle(array)` | Randomize order | `{{ $shuffle(json.items) }}` |
+| `$count(array)` | Array length | `{{ $count(input.items) }}` |
+| `$append(arr1, arr2)` | Concatenate arrays | `{{ $append(input.list1, input.list2) }}` |
+| `$sort(array)` | Sort array | `{{ $sort(input.names) }}` |
+| `$reverse(array)` | Reverse array | `{{ $reverse(input.items) }}` |
+| `$distinct(array)` | Remove duplicates | `{{ $distinct(input.tags) }}` |
+| `$shuffle(array)` | Randomize order | `{{ $shuffle(input.items) }}` |
 
 ### Higher-Order Functions
 
 ```js
 // $map - transform each element
-{{ $map(json.users, function($v) { $v.name }) }}
+{{ $map(input.users, function($v) { $v.name }) }}
 
 // $filter - keep elements matching condition
-{{ $filter(json.users, function($v) { $v.active = true }) }}
+{{ $filter(input.users, function($v) { $v.active = true }) }}
 
 // $reduce - accumulate values
-{{ $reduce(json.numbers, function($acc, $v) { $acc + $v }, 0) }}
+{{ $reduce(input.numbers, function($acc, $v) { $acc + $v }, 0) }}
 ```
 
 ### Date Functions
@@ -220,11 +220,11 @@ JSONata provides a rich set of built-in functions. Here are the most commonly us
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `$keys(obj)` | Get object keys | `{{ $keys(json.data) }}` |
-| `$values(obj)` | Get object values | `{{ $values(json.data) }}` |
-| `$merge(obj1, obj2)` | Merge objects | `{{ $merge(json.defaults, json.overrides) }}` |
-| `$type(value)` | Get value type | `{{ $type(json.field) }}` |
-| `$exists(value)` | Check if defined | `{{ $exists(json.optional) }}` |
+| `$keys(obj)` | Get object keys | `{{ $keys(input.data) }}` |
+| `$values(obj)` | Get object values | `{{ $values(input.data) }}` |
+| `$merge(obj1, obj2)` | Merge objects | `{{ $merge(input.defaults, input.overrides) }}` |
+| `$type(value)` | Get value type | `{{ $type(input.field) }}` |
+| `$exists(value)` | Check if defined | `{{ $exists(input.optional) }}` |
 
 ---
 
@@ -236,16 +236,16 @@ When a field contains only a single expression, the native type is preserved:
 
 ```js
 // Returns number, not string
-{{ json.count }}  // → 42
+{{ input.count }}  // → 42
 
 // Returns array
-{{ json.items }}  // → ["a", "b", "c"]
+{{ input.items }}  // → ["a", "b", "c"]
 
 // Returns object
-{{ json.user }}   // → { name: "John", age: 30 }
+{{ input.user }}   // → { name: "John", age: 30 }
 
 // Returns boolean
-{{ json.active }} // → true
+{{ input.active }} // → true
 ```
 
 ### Mixed Content (String Concatenation)
@@ -254,10 +254,10 @@ When text is mixed with expressions, the result is always a string:
 
 ```js
 // Returns string
-"Hello {{ json.name }}!"  // → "Hello John!"
+"Hello {{ input.name }}!"  // → "Hello John!"
 
 // Multiple expressions become concatenated string
-"{{ json.firstName }} {{ json.lastName }}"  // → "John Doe"
+"{{ input.firstName }} {{ input.lastName }}"  // → "John Doe"
 ```
 
 ### Undefined Values
@@ -266,10 +266,10 @@ When accessing undefined paths, JSONata returns `undefined` (not an error):
 
 ```js
 // Returns undefined if path doesn't exist
-{{ json.nonexistent.path }}  // → undefined
+{{ input.nonexistent.path }}  // → undefined
 
 // Use default values with ternary
-{{ json.name ? json.name : "Unknown" }}
+{{ input.name ? input.name : "Unknown" }}
 ```
 
 ---
@@ -279,7 +279,7 @@ When accessing undefined paths, JSONata returns `undefined` (not an error):
 ### HTTP Request with Dynamic URL
 
 ```
-URL: https://api.example.com/users/{{ json.userId }}
+URL: https://api.example.com/users/{{ input.userId }}
 ```
 
 ### Conditional Headers
@@ -294,40 +294,40 @@ URL: https://api.example.com/users/{{ json.userId }}
 ### Building a Message
 
 ```
-Hello {{ json.firstName }}!
+Hello {{ input.firstName }}!
 
-Your order #{{ json.orderId }} has been {{ $lowercase(json.status) }}.
+Your order #{{ input.orderId }} has been {{ $lowercase(input.status) }}.
 
-Total: ${{ json.total }}
+Total: ${{ input.total }}
 ```
 
 ### Array Processing
 
 ```js
 // Count items
-{{ $count(json.users) }}
+{{ $count(input.users) }}
 
 // Get all names
-{{ $map(json.users, function($u) { $u.name }) }}
+{{ $map(input.users, function($u) { $u.name }) }}
 
 // Filter active users
-{{ $filter(json.users, function($u) { $u.active }) }}
+{{ $filter(input.users, function($u) { $u.active }) }}
 
 // Sum prices
-{{ $sum(json.items.price) }}
+{{ $sum(input.items.price) }}
 ```
 
 ### Conditional Logic (for If/Switch nodes)
 
 ```js
 // Simple condition
-{{ json.status = "approved" }}
+{{ input.status = "approved" }}
 
 // Complex condition
-{{ json.amount > 1000 and json.verified = true }}
+{{ input.amount > 1000 and input.verified = true }}
 
 // Check array membership
-{{ json.role in ["admin", "moderator"] }}
+{{ input.role in ["admin", "moderator"] }}
 ```
 
 ### Working with Branch Context
@@ -365,62 +365,63 @@ If you're migrating from the previous Handlebars-based expression engine, here a
 
 | Old Syntax | New Syntax |
 |------------|------------|
-| `{{ $json.field }}` | `{{ json.field }}` |
+| `{{ $json.field }}` | `{{ input.field }}` |
+| `{{ json.field }}` | `{{ input.field }}` |
 | `{{ $("Node Name").item.json }}` | `{{ $node("Node Name") }}` |
 | `{{ $node["Node Name"].json }}` | `{{ $node("Node Name") }}` |
-| `{{ $input.item.json }}` | `{{ json }}` |
+| `{{ $input.item.json }}` | `{{ input }}` |
 
 ### Helper Functions
 
 | Old Syntax | New Syntax |
 |------------|------------|
-| `{{ $uppercase $json.name }}` | `{{ $uppercase(json.name) }}` |
-| `{{ $lowercase $json.email }}` | `{{ $lowercase(json.email) }}` |
-| `{{ $length $json.items }}` | `{{ $count(json.items) }}` |
-| `{{ $first $json.items }}` | `{{ json.items[0] }}` |
-| `{{ $last $json.items }}` | `{{ json.items[-1] }}` |
-| `{{ $add $json.a $json.b }}` | `{{ json.a + json.b }}` |
-| `{{ $subtract $json.a $json.b }}` | `{{ json.a - json.b }}` |
-| `{{ $multiply $json.a $json.b }}` | `{{ json.a * json.b }}` |
-| `{{ $divide $json.a $json.b }}` | `{{ json.a / json.b }}` |
+| `{{ $uppercase $json.name }}` | `{{ $uppercase(input.name) }}` |
+| `{{ $lowercase $json.email }}` | `{{ $lowercase(input.email) }}` |
+| `{{ $length $json.items }}` | `{{ $count(input.items) }}` |
+| `{{ $first $json.items }}` | `{{ input.items[0] }}` |
+| `{{ $last $json.items }}` | `{{ input.items[-1] }}` |
+| `{{ $add $json.a $json.b }}` | `{{ input.a + input.b }}` |
+| `{{ $subtract $json.a $json.b }}` | `{{ input.a - input.b }}` |
+| `{{ $multiply $json.a $json.b }}` | `{{ input.a * input.b }}` |
+| `{{ $divide $json.a $json.b }}` | `{{ input.a / input.b }}` |
 
 ### Conditionals
 
 | Old Syntax | New Syntax |
 |------------|------------|
-| `{{ $if $json.active "Yes" "No" }}` | `{{ json.active ? "Yes" : "No" }}` |
-| `{{ $eq $json.status "done" }}` | `{{ json.status = "done" }}` |
-| `{{ $ne $json.status "pending" }}` | `{{ json.status != "pending" }}` |
-| `{{ $gt $json.count 10 }}` | `{{ json.count > 10 }}` |
-| `{{ $and $json.a $json.b }}` | `{{ json.a and json.b }}` |
-| `{{ $or $json.a $json.b }}` | `{{ json.a or json.b }}` |
-| `{{ $not $json.disabled }}` | `{{ not json.disabled }}` |
+| `{{ $if $json.active "Yes" "No" }}` | `{{ input.active ? "Yes" : "No" }}` |
+| `{{ $eq $json.status "done" }}` | `{{ input.status = "done" }}` |
+| `{{ $ne $json.status "pending" }}` | `{{ input.status != "pending" }}` |
+| `{{ $gt $json.count 10 }}` | `{{ input.count > 10 }}` |
+| `{{ $and $json.a $json.b }}` | `{{ input.a and input.b }}` |
+| `{{ $or $json.a $json.b }}` | `{{ input.a or input.b }}` |
+| `{{ $not $json.disabled }}` | `{{ not input.disabled }}` |
 
 ### Array Operations
 
 | Old Syntax | New Syntax |
 |------------|------------|
-| `{{ $filter $json.users "active" true }}` | `{{ $filter(json.users, function($v) { $v.active = true }) }}` |
-| `{{ $pluck $json.users "email" }}` | `{{ json.users.email }}` or `{{ $map(json.users, function($v) { $v.email }) }}` |
-| `{{ $find $json.users "id" 123 }}` | `{{ json.users[id = 123] }}` |
-| `{{ $sort $json.items "name" }}` | `{{ $sort(json.items, function($a, $b) { $a.name > $b.name }) }}` |
-| `{{ $unique $json.tags }}` | `{{ $distinct(json.tags) }}` |
+| `{{ $filter $json.users "active" true }}` | `{{ $filter(input.users, function($v) { $v.active = true }) }}` |
+| `{{ $pluck $json.users "email" }}` | `{{ input.users.email }}` or `{{ $map(input.users, function($v) { $v.email }) }}` |
+| `{{ $find $json.users "id" 123 }}` | `{{ input.users[id = 123] }}` |
+| `{{ $sort $json.items "name" }}` | `{{ $sort(input.items, function($a, $b) { $a.name > $b.name }) }}` |
+| `{{ $unique $json.tags }}` | `{{ $distinct(input.tags) }}` |
 
 ### JSON Operations
 
 | Old Syntax | New Syntax |
 |------------|------------|
-| `{{ $stringify $json.data }}` | `{{ $string(json.data) }}` |
-| `{{ $keys $json.object }}` | `{{ $keys(json.object) }}` |
-| `{{ $values $json.object }}` | `{{ $values(json.object) }}` |
-| `{{ $merge $json.obj1 $json.obj2 }}` | `{{ $merge([json.obj1, json.obj2]) }}` |
+| `{{ $stringify $json.data }}` | `{{ $string(input.data) }}` |
+| `{{ $keys $json.object }}` | `{{ $keys(input.object) }}` |
+| `{{ $values $json.object }}` | `{{ $values(input.object) }}` |
+| `{{ $merge $json.obj1 $json.obj2 }}` | `{{ $merge([input.obj1, input.obj2]) }}` |
 
 ---
 
 ## Best Practices
 
 1. **Use descriptive node names** - Name your nodes clearly to make `$node()` references readable
-2. **Prefer `json` for simple cases** - When accessing the previous node's data
+2. **Prefer `input` for simple cases** - When accessing the previous node's data
 3. **Use `$node()` for specific nodes** - When you need data from a non-adjacent node
 4. **Handle undefined values** - Use ternary operator or `$exists()` to handle missing data
 5. **Test expressions** - Verify expressions work with sample data before running workflows
@@ -438,7 +439,7 @@ When an expression has a syntax error, the engine throws an `ExpressionError` wi
 Example error:
 ```
 Expression error at position 15: Expected '}' but found end of expression
-Expression: {{ json.users[0 }}
+Expression: {{ input.users[0 }}
 ```
 
 ---
@@ -451,7 +452,7 @@ Expression: {{ json.users[0 }}
 | Array index out of bounds | Use `$count()` to check array size first |
 | Type mismatch | Use `$type()` to check value type |
 | Node not found | Ensure the referenced node exists and has executed |
-| Special characters in property name | Use backtick notation: `` json.`field-name` `` |
+| Special characters in property name | Use backtick notation: `` input.`field-name` `` |
 | Syntax error | Check for matching brackets, quotes, and parentheses |
 
 ---

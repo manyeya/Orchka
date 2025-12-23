@@ -32,16 +32,16 @@ describe("Expression Engine - JSONata Implementation", () => {
 
   describe("isExpression", () => {
     it("should detect expressions with {{ }}", () => {
-      expect(isExpression("{{ json.name }}")).toBe(true);
-      expect(isExpression("Hello {{ json.name }}")).toBe(true);
+      expect(isExpression("{{ input.name }}")).toBe(true);
+      expect(isExpression("Hello {{ input.name }}")).toBe(true);
       expect(isExpression("plain text")).toBe(false);
       expect(isExpression(123)).toBe(false);
       expect(isExpression(null)).toBe(false);
     });
 
     it("should detect expressions with ={{ }}", () => {
-      expect(isExpression("={{ json.name }}")).toBe(true);
-      expect(isExpression("={{ $uppercase(json.name) }}")).toBe(true);
+      expect(isExpression("={{ input.name }}")).toBe(true);
+      expect(isExpression("={{ $uppercase(input.name) }}")).toBe(true);
     });
   });
 
@@ -57,58 +57,58 @@ describe("Expression Engine - JSONata Implementation", () => {
     });
 
     it("should evaluate simple path expressions", async () => {
-      context.$json = { name: "John", age: 30 };
-      const result = await evaluate("{{ json.name }}", context);
+      context.$input = { name: "John", age: 30 };
+      const result = await evaluate("{{ input.name }}", context);
       expect(result).toBe("John");
     });
 
     it("should evaluate ={{ }} expressions", async () => {
-      context.$json = { name: "John", age: 30 };
-      const result = await evaluate("={{ json.name }}", context);
+      context.$input = { name: "John", age: 30 };
+      const result = await evaluate("={{ input.name }}", context);
       expect(result).toBe("John");
     });
 
     it("should evaluate expressions with functions", async () => {
-      context.$json = { name: "john" };
-      const result = await evaluate("={{ $uppercase(json.name) }}", context);
+      context.$input = { name: "john" };
+      const result = await evaluate("={{ $uppercase(input.name) }}", context);
       expect(result).toBe("JOHN");
     });
 
     it("should evaluate array access", async () => {
-      context.$json = { items: ["a", "b", "c"] };
-      const result = await evaluate("{{ json.items[0] }}", context);
+      context.$input = { items: ["a", "b", "c"] };
+      const result = await evaluate("{{ input.items[0] }}", context);
       expect(result).toBe("a");
     });
 
     it("should evaluate nested path expressions", async () => {
-      context.$json = { user: { profile: { name: "John" } } };
-      const result = await evaluate("{{ json.user.profile.name }}", context);
+      context.$input = { user: { profile: { name: "John" } } };
+      const result = await evaluate("{{ input.user.profile.name }}", context);
       expect(result).toBe("John");
     });
 
     it("should return undefined for missing paths", async () => {
-      context.$json = { name: "John" };
-      const result = await evaluate("{{ json.missing.path }}", context);
+      context.$input = { name: "John" };
+      const result = await evaluate("{{ input.missing.path }}", context);
       expect(result).toBeUndefined();
     });
 
     it("should evaluate JSONata functions", async () => {
-      context.$json = { name: "john" };
-      const result = await evaluate("{{ $uppercase(json.name) }}", context);
+      context.$input = { name: "john" };
+      const result = await evaluate("{{ $uppercase(input.name) }}", context);
       expect(result).toBe("JOHN");
     });
 
     it("should preserve native types for single expressions", async () => {
-      context.$json = { count: 42, active: true, items: [1, 2, 3] };
-      
-      expect(await evaluate("{{ json.count }}", context)).toBe(42);
-      expect(await evaluate("{{ json.active }}", context)).toBe(true);
-      expect(await evaluate("{{ json.items }}", context)).toEqual([1, 2, 3]);
+      context.$input = { count: 42, active: true, items: [1, 2, 3] };
+
+      expect(await evaluate("{{ input.count }}", context)).toBe(42);
+      expect(await evaluate("{{ input.active }}", context)).toBe(true);
+      expect(await evaluate("{{ input.items }}", context)).toEqual([1, 2, 3]);
     });
 
     it("should concatenate mixed text and expressions", async () => {
-      context.$json = { name: "John", age: 30 };
-      const result = await evaluate("Hello {{ json.name }}, you are {{ json.age }} years old", context);
+      context.$input = { name: "John", age: 30 };
+      const result = await evaluate("Hello {{ input.name }}, you are {{ input.age }} years old", context);
       expect(result).toBe("Hello John, you are 30 years old");
     });
 
@@ -145,12 +145,12 @@ describe("Expression Engine - JSONata Implementation", () => {
 
   describe("evaluateObject", () => {
     it("should recursively evaluate expressions in objects", async () => {
-      context.$json = { name: "John", url: "https://api.example.com" };
-      
+      context.$input = { name: "John", url: "https://api.example.com" };
+
       const obj = {
-        greeting: "Hello {{ json.name }}",
+        greeting: "Hello {{ input.name }}",
         config: {
-          endpoint: "{{ json.url }}/users",
+          endpoint: "{{ input.url }}/users",
         },
       };
 
@@ -164,9 +164,9 @@ describe("Expression Engine - JSONata Implementation", () => {
     });
 
     it("should recursively evaluate expressions in arrays", async () => {
-      context.$json = { items: ["a", "b", "c"] };
-      
-      const arr = ["{{ json.items[0] }}", "{{ json.items[1] }}", "static"];
+      context.$input = { items: ["a", "b", "c"] };
+
+      const arr = ["{{ input.items[0] }}", "{{ input.items[1] }}", "static"];
       const result = await evaluateObject(arr, context);
       expect(result).toEqual(["a", "b", "static"]);
     });
@@ -175,9 +175,9 @@ describe("Expression Engine - JSONata Implementation", () => {
       const obj = {
         count: 42,
         active: true,
-        name: "{{ json.name }}",
+        name: "{{ input.name }}",
       };
-      context.$json = { name: "John" };
+      context.$input = { name: "John" };
 
       const result = await evaluateObject(obj, context);
       expect(result).toEqual({
@@ -249,77 +249,77 @@ describe("Expression Engine - JSONata Implementation", () => {
     it("should include expression and position in error", async () => {
       try {
         // Invalid JSONata syntax
-        await evaluate("{{ json. }}", context);
+        await evaluate("{{ input. }}", context);
         expect.fail("Should have thrown");
       } catch (error) {
         expect(error).toBeInstanceOf(ExpressionError);
-        expect((error as ExpressionError).expression).toBe("json.");
+        expect((error as ExpressionError).expression).toBe("input.");
       }
     });
   });
 
   describe("comparison operators", () => {
     it("should evaluate equality (=)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value = 5 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value = 10 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value = 5 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value = 10 }}", context)).toBe(false);
     });
 
     it("should evaluate inequality (!=)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value != 10 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value != 5 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value != 10 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value != 5 }}", context)).toBe(false);
     });
 
     it("should evaluate less than (<)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value < 10 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value < 5 }}", context)).toBe(false);
-      expect(await evaluate("{{ json.value < 3 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value < 10 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value < 5 }}", context)).toBe(false);
+      expect(await evaluate("{{ input.value < 3 }}", context)).toBe(false);
     });
 
     it("should evaluate greater than (>)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value > 3 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value > 5 }}", context)).toBe(false);
-      expect(await evaluate("{{ json.value > 10 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value > 3 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value > 5 }}", context)).toBe(false);
+      expect(await evaluate("{{ input.value > 10 }}", context)).toBe(false);
     });
 
     it("should evaluate less than or equal (<=)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value <= 10 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value <= 5 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value <= 3 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value <= 10 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value <= 5 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value <= 3 }}", context)).toBe(false);
     });
 
     it("should evaluate greater than or equal (>=)", async () => {
-      context.$json = { value: 5 };
-      expect(await evaluate("{{ json.value >= 3 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value >= 5 }}", context)).toBe(true);
-      expect(await evaluate("{{ json.value >= 10 }}", context)).toBe(false);
+      context.$input = { value: 5 };
+      expect(await evaluate("{{ input.value >= 3 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value >= 5 }}", context)).toBe(true);
+      expect(await evaluate("{{ input.value >= 10 }}", context)).toBe(false);
     });
   });
 
   describe("logical operators", () => {
     it("should evaluate 'and'", async () => {
-      context.$json = { a: true, b: false };
-      expect(await evaluate("{{ json.a and json.b }}", context)).toBe(false);
-      expect(await evaluate("{{ json.a and true }}", context)).toBe(true);
+      context.$input = { a: true, b: false };
+      expect(await evaluate("{{ input.a and input.b }}", context)).toBe(false);
+      expect(await evaluate("{{ input.a and true }}", context)).toBe(true);
       expect(await evaluate("{{ true and true }}", context)).toBe(true);
       expect(await evaluate("{{ false and false }}", context)).toBe(false);
     });
 
     it("should evaluate 'or'", async () => {
-      context.$json = { a: true, b: false };
-      expect(await evaluate("{{ json.a or json.b }}", context)).toBe(true);
+      context.$input = { a: true, b: false };
+      expect(await evaluate("{{ input.a or input.b }}", context)).toBe(true);
       expect(await evaluate("{{ false or false }}", context)).toBe(false);
       expect(await evaluate("{{ false or true }}", context)).toBe(true);
     });
 
     it("should evaluate 'not'", async () => {
-      context.$json = { a: true, b: false };
-      expect(await evaluate("{{ $not(json.a) }}", context)).toBe(false);
-      expect(await evaluate("{{ $not(json.b) }}", context)).toBe(true);
+      context.$input = { a: true, b: false };
+      expect(await evaluate("{{ $not(input.a) }}", context)).toBe(false);
+      expect(await evaluate("{{ $not(input.b) }}", context)).toBe(true);
       expect(await evaluate("{{ $not(true) }}", context)).toBe(false);
       expect(await evaluate("{{ $not(false) }}", context)).toBe(true);
     });
@@ -327,42 +327,42 @@ describe("Expression Engine - JSONata Implementation", () => {
 
   describe("ternary operator", () => {
     it("should select correct branch", async () => {
-      context.$json = { condition: true };
-      expect(await evaluate('{{ json.condition ? "yes" : "no" }}', context)).toBe("yes");
-      
-      context.$json = { condition: false };
-      expect(await evaluate('{{ json.condition ? "yes" : "no" }}', context)).toBe("no");
+      context.$input = { condition: true };
+      expect(await evaluate('{{ input.condition ? "yes" : "no" }}', context)).toBe("yes");
+
+      context.$input = { condition: false };
+      expect(await evaluate('{{ input.condition ? "yes" : "no" }}', context)).toBe("no");
     });
 
     it("should work with comparison expressions as condition", async () => {
-      context.$json = { value: 10 };
-      expect(await evaluate('{{ json.value > 5 ? "big" : "small" }}', context)).toBe("big");
-      expect(await evaluate('{{ json.value < 5 ? "small" : "big" }}', context)).toBe("big");
+      context.$input = { value: 10 };
+      expect(await evaluate('{{ input.value > 5 ? "big" : "small" }}', context)).toBe("big");
+      expect(await evaluate('{{ input.value < 5 ? "small" : "big" }}', context)).toBe("big");
     });
 
     it("should return non-string values", async () => {
-      context.$json = { flag: true };
-      expect(await evaluate("{{ json.flag ? 100 : 0 }}", context)).toBe(100);
-      expect(await evaluate("{{ json.flag ? [1,2,3] : [] }}", context)).toEqual([1, 2, 3]);
+      context.$input = { flag: true };
+      expect(await evaluate("{{ input.flag ? 100 : 0 }}", context)).toBe(100);
+      expect(await evaluate("{{ input.flag ? [1,2,3] : [] }}", context)).toEqual([1, 2, 3]);
     });
   });
 
   describe("in operator", () => {
     it("should check array membership", async () => {
-      context.$json = { items: ["apple", "banana", "cherry"] };
-      expect(await evaluate('{{ "apple" in json.items }}', context)).toBe(true);
-      expect(await evaluate('{{ "orange" in json.items }}', context)).toBe(false);
+      context.$input = { items: ["apple", "banana", "cherry"] };
+      expect(await evaluate('{{ "apple" in input.items }}', context)).toBe(true);
+      expect(await evaluate('{{ "orange" in input.items }}', context)).toBe(false);
     });
 
     it("should work with numeric arrays", async () => {
-      context.$json = { numbers: [1, 2, 3, 4, 5] };
-      expect(await evaluate("{{ 3 in json.numbers }}", context)).toBe(true);
-      expect(await evaluate("{{ 10 in json.numbers }}", context)).toBe(false);
+      context.$input = { numbers: [1, 2, 3, 4, 5] };
+      expect(await evaluate("{{ 3 in input.numbers }}", context)).toBe(true);
+      expect(await evaluate("{{ 10 in input.numbers }}", context)).toBe(false);
     });
 
     it("should work with dynamic values", async () => {
-      context.$json = { search: "banana", items: ["apple", "banana", "cherry"] };
-      expect(await evaluate("{{ json.search in json.items }}", context)).toBe(true);
+      context.$input = { search: "banana", items: ["apple", "banana", "cherry"] };
+      expect(await evaluate("{{ input.search in input.items }}", context)).toBe(true);
     });
   });
 
@@ -453,136 +453,136 @@ describe("Expression Engine - JSONata Implementation", () => {
 
   describe("built-in string functions", () => {
     it("should evaluate $uppercase", async () => {
-      context.$json = { text: "hello world" };
-      const result = await evaluate("{{ $uppercase(json.text) }}", context);
+      context.$input = { text: "hello world" };
+      const result = await evaluate("{{ $uppercase(input.text) }}", context);
       expect(result).toBe("HELLO WORLD");
     });
 
     it("should evaluate $lowercase", async () => {
-      context.$json = { text: "HELLO WORLD" };
-      const result = await evaluate("{{ $lowercase(json.text) }}", context);
+      context.$input = { text: "HELLO WORLD" };
+      const result = await evaluate("{{ $lowercase(input.text) }}", context);
       expect(result).toBe("hello world");
     });
 
     it("should evaluate $trim", async () => {
-      context.$json = { text: "  hello world  " };
-      const result = await evaluate("{{ $trim(json.text) }}", context);
+      context.$input = { text: "  hello world  " };
+      const result = await evaluate("{{ $trim(input.text) }}", context);
       expect(result).toBe("hello world");
     });
 
     it("should evaluate $substring", async () => {
-      context.$json = { text: "hello world" };
+      context.$input = { text: "hello world" };
       // $substring(string, start, length)
-      expect(await evaluate("{{ $substring(json.text, 0, 5) }}", context)).toBe("hello");
-      expect(await evaluate("{{ $substring(json.text, 6) }}", context)).toBe("world");
+      expect(await evaluate("{{ $substring(input.text, 0, 5) }}", context)).toBe("hello");
+      expect(await evaluate("{{ $substring(input.text, 6) }}", context)).toBe("world");
     });
 
     it("should evaluate $replace", async () => {
-      context.$json = { text: "hello world" };
-      const result = await evaluate('{{ $replace(json.text, "world", "JSONata") }}', context);
+      context.$input = { text: "hello world" };
+      const result = await evaluate('{{ $replace(input.text, "world", "JSONata") }}', context);
       expect(result).toBe("hello JSONata");
     });
 
     it("should evaluate $split", async () => {
-      context.$json = { text: "a,b,c,d" };
-      const result = await evaluate('{{ $split(json.text, ",") }}', context);
+      context.$input = { text: "a,b,c,d" };
+      const result = await evaluate('{{ $split(input.text, ",") }}', context);
       expect(result).toEqual(["a", "b", "c", "d"]);
     });
 
     it("should evaluate $join", async () => {
-      context.$json = { items: ["a", "b", "c"] };
-      const result = await evaluate('{{ $join(json.items, "-") }}', context);
+      context.$input = { items: ["a", "b", "c"] };
+      const result = await evaluate('{{ $join(input.items, "-") }}', context);
       expect(result).toBe("a-b-c");
     });
   });
 
   describe("built-in math functions", () => {
     it("should evaluate $sum", async () => {
-      context.$json = { numbers: [1, 2, 3, 4, 5] };
-      const result = await evaluate("{{ $sum(json.numbers) }}", context);
+      context.$input = { numbers: [1, 2, 3, 4, 5] };
+      const result = await evaluate("{{ $sum(input.numbers) }}", context);
       expect(result).toBe(15);
     });
 
     it("should evaluate $average", async () => {
-      context.$json = { numbers: [10, 20, 30] };
-      const result = await evaluate("{{ $average(json.numbers) }}", context);
+      context.$input = { numbers: [10, 20, 30] };
+      const result = await evaluate("{{ $average(input.numbers) }}", context);
       expect(result).toBe(20);
     });
 
     it("should evaluate $min", async () => {
-      context.$json = { numbers: [5, 2, 8, 1, 9] };
-      const result = await evaluate("{{ $min(json.numbers) }}", context);
+      context.$input = { numbers: [5, 2, 8, 1, 9] };
+      const result = await evaluate("{{ $min(input.numbers) }}", context);
       expect(result).toBe(1);
     });
 
     it("should evaluate $max", async () => {
-      context.$json = { numbers: [5, 2, 8, 1, 9] };
-      const result = await evaluate("{{ $max(json.numbers) }}", context);
+      context.$input = { numbers: [5, 2, 8, 1, 9] };
+      const result = await evaluate("{{ $max(input.numbers) }}", context);
       expect(result).toBe(9);
     });
 
     it("should evaluate $round", async () => {
-      context.$json = { value: 3.7 };
-      expect(await evaluate("{{ $round(json.value) }}", context)).toBe(4);
+      context.$input = { value: 3.7 };
+      expect(await evaluate("{{ $round(input.value) }}", context)).toBe(4);
       expect(await evaluate("{{ $round(3.14159, 2) }}", context)).toBe(3.14);
     });
 
     it("should evaluate $floor", async () => {
-      context.$json = { value: 3.9 };
-      const result = await evaluate("{{ $floor(json.value) }}", context);
+      context.$input = { value: 3.9 };
+      const result = await evaluate("{{ $floor(input.value) }}", context);
       expect(result).toBe(3);
     });
 
     it("should evaluate $ceil", async () => {
-      context.$json = { value: 3.1 };
-      const result = await evaluate("{{ $ceil(json.value) }}", context);
+      context.$input = { value: 3.1 };
+      const result = await evaluate("{{ $ceil(input.value) }}", context);
       expect(result).toBe(4);
     });
 
     it("should evaluate $abs", async () => {
-      context.$json = { value: -42 };
-      const result = await evaluate("{{ $abs(json.value) }}", context);
+      context.$input = { value: -42 };
+      const result = await evaluate("{{ $abs(input.value) }}", context);
       expect(result).toBe(42);
     });
   });
 
   describe("built-in array functions", () => {
     it("should evaluate $count", async () => {
-      context.$json = { items: [1, 2, 3, 4, 5] };
-      const result = await evaluate("{{ $count(json.items) }}", context);
+      context.$input = { items: [1, 2, 3, 4, 5] };
+      const result = await evaluate("{{ $count(input.items) }}", context);
       expect(result).toBe(5);
     });
 
     it("should evaluate $append", async () => {
-      context.$json = { arr1: [1, 2], arr2: [3, 4] };
-      const result = await evaluate("{{ $append(json.arr1, json.arr2) }}", context);
+      context.$input = { arr1: [1, 2], arr2: [3, 4] };
+      const result = await evaluate("{{ $append(input.arr1, input.arr2) }}", context);
       expect(result).toEqual([1, 2, 3, 4]);
     });
 
     it("should evaluate $sort", async () => {
-      context.$json = { items: [3, 1, 4, 1, 5, 9, 2, 6] };
-      const result = await evaluate("{{ $sort(json.items) }}", context);
+      context.$input = { items: [3, 1, 4, 1, 5, 9, 2, 6] };
+      const result = await evaluate("{{ $sort(input.items) }}", context);
       expect(result).toEqual([1, 1, 2, 3, 4, 5, 6, 9]);
     });
 
     it("should evaluate $reverse", async () => {
-      context.$json = { items: [1, 2, 3, 4, 5] };
-      const result = await evaluate("{{ $reverse(json.items) }}", context);
+      context.$input = { items: [1, 2, 3, 4, 5] };
+      const result = await evaluate("{{ $reverse(input.items) }}", context);
       expect(result).toEqual([5, 4, 3, 2, 1]);
     });
 
     it("should evaluate $filter", async () => {
-      context.$json = { numbers: [1, 2, 3, 4, 5, 6] };
+      context.$input = { numbers: [1, 2, 3, 4, 5, 6] };
       // Filter numbers greater than 3
-      const result = await evaluate("{{ $filter(json.numbers, function($v) { $v > 3 }) }}", context);
+      const result = await evaluate("{{ $filter(input.numbers, function($v) { $v > 3 }) }}", context);
       // JSONata returns sequences, check array contents
       expect(Array.from(result as unknown[])).toEqual([4, 5, 6]);
     });
 
     it("should evaluate $map", async () => {
-      context.$json = { numbers: [1, 2, 3] };
+      context.$input = { numbers: [1, 2, 3] };
       // Double each number
-      const result = await evaluate("{{ $map(json.numbers, function($v) { $v * 2 }) }}", context);
+      const result = await evaluate("{{ $map(input.numbers, function($v) { $v * 2 }) }}", context);
       // JSONata returns sequences, check array contents
       expect(Array.from(result as unknown[])).toEqual([2, 4, 6]);
     });
@@ -594,7 +594,7 @@ describe("Expression Engine - JSONata Implementation", () => {
       const before = Date.now();
       const result = await evaluate("{{ $millis() }}", context);
       const after = Date.now();
-      
+
       expect(typeof result).toBe("number");
       expect(result).toBeGreaterThanOrEqual(before);
       expect(result).toBeLessThanOrEqual(after);
@@ -603,7 +603,7 @@ describe("Expression Engine - JSONata Implementation", () => {
     it("should access context now binding", async () => {
       // The context's now is a timestamp number set when context was created
       const result = await evaluate("{{ now }}", context);
-      
+
       expect(typeof result).toBe("number");
       // The now value should be a recent timestamp (within last minute)
       const oneMinuteAgo = Date.now() - 60000;

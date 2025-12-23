@@ -65,7 +65,7 @@ export interface BranchDecisionInfo {
  */
 export interface ExpressionContext {
   /** Current node's input data (shorthand for most common use case) */
-  $json: unknown;
+  $input: unknown;
   /** Function to get node data by name: $node("NodeName") */
   $node: (nodeName: string) => unknown;
   /** Workflow metadata */
@@ -104,7 +104,7 @@ export interface CreateContextOptions {
   workflowName?: string;
   executionId: string;
   env?: Record<string, string>;
-  /** The current node being executed - used to determine $json value */
+  /** The current node being executed - used to determine $input value */
   currentNodeId?: string;
 }
 
@@ -209,7 +209,7 @@ async function evaluateJsonata(
 
     // Create the evaluation context - JSONata accesses these as top-level variables
     const evalContext = {
-      json: context.$json,
+      input: context.$input,
       workflow: context.$workflow,
       execution: context.$execution,
       env: context.$env,
@@ -220,7 +220,7 @@ async function evaluateJsonata(
 
     // Evaluate with bindings for $ prefixed access
     const result = await compiled.evaluate(evalContext, {
-      json: context.$json,
+      input: context.$input,
       node: context.$node,
       workflow: context.$workflow,
       execution: context.$execution,
@@ -294,7 +294,7 @@ export async function evaluate(
   const matches: Array<{ fullMatch: string; innerExpr: string; index: number }> = [];
   let match: RegExpExecArray | null;
   const regex = new RegExp(ALL_EXPRESSIONS_PATTERN);
-  
+
   while ((match = regex.exec(expression)) !== null) {
     matches.push({
       fullMatch: match[0],
@@ -379,7 +379,7 @@ export async function evaluateObject<T>(
         return [key, evaluatedValue] as const;
       })
     );
-    
+
     for (const [key, value] of evaluatedEntries) {
       result[key] = value;
     }
@@ -423,8 +423,8 @@ export function createExpressionContext(
     nodeDataByName[name] = nodeData;
   }
 
-  // Determine $json - the previous node's output or current input
-  let $json: unknown = {};
+  // Determine $input - the previous node's output or current input
+  let $input: unknown = {};
 
   if (currentNodeId) {
     const currentNodeIndex = nodes.findIndex((n) => n.id === currentNodeId);
@@ -432,13 +432,13 @@ export function createExpressionContext(
       const prevNode = nodes[currentNodeIndex - 1];
       const prevName =
         (prevNode.data?.name as string) || prevNode.name || prevNode.id;
-      $json = nodeDataByName[prevName] || {};
+      $input = nodeDataByName[prevName] || {};
     }
   } else {
     // Use the last executed node's data
     const lastResultKey = Object.keys(nodeResults).pop();
     if (lastResultKey) {
-      $json = nodeResults[lastResultKey] || {};
+      $input = nodeResults[lastResultKey] || {};
     }
   }
 
@@ -458,7 +458,7 @@ export function createExpressionContext(
     | undefined;
 
   return {
-    $json,
+    $input,
     $node,
     $workflow: {
       id: workflowId,
