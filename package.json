@@ -15,7 +15,7 @@
     "dev:all": "mprocs",
     "docs:dev": "cd docs-site && bun dev",
     "docs:build": "cd docs-site && bun run build",
-    "docs:deploy": "cd docs-site && sh deploy.sh"
+    "docs:deploy": "cd docs-site && rm -rf out && bun run build && cd .. && rm -rf docs && mv docs-site/out docs && touch docs/.nojekyll"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.29",

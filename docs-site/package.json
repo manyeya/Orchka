@@ -7,8 +7,7 @@
     "dev": "next dev",
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
-    "postinstall": "fumadocs-mdx",
-    "deploy": "sh deploy.sh"
+    "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
     "fumadocs-core": "16.3.2",
