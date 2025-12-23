@@ -10,6 +10,7 @@ on:
     branches: ["main"]
     paths:
       - 'docs-site/**'
+      - '.github/workflows/nextjs.yml'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -33,22 +34,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+      
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
-          # Automatically inject basePath in your Next.js configuration file and propagate
-          # it to next/router. Free up your next.config.mjs to not have to handle it.
           static_site_generator: next
-          # Change this to your docs-site directory
+          # Point this to the root where the main deployment will be configured
           generator_config_file: docs-site/next.config.mjs
+      
       - name: Install dependencies
-        run: cd docs-site && bun install
+        run: |
+          cd docs-site
+          bun install
+      
       - name: Build with Next.js
-        run: cd docs-site && bun run build
+        run: |
+          cd docs-site
+          bun run build
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
