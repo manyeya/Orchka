@@ -1,6 +1,7 @@
 import { createMDX } from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -10,7 +11,8 @@ const config = {
   images: {
     unoptimized: true,
   },
-  basePath: process.env.NODE_ENV === 'production' ? '/Orchka' : undefined,
+  basePath: basePath,
+  assetPrefix: basePath === '' ? undefined : basePath,
 };
 
 export default withMDX(config);

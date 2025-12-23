@@ -52,6 +52,8 @@ jobs:
         run: |
           cd docs-site
           bun run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /Orchka
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
