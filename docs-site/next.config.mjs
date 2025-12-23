@@ -10,7 +10,7 @@ const config = {
   images: {
     unoptimized: true,
   },
-  basePath: process.env.NODE_ENV === 'production' ? (process.env.NEXT_PUBLIC_BASE_PATH || '/flowbase') : undefined,
+  basePath: process.env.NODE_ENV === 'production' ? '/Orchka' : undefined,
 };
 
 export default withMDX(config);
