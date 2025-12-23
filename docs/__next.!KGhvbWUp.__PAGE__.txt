@@ -1,6 +1,0 @@
-1:"$Sreact.fragment"
-2:I[14099,["/Orchka/_next/static/chunks/2926731a4723a94c.js","/Orchka/_next/static/chunks/efee5e7a1c86274e.js","/Orchka/_next/static/chunks/ad114e8eedd72f8a.js","/Orchka/_next/static/chunks/df866d8666570be1.js"],""]
-3:I[61656,["/Orchka/_next/static/chunks/6d0debb5d2dac84f.js","/Orchka/_next/static/chunks/f94552bc07f27cec.js"],"OutletBoundary"]
-4:"$Sreact.suspense"
-0:{"buildId":"iJgy4PTD0DECDgeG5Hu3Z","rsc":["$","$1","c",{"children":[["$","div",null,{"className":"flex flex-col justify-center text-center flex-1","children":[["$","h1",null,{"className":"text-2xl font-bold mb-4","children":"Hello World"}],["$","p",null,{"children":["You can open"," ",["$","$L2",null,{"href":"/docs","className":"font-medium underline","children":"/docs"}]," ","and see the documentation."]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"loading":null,"isPartial":false}
-5:null
