@@ -42,10 +42,6 @@ jobs:
       
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          static_site_generator: next
-          # Point this to the root where the main deployment will be configured
-          generator_config_file: docs-site/next.config.mjs
       
       - name: Install dependencies
         run: |
