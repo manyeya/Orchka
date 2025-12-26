@@ -9,8 +9,7 @@ import {
     TreeItemIndex,
 } from "react-complex-tree";
 import "react-complex-tree/lib/style-modern.css";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import JsonView from "@uiw/react-json-view";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { logger } from "@/lib/logger";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -398,25 +397,30 @@ TreeViewPanel.displayName = "TreeViewPanel";
  * JSON View Component with syntax highlighting
  */
 const JsonViewPanel = memo(({ data }: { data: unknown }) => {
-    const jsonString = useMemo(
-        () => JSON.stringify(data, null, 2),
-        [data]
-    );
-
     return (
-        <SyntaxHighlighter
-            language="json"
-            style={oneDark}
-            customStyle={{
-                margin: 0,
-                padding: "16px",
-                background: "transparent",
-                fontSize: "12px",
-            }}
-            wrapLongLines
-        >
-            {jsonString}
-        </SyntaxHighlighter>
+        <div className="p-4 bg-muted/5 min-h-full">
+            <JsonView
+                value={data as object}
+                style={{
+                    "--w-rjv-background-color": "transparent",
+                    "--w-rjv-color": "var(--foreground)",
+                    "--w-rjv-key-string": "var(--primary)",
+                    "--w-rjv-type-string-color": "oklch(0.75 0.12 160)",
+                    "--w-rjv-type-int-color": "oklch(0.75 0.12 260)",
+                    "--w-rjv-type-boolean-color": "oklch(0.75 0.12 300)",
+                    "--w-rjv-brackets-color": "var(--muted-foreground)",
+                    "--w-rjv-arrow-color": "var(--muted-foreground)",
+                    "--w-rjv-border-left": "1px solid var(--border)",
+                    "--w-rjv-line-color": "var(--border)",
+                    "--w-rjv-font-family": "var(--font-mono)",
+                    fontSize: "12px",
+                }}
+                displayDataTypes={false}
+                displayObjectSize={true}
+                shortenTextAfterLength={100}
+                enableClipboard
+            />
+        </div>
     );
 });
 JsonViewPanel.displayName = "JsonViewPanel";

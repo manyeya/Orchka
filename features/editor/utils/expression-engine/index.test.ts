@@ -623,4 +623,56 @@ describe("Expression Engine - JSONata Implementation", () => {
       expect(result).toBe("2024-01-15T12:00:00.000Z");
     });
   });
+
+  describe("$input resolution", () => {
+    it("should use previous node data when currentNodeId is provided", () => {
+      const ctx = createExpressionContext({
+        nodeResults: {
+          "Node 1": { out: "v1" },
+          "Node 2": { out: "v2" },
+          "Node 3": { out: "v3" },
+        },
+        nodes: [
+          { id: "n1", name: "Node 1", type: "ACTION" },
+          { id: "n2", name: "Node 2", type: "ACTION" },
+          { id: "n3", name: "Node 3", type: "ACTION" },
+        ],
+        workflowId: "wf-123",
+        executionId: "ex-456",
+        currentNodeId: "n3", // Current is n3, input should be n2
+      });
+
+      expect(ctx.$input).toEqual({ out: "v2" });
+    });
+
+    it("should use fallback to last non-internal node data when currentNodeId is missing", () => {
+      const ctx = createExpressionContext({
+        nodeResults: {
+          "Node 1": { out: "v1" },
+          "Node 2": { out: "v2" },
+          "__branchDecisions": { some: "data" },
+        },
+        nodes: [
+          { id: "n1", name: "Node 1", type: "ACTION" },
+          { id: "n2", name: "Node 2", type: "ACTION" },
+        ],
+        workflowId: "wf-123",
+        executionId: "ex-456",
+        // currentNodeId is missing
+      });
+
+      expect(ctx.$input).toEqual({ out: "v2" });
+    });
+
+    it("should return empty object for $input if no nodes have data", () => {
+      const ctx = createExpressionContext({
+        nodeResults: {},
+        nodes: [{ id: "n1", name: "Node 1", type: "ACTION" }],
+        workflowId: "wf-123",
+        executionId: "ex-456",
+      });
+
+      expect(ctx.$input).toEqual({});
+    });
+  });
 });

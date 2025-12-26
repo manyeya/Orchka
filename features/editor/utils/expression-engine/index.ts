@@ -435,8 +435,9 @@ export function createExpressionContext(
       $input = nodeDataByName[prevName] || {};
     }
   } else {
-    // Use the last executed node's data
-    const lastResultKey = Object.keys(nodeResults).pop();
+    // Use the last executed node's data (excluding internal fields)
+    const nodeKeys = Object.keys(nodeResults).filter(key => !key.startsWith('__'));
+    const lastResultKey = nodeKeys.pop();
     if (lastResultKey) {
       $input = nodeResults[lastResultKey] || {};
     }

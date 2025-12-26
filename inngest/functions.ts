@@ -69,7 +69,8 @@ function getSkippedNodes(
   controlNodeId: string,
   branchDecision: BranchDecision,
   connections: ConnectionWithBranch[],
-  _allNodes: { id: string; type: NodeType }[]
+  _allNodes: { id: string; type: NodeType }[],
+  logger: { info: (obj: any, msg?: string) => void }
 ): Set<string> {
   const skippedNodes = new Set<string>();
 
@@ -182,7 +183,18 @@ export const helloWorld = inngest.createFunction(
 export const execute = inngest.createFunction(
   { id: "execute-workflow" },
   { event: "workflow/execute", channels: [workflowNodeChannel] },
-  async ({ event, step, publish }) => {
+  async ({ event, step, publish, logger: inngestLogger }) => {
+    // Prefix logger calls to identify they come from Inngest
+    const logger = {
+      info: (obj: any, msg?: string) => {
+        if (typeof obj === 'string') {
+          inngestLogger.info(obj);
+        } else {
+          inngestLogger.info(msg || 'log', obj);
+        }
+      }
+    };
+
     const workflowId = event.data.workflowId;
 
     if (!workflowId) {
@@ -252,6 +264,7 @@ export const execute = inngest.createFunction(
         workflowId,
         workflowName: workflowData.name,
         executionId: event.id ?? `exec_${Date.now()}`,
+        currentNodeId: node.id,
       });
 
       // Resolve all {{ }} expressions in node configuration
@@ -296,7 +309,8 @@ export const execute = inngest.createFunction(
           node.id,
           branchDecision,
           workflowData.connections,
-          workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType }))
+          workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
+          logger
         );
 
         nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));

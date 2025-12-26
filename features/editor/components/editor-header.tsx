@@ -9,11 +9,9 @@ import {
     Redo,
     Download,
     Upload,
-    Play,
     AlertTriangle,
     CheckCircle,
     Info,
-    History,
     Check
 } from 'lucide-react';
 
@@ -72,7 +70,6 @@ export function EditorHeader({
 
     const [isImporting, setIsImporting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isTestRunning, setIsTestRunning] = useState(false);
 
     const updateWorkflow = useUpdateWorkflow();
 
@@ -139,13 +136,8 @@ export function EditorHeader({
         }
     };
 
-    const handleTestRun = async () => {
-
-    };
-
-
     return (
-        <div className="flex items-center justify-between h-14 px-4 border-b border-border bg-background">
+        <div className="flex items-center justify-between py-2 px-4 border-b border-border bg-background">
             <div className="flex items-center gap-2">
                 <EditorBreadcrum workflowId={workflowId} />
                 {isDirty && (
@@ -156,7 +148,7 @@ export function EditorHeader({
             </div>
 
             <TooltipProvider>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 ">
                     {/* History Controls */}
                     <div className="flex items-center gap-1">
                         <AppTooltip content="Undo (Ctrl+Z)">
@@ -289,25 +281,12 @@ export function EditorHeader({
                     <AppTooltip content={isSaving ? 'Saving...' : isDirty ? 'Save changes' : 'No changes'}>
                         <Button
                             variant={isDirty ? "default" : "ghost"}
-                            size="icon-sm"
+                            size="icon-lg"
                             onClick={handleSave}
                             disabled={!isDirty || isSaving}
                             className={`h-8 w-8 ${!isDirty ? "opacity-50" : ""}`}
                         >
                             <Save className="w-4 h-4" />
-                        </Button>
-                    </AppTooltip>
-
-                    {/* Test Run */}
-                    <AppTooltip content={isTestRunning ? 'Starting...' : 'Test run (not implemented)'}>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={handleTestRun}
-                            disabled={true}
-                            className="h-8 w-8"
-                        >
-                            <Play className="w-4 h-4" />
                         </Button>
                     </AppTooltip>
                 </div>
