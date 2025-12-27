@@ -74,13 +74,13 @@ export function Features() {
     }, { scope: containerRef });
 
     return (
-        <section ref={containerRef} className="w-full py-20 bg-background border-b border-border">
-            <div className="container mx-auto px-4 md:px-6">
-                <div className="features-header flex flex-col items-start mb-12">
-                    <div className="inline-block px-3 py-1 mb-4 text-xs font-mono uppercase tracking-widest border border-primary text-primary">
+        <section ref={containerRef} className="w-full py-24 md:py-32 bg-background border-b border-border">
+            <div className="container mx-auto px-4 md:px-8 max-w-6xl">
+                <div className="features-header flex flex-col items-start mb-16">
+                    <div className="inline-block px-4 py-2 mb-6 text-xs font-mono uppercase tracking-widest border border-primary text-primary font-medium">
                         System Architecture
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-bold tracking-tighter uppercase font-mono">
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight uppercase font-mono">
                         Core Capabilities
                     </h2>
                 </div>
@@ -89,22 +89,22 @@ export function Features() {
                     {features.map((feature, index) => (
                         <div
                             key={index}
-                            className="feature-card group relative p-8 border-r border-b border-border hover:bg-accent/5 transition-colors duration-300"
+                            className="feature-card group relative p-8 md:p-10 border-r border-b border-border hover:bg-accent/10 transition-all duration-300"
                         >
-                            <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-mono text-muted-foreground">
-                                    M_{index.toString().padStart(2, "0")}
+                            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                                    {index.toString().padStart(2, "0")}
                                 </span>
                             </div>
 
-                            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-none border border-primary/20 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                                <feature.icon className="h-5 w-5" />
+                            <div className="mb-5 inline-flex h-12 w-12 items-center justify-center border-2 border-primary/10 bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                                <feature.icon className="h-6 w-6" />
                             </div>
 
-                            <h3 className="text-xl font-bold mb-2 font-mono uppercase tracking-tight">
+                            <h3 className="text-lg md:text-xl font-bold mb-3 font-mono uppercase tracking-tight leading-tight">
                                 {feature.title}
                             </h3>
-                            <p className="text-muted-foreground leading-relaxed">
+                            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                                 {feature.description}
                             </p>
                         </div>
