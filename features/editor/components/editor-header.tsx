@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
+
 import {
     Popover,
     PopoverContent,
@@ -82,7 +83,12 @@ export function EditorHeader({
                     id: node.id,
                     type: node.type,
                     position: node.position,
-                    data: node.data
+                    data: {
+                        ...(node.data || {}),
+                        parentId: node.parentId,
+                        extent: node.extent,
+                        style: node.style ? { width: node.style.width, height: node.style.height } : undefined,
+                    }
                 })),
                 edges: edges.map(edge => ({
                     source: edge.source,

@@ -37,17 +37,17 @@ export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
             showToolbar={true}
             status={status}
         >
-                <BaseNode onDoubleClick={onDoubleClick} className="rounded-l-2xl relative group ">
-                    <BaseNodeContent>
-                        {typeof Icon === "string" ? (
-                            <Image src={Icon} alt={name} width={16} height={16} />
-                        ) : (
-                            <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
-                        )}
-                        {children}
-                        <BaseHandle id={props.id + "-source"} type="source" position={Position.Right} />
-                    </BaseNodeContent>
-                </BaseNode>
+            <BaseNode onDoubleClick={onDoubleClick} className="rounded-l-2xl relative group ">
+                <BaseNodeContent>
+                    {typeof Icon === "string" ? (
+                        <Image src={Icon} alt={name} width={16} height={16} />
+                    ) : (
+                        <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
+                    )}
+                    {children}
+                    <BaseHandle id={props.id + "-source"} type="source" position={props.sourcePosition || Position.Right} />
+                </BaseNodeContent>
+            </BaseNode>
         </WorkflowNode>
     )
 })

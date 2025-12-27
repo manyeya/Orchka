@@ -129,6 +129,7 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                 id: createId(),
                 type: selection.type,
                 position: flowPosition,
+                zIndex: selection.type === NodeType.GROUP ? -1 : undefined,
                 data: {
                     label: selection.label,
                     name: uniqueName

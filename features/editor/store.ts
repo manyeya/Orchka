@@ -12,6 +12,7 @@ import {
 import { validateConnection, validateWorkflowGraph, ValidationResult } from './utils/graph-validation';
 import { downloadWorkflow, uploadWorkflow } from './utils/import-export';
 import { toast } from 'sonner';
+import { NodeType } from '@/config/node-components';
 
 interface HistoryState {
   nodes: Node[];
@@ -78,7 +79,38 @@ export const onNodesChangeAtom = atom(
   null,
   (get, set, changes: NodeChange[]) => {
     const currentNodes = get(nodesAtom);
-    const newNodes = applyNodeChanges(changes, currentNodes);
+
+    // Handle Group Node Deletion: Detach children instead of deleting them
+    let nodesToProcess = currentNodes;
+    const nodesToRemove = changes.filter(c => c.type === 'remove').map(c => c.id);
+
+    if (nodesToRemove.length > 0) {
+      // Find groups being deleted
+      const deletedGroups = currentNodes.filter(n => nodesToRemove.includes(n.id) && n.type === NodeType.GROUP);
+
+      if (deletedGroups.length > 0) {
+        nodesToProcess = currentNodes.map(node => {
+          // If this node is a child of a deleted group, detach it
+          if (node.parentId && nodesToRemove.includes(node.parentId)) {
+            const parent = currentNodes.find(n => n.id === node.parentId);
+            if (parent) {
+              return {
+                ...node,
+                parentId: undefined,
+                extent: undefined,
+                position: {
+                  x: node.position.x + parent.position.x,
+                  y: node.position.y + parent.position.y
+                }
+              }
+            }
+          }
+          return node;
+        });
+      }
+    }
+
+    const newNodes = applyNodeChanges(changes, nodesToProcess);
     set(nodesAtom, newNodes);
     set(isDirtyAtom, true);
     set(pushToHistoryAtom);
@@ -153,7 +185,27 @@ export const deleteNodeAtom = atom(
     const currentEdges = get(edgesAtom);
     const selectedNodeId = get(selectedNodeIdAtom);
 
-    const newNodes = currentNodes.filter((node) => node.id !== id);
+    // Detach children if deleting a group
+    let nodesToProcess = currentNodes;
+    const nodeToDelete = currentNodes.find(n => n.id === id);
+    if (nodeToDelete && nodeToDelete.type === NodeType.GROUP) {
+      nodesToProcess = currentNodes.map(node => {
+        if (node.parentId === id) {
+          return {
+            ...node,
+            parentId: undefined,
+            extent: undefined,
+            position: {
+              x: node.position.x + nodeToDelete.position.x,
+              y: node.position.y + nodeToDelete.position.y
+            }
+          }
+        }
+        return node;
+      })
+    }
+
+    const newNodes = nodesToProcess.filter((node) => node.id !== id);
     const newEdges = currentEdges.filter(
       (edge) => edge.source !== id && edge.target !== id
     );
@@ -300,7 +352,18 @@ export const importWorkflowAtom = atom(
 export const loadWorkflowAtom = atom(
   null,
   (get, set, { nodes, edges }: { nodes: Node[]; edges: Edge[] }) => {
-    set(nodesAtom, JSON.parse(JSON.stringify(nodes)));
+    const restoredNodes = nodes.map(node => {
+      const data = node.data || {};
+      // Check if we have persisted parentId/extent/style in data
+      // Preserve existing style if it exists on the node or in data
+      return {
+        ...node,
+        parentId: (data.parentId as string) || node.parentId || undefined,
+        extent: (data.extent as string) || node.extent || undefined,
+        style: (data.style as React.CSSProperties) || node.style || undefined,
+      };
+    });
+    set(nodesAtom, JSON.parse(JSON.stringify(restoredNodes)));
     set(edgesAtom, JSON.parse(JSON.stringify(edges)));
     set(selectedNodeIdAtom, null);
     set(historyAtom, []);

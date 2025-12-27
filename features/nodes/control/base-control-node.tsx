@@ -68,22 +68,21 @@ export const BaseControlNode = memo((props: BaseControlNodeProps) => {
     setActiveNodeId(null);
   }, [props.id, deleteNode, setActiveNodeId]);
 
-  // Calculate vertical positions for output handles
+  // Calculate positions for output handles
+  const isVertical = props.sourcePosition === Position.Bottom || props.sourcePosition === Position.Top;
   const getHandleStyle = (index: number, total: number, customPosition?: number) => {
     if (customPosition !== undefined) {
-      return { top: `${customPosition}%` };
+      return isVertical ? { left: `${customPosition}%` } : { top: `${customPosition}%` };
     }
-    // Evenly distribute handles vertically
+    // Evenly distribute handles
     const spacing = 100 / (total + 1);
     const position = spacing * (index + 1);
-    return { top: `${position}%` };
+    return isVertical ? { left: `${position}%` } : { top: `${position}%` };
   };
 
-  // Calculate minimum height based on number of outputs
-  // Only increase height for nodes with more than 2 outputs (like Switch with many cases)
-  // Nodes with 1-2 outputs (If, Loop, Wait) keep default size
-  const needsExtraHeight = outputs.length > 2;
-  const minHeight = needsExtraHeight ? outputs.length * 20 + 16 : undefined;
+  // Calculate minimum dimension based on number of outputs
+  const needsExtraSpace = outputs.length > 2;
+  const minSpace = needsExtraSpace ? outputs.length * 20 + 16 : undefined;
 
   return (
     <WorkflowNode
@@ -96,8 +95,11 @@ export const BaseControlNode = memo((props: BaseControlNodeProps) => {
     >
       <BaseNode onDoubleClick={onDoubleClick} className="relative group">
         <BaseNodeContent
-          className={needsExtraHeight ? "items-center justify-center" : undefined}
-          style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
+          className={needsExtraSpace ? "items-center justify-center" : undefined}
+          style={isVertical
+            ? (minSpace ? { minWidth: `${minSpace}px` } : undefined)
+            : (minSpace ? { minHeight: `${minSpace}px` } : undefined)
+          }
         >
           {typeof Icon === "string" ? (
             <Image src={Icon} alt={name} width={16} height={16} />
@@ -106,23 +108,26 @@ export const BaseControlNode = memo((props: BaseControlNodeProps) => {
           )}
           {children}
 
-          {/* Single input handle on the left */}
+          {/* Single input handle */}
           <BaseHandle
             id={`${props.id}-target`}
             type="target"
-            position={Position.Left}
+            position={props.targetPosition || Position.Left}
           />
 
-          {/* Multiple output handles on the right with labels */}
+          {/* Multiple output handles with labels */}
           {outputs.map((output, index) => (
             <BaseHandle
               key={output.id}
               id={output.id}
               type="source"
-              position={Position.Right}
+              position={props.sourcePosition || Position.Right}
               style={getHandleStyle(index, outputs.length, output.position)}
             >
-              <span className="absolute left-4 whitespace-nowrap text-[6px] text-muted-foreground">
+              <span className={`absolute whitespace-nowrap text-[6px] text-muted-foreground ${isVertical
+                  ? "top-2 left-1/2 -translate-x-1/2"
+                  : "left-4 top-1/2 -translate-y-1/2"
+                }`}>
                 {output.label}
               </span>
             </BaseHandle>
