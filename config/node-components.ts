@@ -6,6 +6,8 @@ import { IfNode } from "@/features/nodes/control/if/node";
 import { SwitchNode } from "@/features/nodes/control/switch/node";
 import { LoopNode } from "@/features/nodes/control/loop/node";
 import { WaitNode } from "@/features/nodes/control/wait/node";
+import GroupNode from "@/features/nodes/tools/group-node";
+import AnnotationNode from "@/features/nodes/tools/annotation-node";
 import type { NodeTypes } from "@xyflow/react";
 
 export enum NodeType {
@@ -16,7 +18,9 @@ export enum NodeType {
     IF_CONDITION = 'IF_CONDITION',
     SWITCH = 'SWITCH',
     LOOP = 'LOOP',
-    WAIT = 'WAIT'
+    WAIT = 'WAIT',
+    GROUP = 'GROUP',
+    ANNOTATION = 'ANNOTATION'
 }
 
 export const NODE_COMPONENTS = {
@@ -28,6 +32,8 @@ export const NODE_COMPONENTS = {
     [NodeType.SWITCH]: SwitchNode,
     [NodeType.LOOP]: LoopNode,
     [NodeType.WAIT]: WaitNode,
+    [NodeType.GROUP]: GroupNode,
+    [NodeType.ANNOTATION]: AnnotationNode,
 } as const satisfies NodeTypes
 
 /**
@@ -44,6 +50,8 @@ export const NODE_REQUIRED_FIELDS: Record<string, string[]> = {
     [NodeType.SWITCH]: ['name', 'expression'],
     [NodeType.LOOP]: ['name', 'mode'],
     [NodeType.WAIT]: ['name', 'mode'],
+    [NodeType.GROUP]: [],
+    [NodeType.ANNOTATION]: [],
 };
 
 export const DEFAULT_REQUIRED_FIELDS = ['name'];

@@ -36,7 +36,7 @@ const StatusIcon = ({ status }: { status: WorkflowNodeStatus }) => {
 
 export const WorkflowNode = ({ name, description, children, showToolbar, onSettingsClick, onRemoveClick, status }: WorkflowNodeProps) => {
     return (
-        <div className="cursor-pointer active:cursor-grabbing">
+        <div className="cursor-pointer active:cursor-grabbing ">
             {showToolbar && (
                 <NodeToolbar>
                     <Button className="cursor-pointer" variant="ghost" onClick={onSettingsClick}>

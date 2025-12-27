@@ -7,6 +7,8 @@ export const NodeType = {
     LOOP: "LOOP",
     WAIT: "WAIT",
     AI_AGENT: "AI_AGENT",
+    GROUP: "GROUP",
+    ANNOTATION: "ANNOTATION",
 } as const;
 
 export type NodeType = string;
