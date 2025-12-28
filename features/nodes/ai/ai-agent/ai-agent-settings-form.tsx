@@ -26,11 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Bot, Wrench, Settings2, Code } from "lucide-react";
+import { Plus, Trash2, Bot, Wrench, Settings2, Code, Key } from "lucide-react";
 import {
   aiAgentSettingsSchema,
   ALL_MODELS,
 } from "./types";
+import { CredentialSelector } from "@/features/credentials/components/credential-selector";
+import { CredentialType } from "@/lib/credentials/types";
 
 export type AIAgentSettingsFormValues = z.infer<typeof aiAgentSettingsSchema>;
 
@@ -38,6 +40,23 @@ interface AIAgentSettingsFormProps {
   defaultValues?: Partial<AIAgentSettingsFormValues>;
   onSubmit: (values: AIAgentSettingsFormValues) => void;
   onCancel?: () => void;
+}
+
+/**
+ * Get the credential type for a given model string
+ */
+function getCredentialTypeForModel(model: string): CredentialType | null {
+  if (model.startsWith("gpt-") || model.startsWith("o1") || model.startsWith("o3")) {
+    return CredentialType.OPENAI;
+  }
+  if (model.startsWith("claude-")) {
+    return CredentialType.ANTHROPIC;
+  }
+  if (model.startsWith("gemini-")) {
+    return CredentialType.GOOGLE_AI;
+  }
+  // Groq models don't have a specific credential type yet
+  return null;
 }
 
 export function AIAgentSettingsForm({
@@ -67,6 +86,8 @@ export function AIAgentSettingsForm({
   });
 
   const enabledTools = form.watch("enabledTools");
+  const selectedModel = form.watch("model");
+  const credentialType = getCredentialTypeForModel(selectedModel);
 
   const toggleTool = (toolName: "http" | "code" | "calculator") => {
     const current = form.getValues("enabledTools");
@@ -175,6 +196,43 @@ export function AIAgentSettingsForm({
                 </FormItem>
               )}
             />
+
+            {/* Credential Selector - Requirements: 3.1, 3.2 */}
+            {credentialType && (
+              <FormField
+                control={form.control}
+                name="credentialId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      API Credential
+                    </FormLabel>
+                    <FormControl>
+                      <CredentialSelector
+                        type={credentialType}
+                        value={field.value}
+                        onChange={(config) => {
+                          if (config) {
+                            form.setValue("credentialId", config.credentialId);
+                            form.setValue("credentialType", config.credentialType);
+                          } else {
+                            form.setValue("credentialId", undefined);
+                            form.setValue("credentialType", undefined);
+                          }
+                        }}
+                        placeholder="Select API credential..."
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select a stored credential for API authentication.
+                      If not selected, environment variables will be used.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

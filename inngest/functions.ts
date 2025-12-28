@@ -1,7 +1,6 @@
 import { generateText } from "ai";
 import { inngest } from "./client";
 import prisma from "@/lib/db";
-import { logger } from "@/lib/logger";
 import { google } from "@ai-sdk/google";
 import { NonRetriableError } from "inngest";
 import { topologicalSortNodes } from "@/features/editor/utils/graph-validation";
@@ -13,6 +12,7 @@ import {
 } from "@/features/editor/utils/resolve-expressions";
 import { workflowNodeChannel } from "@/features/nodes/utils/realtime";
 import type { BranchDecision } from "@/features/nodes/utils/execution/types";
+import { getCredentialForExecution, CredentialNotFoundError } from "@/lib/credentials/execution";
 
 /** Control node types that can produce branch decisions */
 const CONTROL_NODE_TYPES: NodeType[] = [
@@ -274,6 +274,20 @@ export const execute = inngest.createFunction(
       );
 
       const executor = getExecutor(node.type as NodeType);
+      
+      // Create credential resolver for this workflow
+      // Requirements: 3.3, 3.4
+      const resolveCredential = async (credentialId: string) => {
+        try {
+          return await getCredentialForExecution(credentialId, workflowId);
+        } catch (error) {
+          if (error instanceof CredentialNotFoundError) {
+            throw new NonRetriableError(`Credential not found: ${credentialId}. The credential may have been deleted.`);
+          }
+          throw error;
+        }
+      };
+      
       context = await executor({
         data: resolvedData,
         nodeId: node.id,
@@ -281,6 +295,7 @@ export const execute = inngest.createFunction(
         step,
         expressionContext,
         publish,
+        resolveCredential,
       });
 
       // Handle branch decisions from control nodes
@@ -391,6 +406,7 @@ export const execute = inngest.createFunction(
                   step,
                   expressionContext: loopExpressionContext,
                   publish,
+                  resolveCredential,
                 });
 
                 // Publish node data for this iteration

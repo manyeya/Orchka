@@ -3,7 +3,7 @@ import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import { AIAgentSettings } from "./types";
 import { publishNodeStatus } from "../../utils/realtime";
 import { NodeType } from "@/features/nodes/types";
-import { createAgent, tool } from "langchain";
+import { createAgent } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -11,10 +11,22 @@ import { ChatGroq, } from "@langchain/groq";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import * as z from "zod";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { CredentialType, isOpenAICredential, isAnthropicCredential, isGoogleAICredential } from "@/lib/credentials/types";
+import type { DecryptedCredential } from "@/lib/credentials/execution";
+
+/**
+ * Credential configuration for AI models
+ */
+interface AICredentialConfig {
+  apiKey: string;
+  organization?: string;
+}
 
 /**
  * AI Agent Executor using LangChain createReactAgent
  * Similar to n8n's AI Agent node
+ * 
+ * Requirements: 3.3 - Retrieve and decrypt credential data during workflow execution
  */
 export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
   data,
@@ -22,6 +34,7 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
   context,
   step,
   publish,
+  resolveCredential,
 }): Promise<WorkflowContext> => {
   await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_AGENT);
 
@@ -29,8 +42,17 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
   const stepName = `${nodeName} (${nodeId})`;
 
   const result = await step.run(stepName, async () => {
+    // Resolve credential if configured
+    // Requirements: 3.3
+    let credentialConfig: AICredentialConfig | null = null;
+    
+    if (data.credentialId && resolveCredential) {
+      const credential = await resolveCredential(data.credentialId);
+      credentialConfig = extractAICredentialConfig(credential, data.model);
+    }
+
     // 1. Initialize the model based on model string
-    const model = createModel(data.model);
+    const model = createModel(data.model, credentialConfig);
 
     // 2. Build tools
     const tools = buildTools(data, context);
@@ -101,9 +123,81 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
 };
 
 /**
- * Create the appropriate chat model based on model string
+ * Extract AI credential configuration from decrypted credential
+ * Requirements: 3.3
  */
-function createModel(modelString: string): BaseChatModel {
+function extractAICredentialConfig(
+  credential: DecryptedCredential,
+  modelString: string
+): AICredentialConfig {
+  const { type, data } = credential;
+  
+  // Validate credential type matches expected provider
+  const expectedType = getExpectedCredentialType(modelString);
+  
+  if (expectedType && type !== expectedType) {
+    throw new NonRetriableError(
+      `Credential type mismatch: expected ${expectedType} for model ${modelString}, got ${type}`
+    );
+  }
+  
+  // Extract API key based on credential type
+  if (type === CredentialType.OPENAI && isOpenAICredential(data)) {
+    return {
+      apiKey: data.apiKey,
+      organization: data.organization,
+    };
+  }
+  
+  if (type === CredentialType.ANTHROPIC && isAnthropicCredential(data)) {
+    return {
+      apiKey: data.apiKey,
+    };
+  }
+  
+  if (type === CredentialType.GOOGLE_AI && isGoogleAICredential(data)) {
+    return {
+      apiKey: data.apiKey,
+    };
+  }
+  
+  throw new NonRetriableError(
+    `Unsupported credential type for AI agent: ${type}`
+  );
+}
+
+/**
+ * Get the expected credential type for a model string
+ */
+function getExpectedCredentialType(modelString: string): CredentialType | null {
+  // OpenAI models (gpt-*, o1, o3)
+  if (
+    modelString.startsWith("gpt-") ||
+    modelString.startsWith("o1") ||
+    modelString.startsWith("o3")
+  ) {
+    return CredentialType.OPENAI;
+  }
+
+  // Anthropic models
+  if (modelString.startsWith("claude-")) {
+    return CredentialType.ANTHROPIC;
+  }
+
+  // Google models
+  if (modelString.startsWith("gemini-")) {
+    return CredentialType.GOOGLE_AI;
+  }
+
+  // Groq models - no specific credential type yet, uses env vars
+  return null;
+}
+
+/**
+ * Create the appropriate chat model based on model string
+ * Requirements: 3.3 - Use stored credentials instead of environment variables
+ */
+function createModel(modelString: string, credentialConfig: AICredentialConfig | null): BaseChatModel {
   // OpenAI models (gpt-*, o1, o3)
   if (
     modelString.startsWith("gpt-") ||
@@ -113,6 +207,13 @@ function createModel(modelString: string): BaseChatModel {
     return new ChatOpenAI({
       model: modelString,
       temperature: 0.7,
+      // Use credential if provided, otherwise fall back to env var
+      ...(credentialConfig && {
+        apiKey: credentialConfig.apiKey,
+        configuration: credentialConfig.organization 
+          ? { organization: credentialConfig.organization }
+          : undefined,
+      }),
     });
   }
 
@@ -121,6 +222,10 @@ function createModel(modelString: string): BaseChatModel {
     return new ChatAnthropic({
       model: modelString,
       temperature: 0.7,
+      // Use credential if provided, otherwise fall back to env var
+      ...(credentialConfig && {
+        apiKey: credentialConfig.apiKey,
+      }),
     });
   }
 
@@ -129,10 +234,14 @@ function createModel(modelString: string): BaseChatModel {
     return new ChatGoogleGenerativeAI({
       model: modelString,
       temperature: 0.7,
+      // Use credential if provided, otherwise fall back to env var
+      ...(credentialConfig && {
+        apiKey: credentialConfig.apiKey,
+      }),
     });
   }
 
-  // Groq models (llama, mixtral, gemma)
+  // Groq models (llama, mixtral, gemma) - still uses env vars
   if (
     modelString.startsWith("llama-") ||
     modelString.startsWith("mixtral-") ||
@@ -148,6 +257,12 @@ function createModel(modelString: string): BaseChatModel {
   return new ChatOpenAI({
     model: modelString,
     temperature: 0.7,
+    ...(credentialConfig && {
+      apiKey: credentialConfig.apiKey,
+      configuration: credentialConfig.organization 
+        ? { organization: credentialConfig.organization }
+        : undefined,
+    }),
   });
 }
 

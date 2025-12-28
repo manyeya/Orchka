@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { CredentialType } from "@/lib/credentials/types";
 
 export const customToolSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
@@ -13,6 +14,11 @@ export const aiAgentSettingsSchema = z.object({
 
   // Model configuration - LangChain 1.0 style
   model: z.string().catch("gpt-4o"),
+
+  // Credential configuration for AI providers
+  // Requirements: 3.2 - Store credential reference in node config
+  credentialId: z.string().optional(),
+  credentialType: z.nativeEnum(CredentialType).optional(),
 
   // Agent behavior
   systemPrompt: z.string().catch("You are a helpful assistant."),
