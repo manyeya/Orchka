@@ -1,7 +1,7 @@
 import InitialNode from "@/features/nodes/utils/initial-node";
 import { ManualTriggerNode } from "@/features/nodes/trigger/manual/manual-trigger-node";
 import { HttpRequestNode } from "@/features/nodes/action/https-request/node";
-import { AIAgentNode } from "@/features/nodes/action/ai-agent/node";
+import { AIAgentNode } from "@/features/nodes/ai/ai-agent/node";
 import { IfNode } from "@/features/nodes/control/if/node";
 import { SwitchNode } from "@/features/nodes/control/switch/node";
 import { LoopNode } from "@/features/nodes/control/loop/node";

@@ -201,6 +201,7 @@ function Editor({ workflowId }: { workflowId: string }) {
                 connectionLineType={ConnectionLineType.Step}
                 snapToGrid
                 snapGrid={[20, 20]}
+                minZoom={0.9}
                 fitView>
                 <Background gap={20} />
                 <Panel className='flex flex-col gap-2' position="top-left">

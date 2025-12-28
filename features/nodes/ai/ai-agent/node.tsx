@@ -1,7 +1,7 @@
 "use client";
 
 import type { Node, NodeProps } from "@xyflow/react";
-import { BaseActionNode } from "../base-action-node";
+import { BaseAiNodeComponent } from "../base-ai-node";
 import { Bot } from "lucide-react";
 import { memo, useCallback } from "react";
 import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
@@ -67,7 +67,7 @@ export const AIAgentNode = memo((props: NodeProps<AIAgentNodeType>) => {
           onCancel={handleCancel}
         />
       </NodeDetailModal>
-      <BaseActionNode
+      <BaseAiNodeComponent
         {...props}
         id={props.id}
         icon={Bot}

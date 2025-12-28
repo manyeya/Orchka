@@ -2,7 +2,7 @@ import { NodeType } from "../../types";
 import { NodeExecutor } from "./types";
 import { manualTriggerExecutor } from "../../trigger/manual/executor";
 import { httpsRequestExecutor } from "../../action/https-request/executor";
-import { aiAgentExecutor } from "../../action/ai-agent/executor";
+import { aiAgentExecutor } from "../../ai/ai-agent/executor";
 import { ifNodeExecutor } from "../../control/if/executor";
 import { switchNodeExecutor } from "../../control/switch/executor";
 import { loopNodeExecutor } from "../../control/loop/executor";

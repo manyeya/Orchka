@@ -37,13 +37,16 @@ const ACTION_NODES: NodeTypeOption[] = [
         description: "Make an HTTP request",
         icon: GlobeIcon,
         tags: ["api", "fetch", "external"]
-    },
+    }
+]
+
+const AI_NODES: NodeTypeOption[] = [
     {
         type: NodeType.AI_AGENT,
         label: "AI Agent",
         description: "LLM-powered agent with tools",
         icon: Bot,
-        tags: ["ai", "llm", "bot"]
+        tags: ["ai", "llm", "bot", "agent"]
     }
 ]
 
@@ -163,10 +166,11 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
 
     const filteredTriggerNodes = useMemo(() => filterNodes(TRIGGER_NODES), [searchQuery])
     const filteredActionNodes = useMemo(() => filterNodes(ACTION_NODES), [searchQuery])
+    const filteredAiNodes = useMemo(() => filterNodes(AI_NODES), [searchQuery])
     const filteredControlNodes = useMemo(() => filterNodes(CONTROL_NODES), [searchQuery])
     const filteredToolNodes = useMemo(() => filterNodes(TOOL_NODES), [searchQuery])
 
-    const hasResults = filteredTriggerNodes.length > 0 || filteredActionNodes.length > 0 || filteredControlNodes.length > 0 || filteredToolNodes.length > 0
+    const hasResults = filteredTriggerNodes.length > 0 || filteredActionNodes.length > 0 || filteredAiNodes.length > 0 || filteredControlNodes.length > 0 || filteredToolNodes.length > 0
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange} >
@@ -214,6 +218,17 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                             <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Actions</h3>
                             <div className="flex flex-col gap-2">
                                 {filteredActionNodes.map((node) => (
+                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {filteredAiNodes.length > 0 && (
+                        <div className="mb-6">
+                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">AI</h3>
+                            <div className="flex flex-col gap-2">
+                                {filteredAiNodes.map((node) => (
                                     <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
                                 ))}
                             </div>
