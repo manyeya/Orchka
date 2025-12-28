@@ -80,47 +80,80 @@ Category: Actions
 - **Retry on Failure**: Retry failed requests with exponential backoff
 - **Max Retries**: Maximum retry attempts (default: 3)
 
-**Example Configuration:**
-```json
-{
-  "url": "https://api.example.com/data",
-  "method": "POST",
-  "headers": [
-    { "key": "Content-Type", "value": "application/json", "enabled": true }
-  ],
-  "authType": "credential",
-  "credentialId": "cred_abc123",
-  "body": {
-    "name": "{{ $input.name }}"
-  }
-}
-```
+---
+
+## AI
+
+AI nodes leverage large language models for intelligent automation.
 
 ### AI Agent
 
-Executes AI-powered tasks using LangChain.
+Executes AI-powered tasks with tool calling capabilities.
 
 ```yaml
 Type: AI_AGENT
-Category: Actions
+Category: AI
 ```
 
 **Configuration:**
-- **Model**: AI model to use (GPT-4, Claude, Gemini, etc.)
+- **Model**: AI model to use
 - **Credential**: Stored credential for the AI provider (optional)
 - **System Prompt**: Instructions for the AI agent
 - **Tools**: Connected AI Tool nodes for function calling
 
 **Supported Providers:**
-- OpenAI (GPT-4, GPT-4o, o1, o3)
-- Anthropic (Claude 3.5, Claude 3.7, Claude Sonnet 4)
-- Google (Gemini 1.5, Gemini 2.0, Gemini 2.5)
-- Groq (Llama, Mixtral, Gemma)
+- OpenAI (GPT-4.1, GPT-4o, o1, o3)
+- Anthropic (Claude Sonnet 4, Claude 3.7, Claude 3.5 Haiku)
+- Google (Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash)
 
 **Authentication:**
 You can authenticate with AI providers in two ways:
 1. **Stored Credentials** (recommended): Select a credential from the dropdown
 2. **Environment Variables**: Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.
+
+### AI Generate
+
+Simple text generation using AI models.
+
+```yaml
+Type: AI_GENERATE
+Category: AI
+```
+
+**Configuration:**
+- **Model**: AI model to use
+- **Credential**: Stored credential for the AI provider
+- **System Prompt**: Instructions for generation
+- **Prompt/Input Variable**: Text to process
+- **Temperature**: Creativity level (0-2)
+- **Max Tokens**: Maximum output length
+
+**Use Cases:**
+- Content creation
+- Summarization
+- Translation
+- Text transformation
+
+### AI Classify
+
+Classify content into predefined categories.
+
+```yaml
+Type: AI_CLASSIFY
+Category: AI
+```
+
+**Configuration:**
+- **Model**: AI model to use
+- **Categories**: Classification options with labels and descriptions
+- **Include Confidence**: Add confidence score (0-1)
+- **Include Reasoning**: Add explanation for classification
+
+**Built-in Templates:**
+- Sentiment Analysis (positive/negative/neutral)
+- Intent Detection (question/request/complaint/feedback)
+- Priority Classification (urgent/high/medium/low)
+- Spam Detection (spam/not_spam)
 
 ### AI Tool
 
@@ -128,7 +161,7 @@ Defines a tool that can be used by AI Agent nodes.
 
 ```yaml
 Type: AI_TOOL
-Category: Actions
+Category: AI
 ```
 
 **Configuration:**
@@ -276,7 +309,13 @@ Category: Control
   <Card title="Expressions" href="/docs/expressions">
     Learn to transform data between nodes.
   </Card>
-  <Card title="AI Agent Deep Dive" href="/docs/nodes/ai-agent">
-    Master AI-powered automation.
+  <Card title="AI Agent" href="/docs/nodes/ai-agent">
+    Master AI-powered automation with tools.
+  </Card>
+  <Card title="AI Generate" href="/docs/nodes/ai-generate">
+    Generate text content with AI.
+  </Card>
+  <Card title="AI Classify" href="/docs/nodes/ai-classify">
+    Classify content into categories.
   </Card>
 </Cards>

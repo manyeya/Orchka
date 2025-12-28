@@ -7,6 +7,10 @@ export const NodeType = {
     LOOP: "LOOP",
     WAIT: "WAIT",
     AI_AGENT: "AI_AGENT",
+    AI_GENERATE: "AI_GENERATE",
+    AI_EXTRACT: "AI_EXTRACT",
+    AI_CLASSIFY: "AI_CLASSIFY",
+    AI_AGENT_EXP: "AI_AGENT_EXP",
     GROUP: "GROUP",
     ANNOTATION: "ANNOTATION",
 } as const;

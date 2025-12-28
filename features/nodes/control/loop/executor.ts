@@ -134,7 +134,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
   publish,
 }): Promise<WorkflowContext> => {
   // Publish loading status
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.LOOP);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.LOOP, undefined, step);
 
   const nodeName = data.name || "Loop";
   const stepName = `${nodeName} (${nodeId})`;
@@ -188,7 +188,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
     };
 
     // Publish success status
-    await publishNodeStatus(publish, nodeId, "success", NodeType.LOOP);
+    await publishNodeStatus(publish, nodeId, "success", NodeType.LOOP, undefined, step);
 
     // Return the context with loop data
     // The workflow engine will handle the actual iteration
@@ -218,7 +218,7 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
     };
   } catch (error) {
     // Publish error status
-    await publishNodeStatus(publish, nodeId, "error", NodeType.LOOP);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.LOOP, undefined, step);
     throw error;
   }
 };

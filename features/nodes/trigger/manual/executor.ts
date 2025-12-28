@@ -9,9 +9,9 @@ export const manualTriggerExecutor: NodeExecutor = async ({
     step,
     publish
 }) => {
-    await publishNodeStatus(publish, nodeId, "loading", NodeType.MANUAL_TRIGGER)
+    await publishNodeStatus(publish, nodeId, "loading", NodeType.MANUAL_TRIGGER, undefined, step)
     //TODO: Publish Loading State
     const result = await step.run('manual-trigger', async () => context)
-    await publishNodeStatus(publish, nodeId, "success", NodeType.MANUAL_TRIGGER)
+    await publishNodeStatus(publish, nodeId, "success", NodeType.MANUAL_TRIGGER, undefined, step)
     return result;
 }

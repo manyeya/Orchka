@@ -98,7 +98,7 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
   publish,
 }): Promise<WorkflowContext> => {
   // Publish loading status
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.IF_CONDITION);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.IF_CONDITION, undefined, step);
 
   const nodeName = data.name || "If";
   const stepName = `${nodeName} (${nodeId})`;
@@ -134,7 +134,7 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
     });
 
     // Publish success status
-    await publishNodeStatus(publish, nodeId, "success", NodeType.IF_CONDITION);
+    await publishNodeStatus(publish, nodeId, "success", NodeType.IF_CONDITION, undefined, step);
 
     // Extract condition result from the step result
     const conditionResult = (result.branchDecision.data as { conditionResult?: boolean })?.conditionResult;
@@ -152,7 +152,7 @@ export const ifNodeExecutor: NodeExecutor<IfNodeData> = async ({
     };
   } catch (error) {
     // Publish error status
-    await publishNodeStatus(publish, nodeId, "error", NodeType.IF_CONDITION);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.IF_CONDITION, undefined, step);
     throw error;
   }
 };

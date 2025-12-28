@@ -122,7 +122,7 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
   publish,
 }): Promise<WorkflowContext> => {
   // Publish loading status
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.WAIT);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.WAIT, undefined, step);
 
   const nodeName = data.name || "Wait";
   const stepName = `${nodeName} (${nodeId})`;
@@ -167,7 +167,7 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
     };
 
     // Publish success status
-    await publishNodeStatus(publish, nodeId, "success", NodeType.WAIT);
+    await publishNodeStatus(publish, nodeId, "success", NodeType.WAIT, undefined, step);
 
     // Return the context following the standard structure: { [nodeName]: { completed, mode, duration?, until? } }
     // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
@@ -183,7 +183,7 @@ export const waitNodeExecutor: NodeExecutor<WaitNodeData> = async ({
     };
   } catch (error) {
     // Publish error status
-    await publishNodeStatus(publish, nodeId, "error", NodeType.WAIT);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.WAIT, undefined, step);
     throw error;
   }
 };

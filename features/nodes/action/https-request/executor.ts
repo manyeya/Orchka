@@ -52,11 +52,11 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
     publish,
     resolveCredential
 }): Promise<WorkflowContext> => {
-    await publishNodeStatus(publish, nodeId, "loading", NodeType.HTTP_REQUEST)
+    await publishNodeStatus(publish, nodeId, "loading", NodeType.HTTP_REQUEST, undefined, step)
 
     // Validate required URL
     if (!data.url) {
-        await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
+        await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST, undefined, step);
         throw new NonRetriableError('URL is required');
     }
 
@@ -133,7 +133,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
                 url: res.url,
             };
         } catch (error) {
-            await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
+            await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST, undefined, step);
             // Handle ky-specific errors
             if (error instanceof HTTPError) {
                 const res = error.response;
@@ -162,7 +162,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
 
             // Handle timeout errors
             if (error instanceof Error && error.name === 'TimeoutError') {
-                await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST);
+                await publishNodeStatus(publish, nodeId, "error", NodeType.HTTP_REQUEST, undefined, step);
 
                 throw new NonRetriableError(`Request timed out after ${data.timeout || 30000}ms`);
             }
@@ -172,7 +172,7 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
         }
     });
 
-    await publishNodeStatus(publish, nodeId, "success", NodeType.HTTP_REQUEST);
+    await publishNodeStatus(publish, nodeId, "success", NodeType.HTTP_REQUEST, undefined, step);
     // Return WorkflowContext with response data
     // Include both nodeId and nodeName for flexible access
     return {

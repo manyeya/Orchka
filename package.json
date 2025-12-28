@@ -17,7 +17,9 @@
     "docs:build": "cd docs-site && bun run build"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.1",
     "@ai-sdk/google": "^2.0.29",
+    "@ai-sdk/openai": "^3.0.1",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@inngest/realtime": "^0.4.5",

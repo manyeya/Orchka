@@ -3,7 +3,7 @@ import { createId } from "@paralleldrive/cuid2"
 import { useReactFlow } from "@xyflow/react"
 import { useCallback, useState, useMemo } from "react"
 import { toast } from "sonner"
-import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock, Bot, Search, StickyNote, Grid2X2 } from 'lucide-react'
+import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock, Bot, Search, StickyNote, Grid2X2, Sparkles, FileJson, Tags, BotMessageSquare } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
 import { NodeType } from "@/features/nodes/types"
 import Image from "next/image"
@@ -42,11 +42,39 @@ const ACTION_NODES: NodeTypeOption[] = [
 
 const AI_NODES: NodeTypeOption[] = [
     {
+        type: NodeType.AI_GENERATE,
+        label: "AI Generate",
+        description: "Simple text generation",
+        icon: Sparkles,
+        tags: ["ai", "llm", "text", "generate"]
+    },
+    {
+        type: NodeType.AI_EXTRACT,
+        label: "AI Extract",
+        description: "Structured data extraction",
+        icon: FileJson,
+        tags: ["ai", "llm", "extract", "json", "schema"]
+    },
+    {
+        type: NodeType.AI_CLASSIFY,
+        label: "AI Classify",
+        description: "Classification and categorization",
+        icon: Tags,
+        tags: ["ai", "llm", "classify", "sentiment", "category"]
+    },
+    {
+        type: NodeType.AI_AGENT_EXP,
+        label: "AI Agent (SDK)",
+        description: "Tool-using agent with AI SDK",
+        icon: BotMessageSquare,
+        tags: ["ai", "llm", "agent", "tools", "sdk"]
+    },
+    {
         type: NodeType.AI_AGENT,
-        label: "AI Agent",
-        description: "LLM-powered agent with tools",
+        label: "AI Agent (Legacy)",
+        description: "LLM-powered agent with LangChain",
         icon: Bot,
-        tags: ["ai", "llm", "bot", "agent"]
+        tags: ["ai", "llm", "bot", "agent", "langchain"]
     }
 ]
 

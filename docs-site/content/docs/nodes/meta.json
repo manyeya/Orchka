@@ -1,6 +1,8 @@
 {
     "title": "Nodes",
     "pages": [
-        "ai-agent"
+        "ai-agent",
+        "ai-generate",
+        "ai-classify"
     ]
 }

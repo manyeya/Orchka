@@ -1,0 +1,168 @@
+---
+title: AI Classify
+description: Classify content into predefined categories using AI
+---
+
+# AI Classify
+
+The AI Classify node uses AI to categorize input into predefined categories. It's perfect for sentiment analysis, intent detection, priority classification, and spam filtering.
+
+## Overview
+
+AI Classify uses **AI SDK v6 generateObject** with enum output for reliable, structured classification. It guarantees the output will be one of your defined categories.
+
+## Configuration
+
+### Model Selection
+
+| Provider | Models | Credential Type |
+|----------|--------|-----------------|
+| OpenAI | GPT-4.1, GPT-4.1 Mini, GPT-4o, o1, o3 | OpenAI |
+| Anthropic | Claude Sonnet 4, Claude 3.7, Claude 3.5 Haiku | Anthropic |
+| Google | Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash | Google AI |
+
+### Settings
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| **Name** | Node identifier for output reference | "AI Classify" |
+| **Model** | AI model to use | gpt-4o-mini |
+| **Credential** | Stored credential for the AI provider | Optional |
+| **System Prompt** | Classification instructions | "Classify the input..." |
+| **Prompt** | Direct text input | - |
+| **Input Variable** | Variable from workflow context | - |
+| **Categories** | Classification options | Positive/Negative/Neutral |
+| **Include Confidence** | Add confidence score (0-1) | true |
+| **Include Reasoning** | Add explanation for classification | false |
+| **Temperature** | Creativity level (0-2) | 0.1 |
+
+### Categories
+
+Define your classification categories:
+
+```yaml
+Categories:
+  - value: positive
+    label: Positive
+    description: Positive sentiment or outcome
+  - value: negative
+    label: Negative
+    description: Negative sentiment or outcome
+  - value: neutral
+    label: Neutral
+    description: Neutral or unclear
+```
+
+## Built-in Templates
+
+### Sentiment Analysis
+```yaml
+Categories: positive, negative, neutral
+Use Case: Customer feedback, reviews, social media
+```
+
+### Intent Detection
+```yaml
+Categories: question, request, complaint, feedback, other
+Use Case: Customer support routing, chatbot classification
+```
+
+### Priority Classification
+```yaml
+Categories: urgent, high, medium, low
+Use Case: Ticket triage, task prioritization
+```
+
+### Spam Detection
+```yaml
+Categories: spam, not_spam
+Use Case: Email filtering, content moderation
+```
+
+## Output
+
+The node outputs structured classification data:
+
+```json
+{
+  "AI Classify": {
+    "category": "positive",
+    "label": "Positive",
+    "confidence": 0.92,
+    "reasoning": "The text expresses satisfaction with the product.",
+    "usage": {
+      "promptTokens": 80,
+      "completionTokens": 25,
+      "totalTokens": 105
+    }
+  }
+}
+```
+
+## Example Workflows
+
+### Customer Support Triage
+
+```
+[Webhook] → [AI Classify: Priority] → [Switch] → [Route to Team]
+```
+
+Configuration:
+```yaml
+Categories:
+  - value: urgent
+    label: Urgent
+    description: System down, security issue, data loss
+  - value: high
+    label: High
+    description: Major feature broken, blocking issue
+  - value: medium
+    label: Medium
+    description: Feature request, minor bug
+  - value: low
+    label: Low
+    description: Question, documentation
+Include Confidence: true
+Include Reasoning: true
+```
+
+### Sentiment-Based Response
+
+```
+[Form Input] → [AI Classify: Sentiment] → [Condition] → [Positive/Negative Response]
+```
+
+### Content Moderation
+
+```
+[User Post] → [AI Classify: Spam] → [Condition] → [Approve/Reject]
+```
+
+## Best Practices
+
+1. **Use low temperature** - Classification benefits from deterministic outputs (0.1-0.3)
+2. **Write clear descriptions** - Help the AI understand each category
+3. **Enable confidence scores** - Useful for handling uncertain classifications
+4. **Use reasoning for debugging** - Understand why classifications are made
+5. **Choose efficient models** - GPT-4o-mini or Claude 3.5 Haiku work well for classification
+
+## Comparison with Other AI Nodes
+
+| Feature | AI Classify | AI Generate | AI Agent |
+|---------|-------------|-------------|----------|
+| Output Type | Structured enum | Free text | Free text |
+| Tool Calling | No | No | Yes |
+| Guaranteed Format | Yes | No | No |
+| Best For | Categorization | Content creation | Complex tasks |
+
+<Cards>
+  <Card title="AI Generate" href="/docs/nodes/ai-generate">
+    Generate text content.
+  </Card>
+  <Card title="AI Agent" href="/docs/nodes/ai-agent">
+    Complex AI tasks with tools.
+  </Card>
+  <Card title="Credentials" href="/docs/credentials">
+    Manage API keys securely.
+  </Card>
+</Cards>

@@ -92,7 +92,7 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
   publish,
 }): Promise<WorkflowContext> => {
   // Publish loading status
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.SWITCH);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.SWITCH, undefined, step);
 
   const nodeName = data.name || "Switch";
   const stepName = `${nodeName} (${nodeId})`;
@@ -133,7 +133,7 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
     });
 
     // Publish success status
-    await publishNodeStatus(publish, nodeId, "success", NodeType.SWITCH);
+    await publishNodeStatus(publish, nodeId, "success", NodeType.SWITCH, undefined, step);
 
     // Extract values from the step result
     const branchData = result.branchDecision.data as {
@@ -155,7 +155,7 @@ export const switchNodeExecutor: NodeExecutor<SwitchNodeData> = async ({
     };
   } catch (error) {
     // Publish error status
-    await publishNodeStatus(publish, nodeId, "error", NodeType.SWITCH);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.SWITCH, undefined, step);
     throw error;
   }
 };

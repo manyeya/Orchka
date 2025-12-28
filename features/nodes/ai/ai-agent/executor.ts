@@ -36,7 +36,7 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
   publish,
   resolveCredential,
 }): Promise<WorkflowContext> => {
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_AGENT);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_AGENT, undefined, step);
 
   const nodeName = data.name || "AI Agent";
   const stepName = `${nodeName} (${nodeId})`;
@@ -114,7 +114,7 @@ export const aiAgentExecutor: NodeExecutor<AIAgentSettings> = async ({
     };
   });
 
-  await publishNodeStatus(publish, nodeId, "success", NodeType.AI_AGENT);
+  await publishNodeStatus(publish, nodeId, "success", NodeType.AI_AGENT, undefined, step);
 
   return {
     ...context,

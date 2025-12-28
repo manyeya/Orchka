@@ -1,0 +1,121 @@
+---
+title: AI Generate
+description: Generate text content using AI models
+---
+
+# AI Generate
+
+The AI Generate node provides simple, straightforward text generation using AI models. It's ideal for content creation, summarization, and text transformation tasks.
+
+## Overview
+
+AI Generate uses the **AI SDK v6** for reliable text generation with support for multiple providers. Unlike the AI Agent node, it focuses purely on text generation without tool calling capabilities.
+
+## Configuration
+
+### Model Selection
+
+| Provider | Models | Credential Type |
+|----------|--------|-----------------|
+| OpenAI | GPT-4.1, GPT-4.1 Mini, GPT-4o, o1, o3 | OpenAI |
+| Anthropic | Claude Sonnet 4, Claude 3.7, Claude 3.5 Haiku | Anthropic |
+| Google | Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash | Google AI |
+
+### Settings
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| **Name** | Node identifier for output reference | "AI Generate" |
+| **Model** | AI model to use | gpt-4o |
+| **Credential** | Stored credential for the AI provider | Optional |
+| **System Prompt** | Instructions for the AI | "You are a helpful assistant." |
+| **Prompt** | Direct text input | - |
+| **Input Variable** | Variable from workflow context | - |
+| **Temperature** | Creativity level (0-2) | 0.7 |
+| **Max Tokens** | Maximum output length | Provider default |
+
+### Input Options
+
+You can provide input in two ways:
+
+**Direct Prompt:**
+```
+Write a product description for a wireless headphone with noise cancellation.
+```
+
+**Input Variable:**
+Reference data from previous nodes:
+```
+previousNode.output
+```
+
+## Authentication
+
+**Option 1: Stored Credentials (Recommended)**
+1. Create a credential in the **Credentials** page
+2. Select it in the node settings
+
+**Option 2: Environment Variables**
+- `OPENAI_API_KEY` for OpenAI models
+- `ANTHROPIC_API_KEY` for Anthropic models
+- `GOOGLE_GENERATIVE_AI_API_KEY` for Google models
+
+## Output
+
+The node outputs to the workflow context using its name:
+
+```json
+{
+  "AI Generate": {
+    "text": "Generated content here...",
+    "usage": {
+      "promptTokens": 50,
+      "completionTokens": 150,
+      "totalTokens": 200
+    },
+    "finishReason": "stop"
+  }
+}
+```
+
+## Example Use Cases
+
+### Content Generation
+```yaml
+System Prompt: You are a marketing copywriter.
+Prompt: Write a compelling email subject line for a summer sale.
+Temperature: 0.8
+```
+
+### Summarization
+```yaml
+System Prompt: Summarize the following text in 3 bullet points.
+Input Variable: httpRequest.body
+Temperature: 0.3
+```
+
+### Translation
+```yaml
+System Prompt: Translate the following text to Spanish.
+Input Variable: userInput.text
+Temperature: 0.1
+```
+
+## Best Practices
+
+1. **Use appropriate temperature** - Lower (0.1-0.3) for factual tasks, higher (0.7-1.0) for creative content
+2. **Be specific in system prompts** - Clear instructions yield better results
+3. **Set max tokens** - Prevent unexpectedly long outputs and control costs
+4. **Use credentials** - More secure than environment variables
+
+<Cards>
+  <Card title="AI Classify" href="/docs/nodes/ai-classify">
+    Classify content into categories.
+  </Card>
+  <Card title="AI Agent" href="/docs/nodes/ai-agent">
+    Complex AI tasks with tool calling.
+  </Card>
+  <Card title="Credentials" href="/docs/credentials">
+    Manage API keys securely.
+  </Card>
+</Cards>

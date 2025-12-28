@@ -13,8 +13,10 @@ A powerful workflow automation platform that lets you design, build, and execute
 - **Organization Tools**: Group nodes and add annotations (sticky notes)
 
 ### AI Integration
-- **AI Agent Nodes**: Connect AI agents with LangChain for intelligent automation
-- **Multiple Providers**: Support for OpenAI, Anthropic, Google, and Groq
+- **AI Agent Nodes**: Connect AI agents with tool calling for intelligent automation
+- **AI Generate**: Simple text generation for content creation and transformation
+- **AI Classify**: Categorize content with structured output (sentiment, intent, priority)
+- **Multiple Providers**: Support for OpenAI, Anthropic, and Google AI
 - **AI Tools**: Define custom tools for AI function calling
 - **Smart Automation**: AI-driven decision making and workflow execution
 
@@ -31,7 +33,8 @@ A powerful workflow automation platform that lets you design, build, and execute
 
 ### Node Types
 - **Triggers**: Manual Trigger, Webhook Trigger
-- **Actions**: HTTP Request, AI Agent, AI Tool
+- **Actions**: HTTP Request
+- **AI**: AI Agent, AI Generate, AI Classify, AI Tool
 - **Control**: Condition (If), Switch, Wait, Loop
 
 ### Credential Management
@@ -48,7 +51,7 @@ A powerful workflow automation platform that lets you design, build, and execute
 - **Backend**: Next.js API routes, tRPC
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Better Auth with Polar integration
-- **AI**: LangChain with OpenAI, Anthropic, Google, and Groq SDKs
+- **AI**: AI SDK with OpenAI, Anthropic, and Google SDKs
 - **Job Processing**: Inngest
 - **Expression Engine**: JSONata
 - **State Management**: Jotai, TanStack Query

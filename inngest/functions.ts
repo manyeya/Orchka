@@ -411,13 +411,15 @@ export const execute = inngest.createFunction(
 
                 // Publish node data for this iteration
                 const cleanIterationOutput = filterInternalFields(iterationContext);
-                await publish(workflowNodeChannel().data({
-                  nodeId: loopBodyNode.id,
-                  input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }),
-                  output: cleanIterationOutput,
-                  nodeType: loopBodyNode.type,
-                  iteration: { index, total: loopData.total },
-                }));
+                await step.run(`publish-loop-data:${loopBodyNode.id}:${index}`, async () => {
+                  await publish(workflowNodeChannel().data({
+                    nodeId: loopBodyNode.id,
+                    input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }),
+                    output: cleanIterationOutput,
+                    nodeType: loopBodyNode.type,
+                    iteration: { index, total: loopData.total },
+                  }));
+                });
               }
 
               // Store iteration result
@@ -500,12 +502,15 @@ export const execute = inngest.createFunction(
       const cleanInput = filterInternalFields(inputData);
 
       // Publish node data for client display (input/output panels)
-      await publish(workflowNodeChannel().data({
-        nodeId: node.id,
-        input: cleanInput,
-        output: cleanOutput,
-        nodeType: node.type,
-      }));
+      // Use step.run with unique ID to avoid duplicate step ID warnings
+      await step.run(`publish-data:${node.id}`, async () => {
+        await publish(workflowNodeChannel().data({
+          nodeId: node.id,
+          input: cleanInput,
+          output: cleanOutput,
+          nodeType: node.type,
+        }));
+      });
     }
 
     // Filter out internal fields from final result

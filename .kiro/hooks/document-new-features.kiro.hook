@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Document New Features",
+  "description": "When new nodes or significant features are added, prompts to update documentation in the docs-site and README.md",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "features/nodes/**/*.tsx",
+      "features/nodes/**/*.ts",
+      "features/**/**/node.tsx",
+      "features/**/**/executor.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new node or significant feature file has been created. Please check if this requires documentation updates:\n\n1. If a new node was added in features/nodes/, create corresponding documentation in docs-site/content/docs/nodes/ following the existing .mdx format (see ai-agent.mdx, ai-classify.mdx, ai-generate.mdx as examples)\n2. Update docs-site/content/docs/nodes/meta.json to include the new node in the navigation\n3. If this is a significant feature, consider updating README.md with relevant information\n4. Update docs-site/content/docs/nodes.mdx if a new node category or overview is needed\n\nReview the created file and suggest appropriate documentation updates."
+  }
+}
