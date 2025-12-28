@@ -8,8 +8,6 @@ interface CredentialPageProps {
                 
 //http://localhost:3000/credentials/1
 
-
-
 async function CredentialPage({ params }: CredentialPageProps) {
     const { credentialId } = await params
     await requireAuth()

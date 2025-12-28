@@ -1,5 +1,6 @@
 import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-components';
 import { Node, Edge } from '@xyflow/react';
+import { NodeType } from '@/features/nodes/types';
 
 // ============================================================================
 // Generic Types (compatible with both React Flow and Prisma)
@@ -291,17 +292,17 @@ export function getBranchesFromNode<E extends BranchAwareEdge>(
   edges: E[]
 ): Map<string, string[]> {
   const branches = new Map<string, string[]>();
-  
+
   for (const edge of edges) {
     const { source, target } = normalizeEdge(edge);
     if (source !== nodeId) continue;
-    
+
     const branchName = edge.fromOutput || 'main';
     const targets = branches.get(branchName) || [];
     targets.push(target);
     branches.set(branchName, targets);
   }
-  
+
   return branches;
 }
 
@@ -320,21 +321,21 @@ export function getNodesOnBranch<E extends BranchAwareEdge>(
   edges: E[]
 ): Set<string> {
   const reachable = new Set<string>();
-  
+
   // Find initial nodes on this branch
   const branchEdges = edges.filter(edge => {
     const { source } = normalizeEdge(edge);
     return source === controlNodeId && (edge.fromOutput || 'main') === branchName;
   });
-  
+
   const queue: string[] = branchEdges.map(edge => normalizeEdge(edge).target);
-  
+
   while (queue.length > 0) {
     const current = queue.shift()!;
     if (reachable.has(current)) continue;
-    
+
     reachable.add(current);
-    
+
     // Find all downstream nodes
     for (const edge of edges) {
       const { source, target } = normalizeEdge(edge);
@@ -343,7 +344,7 @@ export function getNodesOnBranch<E extends BranchAwareEdge>(
       }
     }
   }
-  
+
   return reachable;
 }
 
@@ -363,13 +364,13 @@ export function findConvergencePoints<N extends GenericNode, E extends BranchAwa
   edges: E[]
 ): Map<string, Array<{ sourceNodeId: string; branch: string }>> {
   const convergencePoints = new Map<string, Array<{ sourceNodeId: string; branch: string }>>();
-  
+
   for (const node of nodes) {
     const incomingEdges = edges.filter(edge => {
       const { target } = normalizeEdge(edge);
       return target === node.id;
     });
-    
+
     // A convergence point has multiple incoming edges
     if (incomingEdges.length > 1) {
       const sources = incomingEdges.map(edge => ({
@@ -379,7 +380,7 @@ export function findConvergencePoints<N extends GenericNode, E extends BranchAwa
       convergencePoints.set(node.id, sources);
     }
   }
-  
+
   return convergencePoints;
 }
 
@@ -484,7 +485,10 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
   }
 
   const orphanedNodes = nodes.filter(node =>
-    !connectedNodes.has(node.id) && nodes.length > 1
+    !connectedNodes.has(node.id) &&
+    nodes.length > 1 &&
+    node.type !== NodeType.GROUP &&
+    node.type !== NodeType.ANNOTATION
   );
 
   if (orphanedNodes.length > 0) {
@@ -499,7 +503,10 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
   if (triggerNodes.length > 0 && triggerNodes[0]) {
     const reachableNodes = findReachableNodes(triggerNodes[0].id, nodes, edges);
     const unreachableNodes = nodes.filter(node =>
-      !reachableNodes.has(node.id) && !triggerNodes.some(t => t.id === node.id)
+      !reachableNodes.has(node.id) &&
+      !triggerNodes.some(t => t.id === node.id) &&
+      node.type !== NodeType.GROUP &&
+      node.type !== NodeType.ANNOTATION
     );
 
     if (unreachableNodes.length > 0) {
@@ -513,6 +520,7 @@ export function validateWorkflowGraph(nodes: Node[], edges: Edge[]): ValidationR
 
   // Check for nodes with missing required configuration
   const nodesWithMissingConfig = nodes.filter(node => {
+    if (node.type === NodeType.GROUP || node.type === NodeType.ANNOTATION) return false;
     const data = (node.data as any) || {};
     return !isNodeConfigValid(node.type, data);
   });

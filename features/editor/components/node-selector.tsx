@@ -130,6 +130,7 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                 type: selection.type,
                 position: flowPosition,
                 zIndex: selection.type === NodeType.GROUP ? -1 : undefined,
+                style: (selection.type === NodeType.GROUP || selection.type === NodeType.ANNOTATION) ? { width: 200, height: 150 } : undefined,
                 data: {
                     label: selection.label,
                     name: uniqueName

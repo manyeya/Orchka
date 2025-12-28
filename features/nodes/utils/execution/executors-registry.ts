@@ -17,6 +17,8 @@ export const executorsRegistry: Record<NodeType, NodeExecutor<any>> = {
     [NodeType.SWITCH]: switchNodeExecutor,
     [NodeType.LOOP]: loopNodeExecutor,
     [NodeType.WAIT]: waitNodeExecutor,
+    [NodeType.GROUP]: () => Promise.resolve({}),
+    [NodeType.ANNOTATION]: () => Promise.resolve({}),
 };
 
 export const getExecutor = (type: NodeType): NodeExecutor<any> => {
