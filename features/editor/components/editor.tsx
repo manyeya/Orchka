@@ -63,18 +63,62 @@ function Editor({ workflowId }: { workflowId: string }) {
                     // Filter out groups from collision resolution targets
                     const collisionNodes = updatedNodes.filter(n => n.type !== NodeType.GROUP);
 
-                    // Resolve collisions
-                    const resolvedCollisionNodes = resolveCollisions(collisionNodes, {
+                    // Convert all collision nodes to absolute positions for the algorithm
+                    const absoluteCollisionNodes = collisionNodes.map(n => {
+                        if (!n.parentId) return n;
+                        const parent = nodes.find(p => p.id === n.parentId);
+                        if (!parent) return n;
+
+                        return {
+                            ...n,
+                            position: {
+                                x: n.position.x + parent.position.x,
+                                y: n.position.y + parent.position.y
+                            }
+                        };
+                    });
+
+                    // Resolve collisions using absolute positions
+                    const resolvedAbsoluteNodes = resolveCollisions(absoluteCollisionNodes, {
                         maxIterations: 10,
                         overlapThreshold: 5,
                         margin: 24
                     });
 
-                    // Merge back: Keep groups as they were, update non-groups from result
+                    // Merge back and convert absolute positions back to relative for child nodes
                     const finalNodes = nodes.map(n => {
                         if (n.type === NodeType.GROUP) return n;
-                        const resolved = resolvedCollisionNodes.find(rn => rn.id === n.id);
-                        return resolved || n;
+
+                        // Find the resolved node (which is in absolute coords)
+                        const resolvedAbs = resolvedAbsoluteNodes.find(rn => rn.id === n.id);
+                        if (!resolvedAbs) return n;
+
+                        // If it's a child node, convert back to relative
+                        if (n.parentId) {
+                            const parent = nodes.find(p => p.id === n.parentId);
+                            if (parent) {
+                                return {
+                                    ...n,
+                                    position: {
+                                        x: resolvedAbs.position.x - parent.position.x,
+                                        y: resolvedAbs.position.y - parent.position.y
+                                    },
+                                    // Preserve these if they were changed
+                                    width: resolvedAbs.width,
+                                    height: resolvedAbs.height,
+                                    measured: resolvedAbs.measured
+                                };
+                            }
+                        }
+
+                        // If top-level, use absolute position directly
+                        return {
+                            ...n,
+                            position: resolvedAbs.position,
+                            width: resolvedAbs.width,
+                            height: resolvedAbs.height,
+                            measured: resolvedAbs.measured
+                        };
                     });
 
                     setNodes(finalNodes);
