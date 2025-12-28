@@ -89,6 +89,19 @@ const AnnotationNode = ({ selected, data, id, style }: { selected?: boolean, dat
         });
     }, [id, updateNode, data]);
 
+    const handleResize = useCallback((event: unknown, params: { width: number, height: number }) => {
+        updateNode({
+            id,
+            updates: {
+                style: {
+                    ...style,
+                    width: params.width,
+                    height: params.height,
+                },
+            },
+        });
+    }, [id, updateNode, style]);
+
     return (
         <>
             <NodeResizer
@@ -97,6 +110,7 @@ const AnnotationNode = ({ selected, data, id, style }: { selected?: boolean, dat
                 minHeight={100}
                 lineStyle={{ border: '1px solid var(--ring)', opacity: 0.5 }}
                 handleStyle={{ width: 8, height: 8, borderRadius: '50%' }}
+                onResizeEnd={handleResize}
             />
             <div
                 style={style}

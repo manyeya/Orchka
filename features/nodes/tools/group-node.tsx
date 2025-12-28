@@ -1,9 +1,26 @@
 "use client"
 import { NodeResizer } from '@xyflow/react';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { useSetAtom } from 'jotai';
+import { updateNodeAtom } from '@/features/editor/store';
 
-const GroupNode = ({ selected, style }: { selected?: boolean, style?: React.CSSProperties }) => {
+const GroupNode = ({ id, selected, style }: { id: string, selected?: boolean, style?: React.CSSProperties }) => {
+    const updateNode = useSetAtom(updateNodeAtom);
+
+    const handleResize = useCallback((event: unknown, params: { width: number, height: number }) => {
+        updateNode({
+            id,
+            updates: {
+                style: {
+                    ...style,
+                    width: params.width,
+                    height: params.height,
+                },
+            },
+        });
+    }, [id, updateNode, style]);
+
     return (
         <>
             <NodeResizer
@@ -12,6 +29,7 @@ const GroupNode = ({ selected, style }: { selected?: boolean, style?: React.CSSP
                 minHeight={100}
                 lineStyle={{ border: '1px solid var(--primary)', opacity: 0.5 }}
                 handleStyle={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--primary)', border: '2px solid var(--background)' }}
+                onResizeEnd={handleResize}
             />
             <div
                 style={style}
