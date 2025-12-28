@@ -34,14 +34,34 @@ vi.mock("@/lib/db", () => {
           }
           return null;
         }),
-        findMany: vi.fn(async ({ where }: any) => {
+        findMany: vi.fn(async ({ where, skip, take }: any) => {
           const results: any[] = [];
           for (const cred of mockCredentials.values()) {
             if (where.userId && cred.userId !== where.userId) continue;
             if (where.type && cred.type !== where.type) continue;
+            if (where.name?.contains) {
+              const searchTerm = where.name.contains.toLowerCase();
+              if (!cred.name.toLowerCase().includes(searchTerm)) continue;
+            }
             results.push(cred);
           }
-          return results;
+          // Apply pagination
+          const start = skip || 0;
+          const end = take ? start + take : results.length;
+          return results.slice(start, end);
+        }),
+        count: vi.fn(async ({ where }: any) => {
+          let count = 0;
+          for (const cred of mockCredentials.values()) {
+            if (where.userId && cred.userId !== where.userId) continue;
+            if (where.type && cred.type !== where.type) continue;
+            if (where.name?.contains) {
+              const searchTerm = where.name.contains.toLowerCase();
+              if (!cred.name.toLowerCase().includes(searchTerm)) continue;
+            }
+            count++;
+          }
+          return count;
         }),
         create: vi.fn(async ({ data }: any) => {
           const id = `cred_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
@@ -284,7 +304,7 @@ describe("Credentials Router Property Tests", () => {
           const list = await caller.list({});
 
           // Verify each item in the list
-          for (const item of list) {
+          for (const item of list.items) {
             // Should have metadata fields
             const hasMetadata =
               typeof item.id === "string" &&
@@ -606,8 +626,8 @@ describe("Credentials Router Unit Tests", () => {
 
     const list = await caller.list({});
 
-    expect(list.length).toBe(2);
-    expect(list.every((c) => c.id && c.name && c.type)).toBe(true);
+    expect(list.items.length).toBe(2);
+    expect(list.items.every((c: any) => c.id && c.name && c.type)).toBe(true);
   });
 
   it("should decrypt credential data correctly", async () => {

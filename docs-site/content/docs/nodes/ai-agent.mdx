@@ -24,12 +24,35 @@ graph LR
 
 Choose from supported AI providers:
 
-| Provider | Models | API Key Required |
-|----------|--------|------------------|
-| OpenAI | GPT-4, GPT-4 Turbo, GPT-3.5 | `OPENAI_API_KEY` |
-| Anthropic | Claude 3 Opus, Sonnet, Haiku | `ANTHROPIC_API_KEY` |
-| Google | Gemini Pro, Gemini Ultra | `GOOGLE_API_KEY` |
-| Groq | Mixtral, LLaMA | `GROQ_API_KEY` |
+| Provider | Models | Credential Type |
+|----------|--------|-----------------|
+| OpenAI | GPT-4.1, GPT-4o, o1, o3 | OpenAI |
+| Anthropic | Claude Sonnet 4, Claude 3.7, Claude 3.5 Haiku | Anthropic |
+| Google | Gemini 2.5, Gemini 2.0, Gemini 1.5 | Google AI |
+| Groq | Llama 3.3, Mixtral, Gemma 2 | Environment variable |
+
+### Authentication
+
+You can authenticate with AI providers in two ways:
+
+**Option 1: Stored Credentials (Recommended)**
+
+1. Create a credential in the **Credentials** page
+2. Select the credential in the AI Agent node settings
+3. The credential type must match the model provider
+
+```yaml
+Model: gpt-4o
+Credential: My OpenAI Key
+```
+
+**Option 2: Environment Variables**
+
+Set the appropriate environment variable:
+- `OPENAI_API_KEY` for OpenAI models
+- `ANTHROPIC_API_KEY` for Anthropic models
+- `GOOGLE_GENERATIVE_AI_API_KEY` for Google models
+- `GROQ_API_KEY` for Groq models
 
 ### System Prompt
 
@@ -164,8 +187,14 @@ Add a Condition node after AI Agent to handle failures:
 ### Common Issues
 
 **"API key not configured"**
-- Ensure the correct environment variable is set
-- Restart the server after adding keys
+- Create a credential in the Credentials page and select it in the node
+- Or ensure the correct environment variable is set
+- Restart the server after adding environment variables
+
+**"Credential type mismatch"**
+- The credential type must match the model provider
+- OpenAI models require OpenAI credentials
+- Claude models require Anthropic credentials
 
 **"Rate limit exceeded"**
 - Add Wait nodes between AI calls
@@ -176,6 +205,9 @@ Add a Condition node after AI Agent to handle failures:
 - Break complex tasks into smaller prompts
 
 <Cards>
+  <Card title="Credentials" href="/docs/credentials">
+    Learn about secure credential management.
+  </Card>
   <Card title="Expressions" href="/docs/expressions">
     Pass dynamic data to AI prompts.
   </Card>

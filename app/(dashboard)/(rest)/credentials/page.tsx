@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { CredentialsList, CredentialsLoadingView, CredentialsErrorView } from '@/features/credentials/components/credentials-list'
+import { CredentialsList, CredentialsLoadingView, CredentialsErrorView, CredentialsToolbar } from '@/features/credentials/components/credentials-list'
 import { CredentialForm } from '@/features/credentials/components/credential-form'
 import { useCreateCredential, useUpdateCredential } from '@/features/credentials/hooks/use-credentials'
 import { CredentialType } from '@/lib/credentials/types'
@@ -80,6 +80,7 @@ function CredentialsPage() {
             {/* Credentials List */}
             <ErrorBoundary fallback={<CredentialsErrorView />}>
                 <Suspense fallback={<CredentialsLoadingView />}>
+                    <CredentialsToolbar />
                     <CredentialsList onEdit={handleEdit} onCreate={handleCreate} />
                 </Suspense>
             </ErrorBoundary>

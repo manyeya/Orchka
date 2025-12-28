@@ -101,8 +101,8 @@ export const CredentialSelector = ({
                 <SelectItem value="__none__">
                     <span className="text-muted-foreground">No credential selected</span>
                 </SelectItem>
-                {credentials && credentials.length > 0 ? (
-                    credentials.map((credential) => (
+                {credentials && credentials.items.length > 0 ? (
+                    credentials.items.map((credential) => (
                         <SelectItem key={credential.id} value={credential.id}>
                             <div className="flex items-center gap-2">
                                 <Key className="h-4 w-4 text-muted-foreground" />

@@ -1,3 +1,4 @@
+import { PAGINATION } from "@/config/constants";
 import prisma from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/credentials/encryption";
 import {
@@ -40,6 +41,13 @@ const idSchema = z.object({
 
 const listByTypeSchema = z.object({
   type: z.nativeEnum(CredentialType).optional(),
+  page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
+  pageSize: z
+    .number()
+    .min(PAGINATION.MIN_PAGE_SIZE)
+    .max(PAGINATION.MAX_PAGE_SIZE)
+    .default(PAGINATION.DEFAULT_PAGE_SIZE),
+  search: z.string().default(""),
 });
 
 const testCredentialSchema = z.object({
@@ -283,28 +291,55 @@ export const credentialsRouter = createTRPCRouter({
   list: protectedProcedure
     .input(listByTypeSchema)
     .query(async ({ ctx, input }) => {
-      const credentials = await prisma.credential.findMany({
-        where: {
-          userId: ctx.auth.user.id,
-          ...(input.type && { type: input.type }),
-        },
-        select: {
-          id: true,
-          name: true,
-          type: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+      const { page, pageSize, search, type } = input;
 
-      return credentials.map((c) => ({
-        id: c.id,
-        name: c.name,
-        type: c.type as CredentialType,
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
-      }));
+      const whereClause = {
+        userId: ctx.auth.user.id,
+        ...(type && { type }),
+        ...(search && {
+          name: {
+            contains: search,
+            mode: "insensitive" as const,
+          },
+        }),
+      };
+
+      const [credentials, count] = await Promise.all([
+        prisma.credential.findMany({
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.credential.count({ where: whereClause }),
+      ]);
+
+      const totalPages = Math.ceil(count / pageSize);
+      const hasNext = page < totalPages;
+      const hasPrevious = page > 1;
+
+      return {
+        items: credentials.map((c) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type as CredentialType,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+        })),
+        page,
+        pageSize,
+        count,
+        totalPages,
+        hasNext,
+        hasPrevious,
+      };
     }),
 
   /**

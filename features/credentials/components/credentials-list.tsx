@@ -1,10 +1,13 @@
 "use client"
 
 import { useSuspenseCredentials, useDeleteCredential } from "../hooks/use-credentials"
-import { Key, MoreVerticalIcon, Trash2, Pencil, Loader2Icon } from "lucide-react"
+import { useCredentialsParams } from "../hooks/use-credentials-params"
+import { useEntitySearch } from "@/hooks/use-entity-search"
+import { Key, MoreVerticalIcon, Trash2, Pencil, Loader2Icon, Search } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,7 +23,7 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty"
-import { EntityList } from "@/components/entity-component"
+import { EntityList, EntityPagination } from "@/components/entity-component"
 import { getCredentialTypeLabel, CredentialType } from "@/lib/credentials/types"
 
 interface CredentialMetadata {
@@ -44,7 +47,7 @@ export const CredentialsList = ({ onEdit, onCreate }: CredentialsListProps) => {
             <div className="rounded-md border border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <EntityList
                     className="gap-px bg-border/40"
-                    items={credentials.data}
+                    items={credentials.data.items}
                     render={(credential) => (
                         <CredentialItem credential={credential} onEdit={onEdit} />
                     )}
@@ -52,7 +55,41 @@ export const CredentialsList = ({ onEdit, onCreate }: CredentialsListProps) => {
                     emptyView={<CredentialsEmptyView onCreate={onCreate} />}
                 />
             </div>
+            {credentials.data.items.length > 0 && <CredentialsPagination />}
         </div>
+    )
+}
+
+export const CredentialsToolbar = () => {
+    const [params, setParams] = useCredentialsParams()
+    const { searchValue, onSearchChange } = useEntitySearch({ params, setParams })
+
+    return (
+        <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search credentials..."
+                    className="pl-9 bg-muted/50 border-input/50 h-9"
+                    value={searchValue}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                />
+            </div>
+        </div>
+    )
+}
+
+const CredentialsPagination = () => {
+    const [params, setParams] = useCredentialsParams()
+    const credentials = useSuspenseCredentials()
+    return (
+        <EntityPagination
+            page={credentials.data.page}
+            totalPages={credentials.data.totalPages}
+            onPageChange={(page) => setParams({ ...params, page })}
+            disabled={credentials.isFetching}
+        />
     )
 }
 

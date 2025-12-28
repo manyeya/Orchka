@@ -59,19 +59,37 @@ Category: Actions
 | Field | Description |
 |-------|-------------|
 | URL | Target endpoint |
-| Method | GET, POST, PUT, DELETE, PATCH |
-| Headers | Request headers (JSON) |
-| Body | Request body for POST/PUT |
+| Method | GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD |
+| Headers | Request headers (with enable/disable toggle) |
+| Body | Request body (JSON, text, form-data, x-www-form-urlencoded) |
+| Auth | None, Bearer, Basic, API Key, or Credential |
+
+**Authentication Options:**
+
+| Type | Description |
+|------|-------------|
+| None | No authentication |
+| Bearer | `Authorization: Bearer <token>` |
+| Basic | `Authorization: Basic <base64>` |
+| API Key | Custom header with API key |
+| Credential | Use a stored credential |
+
+**Advanced Settings:**
+- **Timeout**: Request timeout in milliseconds (default: 30000)
+- **Follow Redirects**: Automatically follow HTTP redirects
+- **Retry on Failure**: Retry failed requests with exponential backoff
+- **Max Retries**: Maximum retry attempts (default: 3)
 
 **Example Configuration:**
 ```json
 {
   "url": "https://api.example.com/data",
   "method": "POST",
-  "headers": {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer {{ $input.token }}"
-  },
+  "headers": [
+    { "key": "Content-Type", "value": "application/json", "enabled": true }
+  ],
+  "authType": "credential",
+  "credentialId": "cred_abc123",
   "body": {
     "name": "{{ $input.name }}"
   }
@@ -89,14 +107,20 @@ Category: Actions
 
 **Configuration:**
 - **Model**: AI model to use (GPT-4, Claude, Gemini, etc.)
+- **Credential**: Stored credential for the AI provider (optional)
 - **System Prompt**: Instructions for the AI agent
 - **Tools**: Connected AI Tool nodes for function calling
 
 **Supported Providers:**
-- OpenAI (GPT-4, GPT-3.5)
-- Anthropic (Claude)
-- Google (Gemini)
-- Groq
+- OpenAI (GPT-4, GPT-4o, o1, o3)
+- Anthropic (Claude 3.5, Claude 3.7, Claude Sonnet 4)
+- Google (Gemini 1.5, Gemini 2.0, Gemini 2.5)
+- Groq (Llama, Mixtral, Gemma)
+
+**Authentication:**
+You can authenticate with AI providers in two ways:
+1. **Stored Credentials** (recommended): Select a credential from the dropdown
+2. **Environment Variables**: Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.
 
 ### AI Tool
 
@@ -142,7 +166,7 @@ $exists($input.email)
 
 ### Wait
 
-Pauses workflow execution for a specified duration.
+Pauses workflow execution for a specified duration or until a specific time.
 
 ```yaml
 Type: WAIT
@@ -150,12 +174,36 @@ Category: Control
 ```
 
 **Configuration:**
-- **Duration**: Time to wait
-- **Unit**: seconds, minutes, hours, days
+
+| Mode | Fields | Description |
+|------|--------|-------------|
+| Duration | `value`, `unit` | Wait for a fixed time period |
+| Until | `timestamp` | Wait until a specific date/time |
+
+**Duration Units:** seconds, minutes, hours, days
+
+**Example - Duration Mode:**
+```json
+{
+  "mode": "duration",
+  "duration": {
+    "value": 5,
+    "unit": "minutes"
+  }
+}
+```
+
+**Example - Until Mode:**
+```json
+{
+  "mode": "until",
+  "until": "{{ $input.scheduledTime }}"
+}
+```
 
 ### Loop
 
-Iterates over an array of items.
+Iterates over an array of items or a fixed count.
 
 ```yaml
 Type: LOOP
@@ -163,8 +211,62 @@ Category: Control
 ```
 
 **Configuration:**
-- **Items**: Array expression to iterate
-- **Variable**: Name for current item
+
+| Mode | Fields | Description |
+|------|--------|-------------|
+| Array | `arrayExpression` | Iterate over each element |
+| Count | `count` | Iterate N times |
+
+**Loop Context Variables:**
+- `$item` - Current item in the iteration
+- `$index` - Current index (0-based)
+- `$total` - Total number of items
+
+**Example - Array Mode:**
+```json
+{
+  "mode": "array",
+  "arrayExpression": "{{ $input.users }}"
+}
+```
+
+**Example - Count Mode:**
+```json
+{
+  "mode": "count",
+  "count": 10
+}
+```
+
+### Switch
+
+Routes workflow execution based on matching a value against multiple cases.
+
+```yaml
+Type: SWITCH
+Category: Control
+```
+
+**Configuration:**
+- **Expression**: Value to evaluate and match
+- **Cases**: Array of value/label pairs to match against
+- **Default**: Fallback when no case matches
+
+**Example Configuration:**
+```json
+{
+  "expression": "{{ $input.status }}",
+  "cases": [
+    { "id": "case-1", "value": "pending", "label": "Pending" },
+    { "id": "case-2", "value": "approved", "label": "Approved" },
+    { "id": "case-3", "value": "rejected", "label": "Rejected" }
+  ]
+}
+```
+
+**Output Handles:**
+- One handle per case (connects to case-specific logic)
+- Default handle (when no case matches)
 
 ---
 

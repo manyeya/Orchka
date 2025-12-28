@@ -4,11 +4,13 @@ import { useTRPC } from "@/trpc/client"
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { CredentialType } from "@/lib/credentials/types"
+import { useCredentialsParams } from "./use-credentials-params"
 
-// Get all credentials for the current user
-export const useSuspenseCredentials = (type?: CredentialType) => {
+// Get all credentials for the current user with pagination
+export const useSuspenseCredentials = () => {
     const trpc = useTRPC()
-    return useSuspenseQuery(trpc.credentials.list.queryOptions({ type }))
+    const [params] = useCredentialsParams()
+    return useSuspenseQuery(trpc.credentials.list.queryOptions(params))
 }
 
 // Create a new credential

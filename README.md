@@ -32,7 +32,13 @@ A powerful workflow automation platform that lets you design, build, and execute
 ### Node Types
 - **Triggers**: Manual Trigger, Webhook Trigger
 - **Actions**: HTTP Request, AI Agent, AI Tool
-- **Control**: Condition (If), Wait, Loop
+- **Control**: Condition (If), Switch, Wait, Loop
+
+### Credential Management
+- **Secure Storage**: AES-256-GCM encryption for API keys and tokens
+- **Multiple Types**: API Key, Basic Auth, Bearer Token, OAuth2, and AI provider credentials
+- **Node Integration**: Reference credentials in HTTP Request and AI Agent nodes
+- **Credential Testing**: Validate credentials before use in workflows
 
 ## Tech Stack
 
@@ -77,9 +83,10 @@ Configure the following environment variables:
 - `DATABASE_URL`: PostgreSQL connection string
 - `BETTER_AUTH_SECRET`: Random secret for authentication
 - `BETTER_AUTH_URL`: Your app URL
-- `OPENAI_API_KEY`: OpenAI API key (optional)
-- `ANTHROPIC_API_KEY`: Anthropic API key (optional)
-- `GOOGLE_GENERATIVE_AI_API_KEY`: Google AI API key (optional)
+- `CREDENTIAL_ENCRYPTION_KEY`: 64-character hex key for credential encryption (generate with `openssl rand -hex 32`)
+- `OPENAI_API_KEY`: OpenAI API key (optional, can use stored credentials)
+- `ANTHROPIC_API_KEY`: Anthropic API key (optional, can use stored credentials)
+- `GOOGLE_GENERATIVE_AI_API_KEY`: Google AI API key (optional, can use stored credentials)
 - `GROQ_API_KEY`: Groq API key (optional)
 - `INNGEST_SIGNING_KEY`: Inngest signing key
 - `INNGEST_EVENT_KEY`: Inngest event key
@@ -142,6 +149,7 @@ bun run docs:build
 │   └── ui/               # shadcn/ui components
 ├── features/              # Feature-specific code
 │   ├── auth/             # Authentication forms and logic
+│   ├── credentials/      # Credential management (CRUD, encryption)
 │   ├── editor/           # Workflow editor components
 │   ├── landing-page/     # Landing page features
 │   ├── nodes/            # Workflow node implementations
@@ -167,6 +175,14 @@ The application uses tRPC for type-safe API communication. Key procedures includ
 - `workflows.updateWorkflowName`: Update workflow name
 - `workflows.removeWorkflow`: Delete a workflow
 - `workflows.executeWorkflow`: Trigger workflow execution
+
+### Credentials
+- `credentials.list`: List credentials with optional type filter
+- `credentials.getById`: Get credential metadata by ID
+- `credentials.create`: Create a new encrypted credential
+- `credentials.update`: Update credential name or data
+- `credentials.delete`: Delete a credential and clear node references
+- `credentials.test`: Test credential validity with the provider
 
 ## Contributing
 
