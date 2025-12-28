@@ -4,6 +4,13 @@ import { HttpSettingsFormValues } from "./http-settings-form";
 import ky, { Options as KyOptions, HTTPError } from 'ky';
 import { publishNodeStatus } from "../../utils/realtime";
 import { NodeType } from "@/features/nodes/types";
+import { 
+    CredentialType, 
+    isApiKeyCredential, 
+    isBasicAuthCredential, 
+    isBearerTokenCredential 
+} from "@/lib/credentials/types";
+import type { DecryptedCredential } from "@/lib/credentials/execution";
 
 /**
  * Response structure from the HTTP request
@@ -18,6 +25,13 @@ interface HttpResponse {
 }
 
 /**
+ * Resolved authentication headers from credentials
+ */
+interface ResolvedAuth {
+    headers: Record<string, string>;
+}
+
+/**
  * Advanced HTTPS Request Executor using ky
  * 
  * Handles all HTTP settings values from HttpSettingsFormValues:
@@ -25,15 +39,18 @@ interface HttpResponse {
  * - HTTP Methods (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD)
  * - Custom headers with enable/disable support
  * - Body types (none, json, text, form-data, x-www-form-urlencoded)
- * - Authentication (none, bearer, basic, api-key)
+ * - Authentication (none, bearer, basic, api-key, credential)
  * - Advanced settings (timeout, followRedirects, validateSSL, retryOnFailure, maxRetries)
+ * 
+ * Requirements: 3.3 - Retrieve and decrypt credential data during workflow execution
  */
 export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async ({
     data,
     nodeId,
     context,
     step,
-    publish
+    publish,
+    resolveCredential
 }): Promise<WorkflowContext> => {
     await publishNodeStatus(publish, nodeId, "loading", NodeType.HTTP_REQUEST)
 
@@ -52,8 +69,16 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
         // Build the complete URL with query parameters
         const url = buildUrlWithQueryParams(data.url, data.queryParams || []);
 
+        // Resolve credential-based authentication if configured
+        // Requirements: 3.3
+        let credentialAuth: ResolvedAuth | null = null;
+        if (data.authType === 'credential' && data.credentialId && resolveCredential) {
+            const credential = await resolveCredential(data.credentialId);
+            credentialAuth = resolveCredentialAuth(credential);
+        }
+
         // Build headers including auth headers and content-type
-        const headers = buildHeaders(data);
+        const headers = buildHeaders(data, credentialAuth);
 
         // Build request body based on body type
         const { body, json } = buildRequestBody(data);
@@ -161,6 +186,45 @@ export const httpsRequestExecutor: NodeExecutor<HttpSettingsFormValues> = async 
 };
 
 /**
+ * Resolve authentication headers from a decrypted credential
+ * Requirements: 3.3
+ */
+function resolveCredentialAuth(credential: DecryptedCredential): ResolvedAuth {
+    const { type, data } = credential;
+    const headers: Record<string, string> = {};
+
+    switch (type) {
+        case CredentialType.BEARER_TOKEN:
+            if (isBearerTokenCredential(data)) {
+                headers['Authorization'] = `Bearer ${data.token}`;
+            }
+            break;
+            
+        case CredentialType.BASIC_AUTH:
+            if (isBasicAuthCredential(data)) {
+                const credentials = Buffer.from(`${data.username}:${data.password}`).toString('base64');
+                headers['Authorization'] = `Basic ${credentials}`;
+            }
+            break;
+            
+        case CredentialType.API_KEY:
+            if (isApiKeyCredential(data)) {
+                // Default to X-API-Key header for API key credentials
+                headers['X-API-Key'] = data.apiKey;
+            }
+            break;
+            
+        default:
+            throw new NonRetriableError(
+                `Unsupported credential type for HTTP request: ${type}. ` +
+                `Supported types: ${CredentialType.BEARER_TOKEN}, ${CredentialType.BASIC_AUTH}, ${CredentialType.API_KEY}`
+            );
+    }
+
+    return { headers };
+}
+
+/**
  * Build URL with query parameters
  */
 function buildUrlWithQueryParams(
@@ -180,8 +244,9 @@ function buildUrlWithQueryParams(
 
 /**
  * Build headers including authentication and content-type
+ * Requirements: 3.3 - Support credential-based authentication
  */
-function buildHeaders(data: HttpSettingsFormValues): Record<string, string> {
+function buildHeaders(data: HttpSettingsFormValues, credentialAuth: ResolvedAuth | null): Record<string, string> {
     const headers: Record<string, string> = {};
 
     // Add custom headers (only enabled ones)
@@ -209,23 +274,29 @@ function buildHeaders(data: HttpSettingsFormValues): Record<string, string> {
     }
 
     // Add authentication headers
-    switch (data.authType) {
-        case 'bearer':
-            if (data.authToken) {
-                headers['Authorization'] = `Bearer ${data.authToken}`;
-            }
-            break;
-        case 'basic':
-            if (data.authUsername && data.authPassword) {
-                const credentials = Buffer.from(`${data.authUsername}:${data.authPassword}`).toString('base64');
-                headers['Authorization'] = `Basic ${credentials}`;
-            }
-            break;
-        case 'api-key':
-            if (data.apiKeyHeader && data.apiKeyValue) {
-                headers[data.apiKeyHeader] = data.apiKeyValue;
-            }
-            break;
+    // If using credential-based auth, use the resolved credential headers
+    if (data.authType === 'credential' && credentialAuth) {
+        Object.assign(headers, credentialAuth.headers);
+    } else {
+        // Use inline authentication values
+        switch (data.authType) {
+            case 'bearer':
+                if (data.authToken) {
+                    headers['Authorization'] = `Bearer ${data.authToken}`;
+                }
+                break;
+            case 'basic':
+                if (data.authUsername && data.authPassword) {
+                    const credentials = Buffer.from(`${data.authUsername}:${data.authPassword}`).toString('base64');
+                    headers['Authorization'] = `Basic ${credentials}`;
+                }
+                break;
+            case 'api-key':
+                if (data.apiKeyHeader && data.apiKeyValue) {
+                    headers[data.apiKeyHeader] = data.apiKeyValue;
+                }
+                break;
+        }
     }
 
     return headers;

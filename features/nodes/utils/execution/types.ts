@@ -1,9 +1,18 @@
 import type { ExpressionContext } from "@/features/editor/utils/expression-engine/index";
 import type { Realtime } from "@inngest/realtime";
 import { GetStepTools, Inngest } from "inngest";
+import type { DecryptedCredential } from "@/lib/credentials/execution";
 
 export type WorkflowContext = Record<string, unknown>;
 export type WorkflowStepTools = GetStepTools<Inngest.Any>;
+
+/**
+ * Function type for resolving credentials during workflow execution
+ * Requirements: 3.3
+ */
+export type CredentialResolver = (
+    credentialId: string
+) => Promise<DecryptedCredential>;
 
 export interface NodeExecutorParams<TData = Record<string, unknown>> {
     data: TData;
@@ -12,7 +21,12 @@ export interface NodeExecutorParams<TData = Record<string, unknown>> {
     step: WorkflowStepTools;
     /** Expression context for evaluating dynamic expressions in node data */
     expressionContext?: ExpressionContext;
-    publish: Realtime.PublishFn
+    publish: Realtime.PublishFn;
+    /** 
+     * Function to resolve credentials during execution
+     * Requirements: 3.3
+     */
+    resolveCredential?: CredentialResolver;
 }
 
 export type NodeExecutor<TData = Record<string, unknown>>

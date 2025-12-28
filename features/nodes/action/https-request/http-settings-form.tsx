@@ -26,8 +26,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Key } from "lucide-react"
 import { useState } from "react"
+import { CredentialType, getCredentialTypeLabel } from "@/lib/credentials/types"
+import { CredentialSelector } from "@/features/credentials/components/credential-selector"
 
 const httpMethodSchema = z.enum(["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
 
@@ -62,12 +64,17 @@ const httpSettingsSchema = z.object({
     bodyType: z.enum(["none", "json", "text", "form-data", "x-www-form-urlencoded"]).catch("none"),
 
     // Authentication
-    authType: z.enum(["none", "bearer", "basic", "api-key"]).catch("none"),
+    authType: z.enum(["none", "bearer", "basic", "api-key", "credential"]).catch("none"),
     authToken: z.string().optional(),
     authUsername: z.string().optional(),
     authPassword: z.string().optional(),
     apiKeyHeader: z.string().optional(),
     apiKeyValue: z.string().optional(),
+    
+    // Credential-based authentication
+    // Requirements: 3.2 - Store credential reference in node config
+    credentialId: z.string().optional(),
+    credentialType: z.nativeEnum(CredentialType).optional(),
 
     // Advanced Settings
     timeout: z.number().min(0).max(300000).catch(30000),
@@ -438,6 +445,12 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="none">No Authentication</SelectItem>
+                                                <SelectItem value="credential">
+                                                    <div className="flex items-center gap-2">
+                                                        <Key className="h-4 w-4" />
+                                                        Stored Credential
+                                                    </div>
+                                                </SelectItem>
                                                 <SelectItem value="bearer">Bearer Token</SelectItem>
                                                 <SelectItem value="basic">Basic Auth</SelectItem>
                                                 <SelectItem value="api-key">API Key</SelectItem>
@@ -447,6 +460,83 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                                     </FormItem>
                                 )}
                             />
+
+                            {/* Credential Selector - Requirements: 3.1, 3.2 */}
+                            {watchAuthType === "credential" && (
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="credentialType"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Credential Type</FormLabel>
+                                                <Select 
+                                                    onValueChange={(value) => {
+                                                        field.onChange(value as CredentialType)
+                                                        // Clear credential selection when type changes
+                                                        form.setValue("credentialId", undefined)
+                                                    }} 
+                                                    value={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select credential type" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value={CredentialType.BEARER_TOKEN}>
+                                                            {getCredentialTypeLabel(CredentialType.BEARER_TOKEN)}
+                                                        </SelectItem>
+                                                        <SelectItem value={CredentialType.BASIC_AUTH}>
+                                                            {getCredentialTypeLabel(CredentialType.BASIC_AUTH)}
+                                                        </SelectItem>
+                                                        <SelectItem value={CredentialType.API_KEY}>
+                                                            {getCredentialTypeLabel(CredentialType.API_KEY)}
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormDescription>
+                                                    Select the type of credential to use
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+                                    {form.watch("credentialType") && (
+                                        <FormField
+                                            control={form.control}
+                                            name="credentialId"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="flex items-center gap-2">
+                                                        <Key className="h-4 w-4" />
+                                                        Select Credential
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <CredentialSelector
+                                                            type={form.watch("credentialType")!}
+                                                            value={field.value}
+                                                            onChange={(config) => {
+                                                                if (config) {
+                                                                    form.setValue("credentialId", config.credentialId)
+                                                                } else {
+                                                                    form.setValue("credentialId", undefined)
+                                                                }
+                                                            }}
+                                                            placeholder="Select a stored credential..."
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        Choose a stored credential for authentication
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
+                                </div>
+                            )}
 
                             {watchAuthType === "bearer" && (
                                 <FormField
