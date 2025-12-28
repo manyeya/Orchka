@@ -42,7 +42,7 @@ export const BaseTriggerNode = memo((props: BaseTriggerNodeProps) => {
                     {typeof Icon === "string" ? (
                         <Image src={Icon} alt={name} width={16} height={16} />
                     ) : (
-                        <Icon className="size-4 text-muted-foreground group-hover:text-primary" />
+                        <Icon className="size-4 text-muted-foreground group-hover:text-primary size-6" />
                     )}
                     {children}
                     <BaseHandle id={props.id + "-source"} type="source" position={props.sourcePosition || Position.Right} />
