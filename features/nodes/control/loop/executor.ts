@@ -106,9 +106,15 @@ export function generateCountArray(count: number): number[] {
 /**
  * Loop Node Executor
  * 
- * Iterates over an array or a specified number of times, executing
- * the loop body for each iteration. Uses Inngest step.run for each
- * iteration to ensure durability and proper state management.
+ * Prepares iteration data for the workflow engine to execute connected "loop" 
+ * body nodes for each iteration. After all iterations complete, the "done" 
+ * branch is executed with aggregated results.
+ * 
+ * The workflow engine handles the actual iteration by:
+ * 1. Getting the items array from the executor
+ * 2. Executing nodes connected to "loop" output for each item
+ * 3. Collecting results from each iteration
+ * 4. Executing nodes connected to "done" output with aggregated results
  * 
  * Requirements:
  * - 3.3: Iterate over each element in array mode
@@ -134,76 +140,81 @@ export const loopNodeExecutor: NodeExecutor<LoopNodeData> = async ({
   const stepName = `${nodeName} (${nodeId})`;
 
   try {
-    // Determine the items to iterate over
-    let items: unknown[];
+    // Determine the items to iterate over (within a step for durability)
+    const loopSetup = await step.run(`${stepName} - setup`, async () => {
+      let items: unknown[];
 
-    if (data.mode === "array") {
-      // Array mode: evaluate the array expression
-      if (!expressionContext) {
-        logger.warn("Loop Node: No expression context provided, using empty array");
-        items = [];
+      if (data.mode === "array") {
+        // Array mode: evaluate the array expression
+        if (!expressionContext) {
+          logger.warn("Loop Node: No expression context provided, using empty array");
+          items = [];
+        } else {
+          items = await evaluateLoopArray(data.arrayExpression as unknown, expressionContext);
+        }
       } else {
-        items = await evaluateLoopArray(data.arrayExpression as unknown, expressionContext);
+        // Count mode: generate array of indices
+        items = generateCountArray(data.count || 0);
       }
-    } else {
-      // Count mode: generate array of indices
-      items = generateCountArray(data.count || 0);
-    }
 
-    const total = items.length;
-    const results: unknown[] = [];
-
-    // Execute each iteration using step.run for durability
-    for (let index = 0; index < items.length; index++) {
-      const item = items[index];
-      const iterationStepName = `${stepName} - iteration ${index + 1}/${total}`;
-
-      const iterationResult = await step.run(iterationStepName, async () => {
-        // Create iteration context
-        const iterationContext: LoopIterationContext = {
-          $item: item,
-          $index: index,
-          $total: total,
-        };
-
-        return {
-          item,
-          index,
-          total,
-          iterationContext,
-        };
-      });
-
-      results.push(iterationResult);
-    }
-
-    // Build the branch decision
-    const branchDecision: BranchDecision = {
-      branch: "done",
-      data: {
-        results,
-        total,
+      return {
+        items,
+        total: items.length,
         mode: data.mode,
+      };
+    });
+
+    const { items, total, mode } = loopSetup;
+
+    // Build the branch decision with loop-specific data
+    // The workflow engine will use this to execute loop iterations
+    const branchDecision: BranchDecision = {
+      // Use "loop" as the branch when there are items to iterate
+      // Use "done" when there are no items (empty loop)
+      branch: items.length > 0 ? "loop" : "done",
+      data: {
+        items,
+        total,
+        mode,
+        currentIndex: 0, // Start at index 0
+        results: [], // Will be populated by workflow engine
       },
+      // Provide initial iteration context for the first item
+      iteration: items.length > 0 ? {
+        index: 0,
+        total,
+        item: (items as unknown[])[0],
+      } : undefined,
     };
 
     // Publish success status
     await publishNodeStatus(publish, nodeId, "success", NodeType.LOOP);
 
-    // Return the context following the standard structure: { [nodeName]: { results, total, mode, $item, $index, $total } }
-    // IMPORTANT: Spread context FIRST, then set __branchDecision to ensure it's not overwritten
+    // Return the context with loop data
+    // The workflow engine will handle the actual iteration
     return {
       ...context,
       [`${nodeName}`]: {
-        results,
+        items,
         total,
-        mode: data.mode,
-        // Provide iteration context for downstream nodes
-        $item: items[items.length - 1], // Last item
-        $index: items.length - 1, // Last index
+        mode,
+        results: [], // Will be populated during iterations
+        // Provide initial iteration context
+        $item: items.length > 0 ? (items as unknown[])[0] : undefined,
+        $index: 0,
         $total: total,
       },
       __branchDecision: branchDecision,
+      // Mark this as a loop node for special handling
+      __loopNode: {
+        nodeId,
+        nodeName,
+        items,
+        total,
+        mode,
+        currentIndex: 0,
+        results: [],
+      },
     };
   } catch (error) {
     // Publish error status

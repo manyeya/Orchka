@@ -291,31 +291,192 @@ export const execute = inngest.createFunction(
         // Store branch decision for context propagation (Requirement 5.5)
         branchDecisions[node.id] = branchDecision;
 
-        // Add branch decision to context for downstream nodes
-        context = {
-          ...context,
-          __lastBranchDecision: branchDecision,
-          __branchDecisions: branchDecisions,
-        };
+        // Special handling for loop nodes - execute loop body for each iteration
+        if (node.type === NodeType.LOOP && context.__loopNode) {
+          const loopData = context.__loopNode as {
+            nodeId: string;
+            nodeName: string;
+            items: unknown[];
+            total: number;
+            mode: string;
+            currentIndex: number;
+            results: unknown[];
+          };
 
-        // Debug: log connections from this control node
-        const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
-        logger.info({ connections: outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `Control node ${node.id} connections`);
-        logger.info(`Branch decision: "${branchDecision.branch}"`);
+          // Find nodes connected to the "loop" output
+          const loopBodyConnections = workflowData.connections.filter(
+            c => c.fromNodeId === node.id && c.fromOutput === "loop"
+          );
 
-        // Determine which nodes to skip based on branch decision
-        // Requirements 5.2: Skip nodes only reachable through non-taken branches
-        const nodesToSkip = getSkippedNodes(
-          node.id,
-          branchDecision,
-          workflowData.connections,
-          workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
-          logger
-        );
+          if (loopBodyConnections.length > 0 && loopData.items.length > 0) {
+            // Find all nodes in the loop body (reachable from loop output)
+            const loopBodyNodeIds = new Set<string>();
+            for (const conn of loopBodyConnections) {
+              const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
+              reachable.forEach(id => loopBodyNodeIds.add(id));
+            }
 
-        nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
+            // Get "done" branch nodes to exclude them from loop body
+            const doneConnections = workflowData.connections.filter(
+              c => c.fromNodeId === node.id && c.fromOutput === "done"
+            );
+            const doneNodeIds = new Set<string>();
+            for (const conn of doneConnections) {
+              const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
+              reachable.forEach(id => doneNodeIds.add(id));
+            }
 
-        logger.info({ skippedNodes: Array.from(nodesToSkip) }, `Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes`);
+            // Remove done-reachable nodes from loop body
+            for (const doneId of doneNodeIds) {
+              loopBodyNodeIds.delete(doneId);
+            }
+
+            // Get loop body nodes in topological order
+            const loopBodyNodes = workflowData.sortedNodes.filter(n => loopBodyNodeIds.has(n.id));
+
+            logger.info({ loopBodyNodes: loopBodyNodes.map(n => n.id) }, `Loop node ${node.id}: Executing loop body nodes`);
+
+            // Collect results from all iterations
+            const iterationResults: unknown[] = [];
+
+            // Execute loop body for each item
+            for (let index = 0; index < loopData.items.length; index++) {
+              const item = loopData.items[index];
+
+              logger.info(`Loop iteration ${index + 1}/${loopData.total}`);
+
+              // Create iteration-specific context
+              let iterationContext = {
+                ...context,
+                [`${loopData.nodeName}`]: {
+                  ...((context[loopData.nodeName] as Record<string, unknown>) || {}),
+                  $item: item,
+                  $index: index,
+                  $total: loopData.total,
+                },
+                // Global iteration variables
+                $item: item,
+                $index: index,
+                $total: loopData.total,
+              };
+
+              // Execute each loop body node for this iteration
+              for (const loopBodyNode of loopBodyNodes) {
+                const loopExpressionContext = buildExpressionContext({
+                  nodeResults: {
+                    ...iterationContext,
+                    __branchDecisions: branchDecisions,
+                  },
+                  nodes: workflowData.nodes.map(n => ({
+                    id: n.id,
+                    type: n.type,
+                    data: n.data as Record<string, unknown>,
+                  })),
+                  workflowId,
+                  workflowName: workflowData.name,
+                  executionId: event.id ?? `exec_${Date.now()}`,
+                  currentNodeId: loopBodyNode.id,
+                });
+
+                const resolvedLoopData = await resolveNodeExpressions(
+                  loopBodyNode.data as Record<string, unknown>,
+                  loopExpressionContext
+                );
+
+                const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
+                iterationContext = await loopExecutor({
+                  data: resolvedLoopData,
+                  nodeId: loopBodyNode.id,
+                  context: iterationContext,
+                  step,
+                  expressionContext: loopExpressionContext,
+                  publish,
+                });
+
+                // Publish node data for this iteration
+                const cleanIterationOutput = filterInternalFields(iterationContext);
+                await publish(workflowNodeChannel().data({
+                  nodeId: loopBodyNode.id,
+                  input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }),
+                  output: cleanIterationOutput,
+                  nodeType: loopBodyNode.type,
+                  iteration: { index, total: loopData.total },
+                }));
+              }
+
+              // Store iteration result
+              iterationResults.push({
+                item,
+                index,
+                result: filterInternalFields(iterationContext),
+              });
+            }
+
+            // After all iterations, update context with aggregated results
+            context = {
+              ...context,
+              [`${loopData.nodeName}`]: {
+                items: loopData.items,
+                total: loopData.total,
+                mode: loopData.mode,
+                results: iterationResults,
+                $item: loopData.items[loopData.items.length - 1],
+                $index: loopData.items.length - 1,
+                $total: loopData.total,
+              },
+              __loopResults: iterationResults,
+            };
+
+            // Mark loop body nodes as processed to skip them in main loop
+            loopBodyNodeIds.forEach(id => skippedNodes.add(id));
+
+            // Update branch decision to "done" for downstream processing
+            const doneBranchDecision: BranchDecision = {
+              branch: "done",
+              data: {
+                results: iterationResults,
+                total: loopData.total,
+                mode: loopData.mode,
+              },
+            };
+            branchDecisions[node.id] = doneBranchDecision;
+            context = {
+              ...context,
+              __branchDecision: doneBranchDecision,
+              __lastBranchDecision: doneBranchDecision,
+              __branchDecisions: branchDecisions,
+            };
+
+            logger.info({ results: iterationResults.length }, `Loop node ${node.id}: Completed all iterations`);
+          }
+        } else {
+          // Non-loop control nodes - handle normally
+          // Add branch decision to context for downstream nodes
+          context = {
+            ...context,
+            __lastBranchDecision: branchDecision,
+            __branchDecisions: branchDecisions,
+          };
+
+          // Debug: log connections from this control node
+          const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
+          logger.info({ connections: outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `Control node ${node.id} connections`);
+          logger.info(`Branch decision: "${branchDecision.branch}"`);
+
+          // Determine which nodes to skip based on branch decision
+          // Requirements 5.2: Skip nodes only reachable through non-taken branches
+          const nodesToSkip = getSkippedNodes(
+            node.id,
+            branchDecision,
+            workflowData.connections,
+            workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
+            logger
+          );
+
+          nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
+
+          logger.info({ skippedNodes: Array.from(nodesToSkip) }, `Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes`);
+        }
       }
 
       // Filter out internal fields (prefixed with __) for client display

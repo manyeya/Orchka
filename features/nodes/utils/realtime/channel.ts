@@ -24,6 +24,11 @@ export interface NodeDataPayload {
     output: unknown;
     /** Optional: include the node type for filtering */
     nodeType?: string;
+    /** Optional: loop iteration info when this node is executed as part of a loop */
+    iteration?: {
+        index: number;
+        total: number;
+    };
 }
 
 /**
