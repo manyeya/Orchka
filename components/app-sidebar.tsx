@@ -2,14 +2,14 @@
 
 import * as React from "react"
 import {
-  BookOpen,
-  Bot,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
   Settings2,
-  SquareTerminal,
+  Workflow,
+  Activity,
+  KeyRound,
+  Clock,
+  LayoutTemplate,
+  BarChart3,
+  GalleryVerticalEnd,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -42,17 +42,17 @@ const data = {
     {
       title: "Workflows",
       url: "/workflows",
-      icon: SquareTerminal,
+      icon: Workflow,
     },
     {
       title: "Executions",
       url: "/executions",
-      icon: Bot,
+      icon: Activity,
     },
     {
       title: "Credentials",
       url: "/credentials",
-      icon: BookOpen,
+      icon: KeyRound,
     },
     {
       title: "Settings",
@@ -64,17 +64,17 @@ const data = {
     {
       name: "Recent Workflows",
       url: "#",
-      icon: Frame,
+      icon: Clock,
     },
     {
       name: "Templates",
       url: "#",
-      icon: PieChart,
+      icon: LayoutTemplate,
     },
     {
       name: "Analytics",
       url: "#",
-      icon: Map,
+      icon: BarChart3,
     },
   ],
 }

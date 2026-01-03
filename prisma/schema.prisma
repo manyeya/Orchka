@@ -15,11 +15,12 @@ model User {
   emailVerified Boolean      @default(false)
   image         String?
   createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now()) @updatedAt
+  updatedAt     DateTime     @updatedAt
   sessions      Session[]
   accounts      Account[]
   workflows     Workflow[]
   credentials   Credential[]
+  executions    Execution[]
 
   @@unique([email])
   @@map("user")
@@ -79,6 +80,7 @@ model Workflow {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   nodes       Node[]
   connections Connection[]
+  executions  Execution[]
 
   @@map("workflow")
 }
@@ -116,7 +118,6 @@ model Connection {
   @@map("connection")
 }
 
-
 model Credential {
   id            String   @id @default(cuid())
   name          String
@@ -142,4 +143,49 @@ model CredentialLog {
   timestamp    DateTime @default(now())
 
   @@map("credential_log")
+}
+
+model Execution {
+  id           String          @id @default(cuid())
+  workflowId   String
+  workflow     Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  status       ExecutionStatus @default(RUNNING)
+  inngestRunId String?
+  startedAt    DateTime        @default(now())
+  completedAt  DateTime?
+  result       Json?
+  error        String?
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps        ExecutionStep[]
+
+  @@index([workflowId])
+  @@index([userId])
+  @@index([status])
+  @@map("execution")
+}
+
+enum ExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model ExecutionStep {
+  id          String    @id @default(cuid())
+  executionId String
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  nodeId      String
+  nodeName    String
+  nodeType    String
+  status      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  input       Json?
+  output      Json?
+  error       String?
+
+  @@index([executionId])
+  @@map("execution_step")
 }

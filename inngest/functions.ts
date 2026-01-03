@@ -13,6 +13,7 @@ import {
 import { workflowNodeChannel } from "@/features/nodes/utils/realtime";
 import type { BranchDecision } from "@/features/nodes/utils/execution/types";
 import { getCredentialForExecution, CredentialNotFoundError } from "@/lib/credentials/execution";
+import { ExecutionStatus } from "@/lib/generated/prisma/client";
 
 /** Control node types that can produce branch decisions */
 const CONTROL_NODE_TYPES: NodeType[] = [
@@ -184,7 +185,6 @@ export const execute = inngest.createFunction(
   { id: "execute-workflow" },
   { event: "workflow/execute", channels: [workflowNodeChannel] },
   async ({ event, step, publish, logger: inngestLogger }) => {
-    // Prefix logger calls to identify they come from Inngest
     const logger = {
       info: (obj: any, msg?: string) => {
         if (typeof obj === 'string') {
@@ -196,12 +196,14 @@ export const execute = inngest.createFunction(
     };
 
     const workflowId = event.data.workflowId;
+    const inngestRunId = event.id;
+    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
     if (!workflowId) {
       throw new NonRetriableError("Workflow ID is required");
     }
 
-    const workflowData = await step.run("get-workflow", async () => {
+    const workflowData = await step.run("get-workflow-and-create-execution", async () => {
       const workflow = await prisma.workflow.findUniqueOrThrow({
         where: {
           id: workflowId,
@@ -212,7 +214,18 @@ export const execute = inngest.createFunction(
         }
       });
 
+      const execution = await prisma.execution.create({
+        data: {
+          workflowId,
+          userId: workflow.userId,
+          status: ExecutionStatus.RUNNING,
+          inngestRunId,
+        }
+      });
+
       return {
+        executionId: execution.id,
+        userId: workflow.userId,
         name: workflow.name,
         nodes: workflow.nodes,
         connections: workflow.connections.map(c => ({
@@ -227,299 +240,328 @@ export const execute = inngest.createFunction(
 
     let context = event.data.initialData || {};
 
-    // Track nodes to skip due to branch decisions
-    // Requirements 5.2: Skip all nodes only reachable through non-taken branches
     const skippedNodes = new Set<string>();
-
-    // Track branch decisions for context propagation
-    // Requirements 5.5: Include selected branch identifier in execution context
     const branchDecisions: Record<string, BranchDecision> = {};
 
-    for (const node of workflowData.sortedNodes) {
-      logger.info({ skippedNodes: Array.from(skippedNodes) }, `[execute] Processing node ${node.id} (${node.type})`);
+    try {
+      for (const node of workflowData.sortedNodes) {
+        logger.info({ skippedNodes: Array.from(skippedNodes) }, `[execute] Processing node ${node.id} (${node.type})`);
 
-      // Skip nodes that are only reachable through non-taken branches
-      if (skippedNodes.has(node.id)) {
-        logger.info(`[execute] Skipping node ${node.id} - not on active branch`);
-        continue;
-      }
+        if (skippedNodes.has(node.id)) {
+          logger.info(`[execute] Skipping node ${node.id} - not on active branch`);
+          continue;
+        }
 
-      logger.info(`[execute] Executing node ${node.id}`);
+        logger.info(`[execute] Executing node ${node.id}`);
 
-      // Capture current context as this node's input
-      const inputData = { ...context };
+        const inputData = { ...context };
 
-      // Build expression context from accumulated results
-      // Include branch decisions in the context for downstream nodes
-      const expressionContext = buildExpressionContext({
-        nodeResults: {
-          ...context,
-          __branchDecisions: branchDecisions,
-        },
-        nodes: workflowData.nodes.map(n => ({
-          id: n.id,
-          type: n.type,
-          data: n.data as Record<string, unknown>,
-        })),
-        workflowId,
-        workflowName: workflowData.name,
-        executionId: event.id ?? `exec_${Date.now()}`,
-        currentNodeId: node.id,
-      });
+        const expressionContext = buildExpressionContext({
+          nodeResults: {
+            ...context,
+            __branchDecisions: branchDecisions,
+          },
+          nodes: workflowData.nodes.map(n => ({
+            id: n.id,
+            type: n.type,
+            data: n.data as Record<string, unknown>,
+          })),
+          workflowId,
+          workflowName: workflowData.name,
+          executionId: inngestRunId ?? executionId,
+          currentNodeId: node.id,
+        });
 
-      // Resolve all {{ }} expressions in node configuration
-      const resolvedData = await resolveNodeExpressions(
-        node.data as Record<string, unknown>,
-        expressionContext
-      );
+        const resolvedData = await resolveNodeExpressions(
+          node.data as Record<string, unknown>,
+          expressionContext
+        );
 
-      const executor = getExecutor(node.type as NodeType);
-      
-      // Create credential resolver for this workflow
-      // Requirements: 3.3, 3.4
-      const resolveCredential = async (credentialId: string) => {
-        try {
-          return await getCredentialForExecution(credentialId, workflowId);
-        } catch (error) {
-          if (error instanceof CredentialNotFoundError) {
-            throw new NonRetriableError(`Credential not found: ${credentialId}. The credential may have been deleted.`);
+        const executor = getExecutor(node.type as NodeType);
+
+        const resolveCredential = async (credentialId: string) => {
+          try {
+            return await getCredentialForExecution(credentialId, workflowId);
+          } catch (error) {
+            if (error instanceof CredentialNotFoundError) {
+              throw new NonRetriableError(`Credential not found: ${credentialId}. The credential may have been deleted.`);
+            }
+            throw error;
           }
+        };
+
+        const stepStartedAt = new Date();
+        const stepRecord = await step.run(`create-step-record:${node.id}`, async () => {
+          return prisma.executionStep.create({
+            data: {
+              executionId: workflowData.executionId,
+              nodeId: node.id,
+              nodeName: node.name,
+              nodeType: node.type,
+              status: "RUNNING",
+              startedAt: stepStartedAt,
+              input: filterInternalFields(inputData) as any,
+
+            }
+          });
+        });
+
+        try {
+          context = await executor({
+            data: resolvedData,
+            nodeId: node.id,
+            context,
+            step,
+            expressionContext,
+            publish,
+            resolveCredential,
+          });
+
+          const cleanOutput = filterInternalFields(context);
+
+          await step.run(`update-step-success:${node.id}`, async () => {
+            await prisma.executionStep.update({
+              where: { id: stepRecord.id },
+              data: {
+                status: "COMPLETED",
+                completedAt: new Date(),
+                output: cleanOutput as any,
+              }
+            });
+          });
+
+          await step.run(`publish-data:${node.id}`, async () => {
+            await publish(workflowNodeChannel().data({
+              nodeId: node.id,
+              input: filterInternalFields(inputData) as any,
+              output: cleanOutput as any,
+              nodeType: node.type,
+            }));
+          });
+        } catch (error) {
+          const stepErrorMessage = error instanceof Error ? error.message : "Step failed";
+          await step.run(`update-step-failed:${node.id}`, async () => {
+            await prisma.executionStep.update({
+              where: { id: stepRecord.id },
+              data: {
+                status: "FAILED",
+                completedAt: new Date(),
+                error: stepErrorMessage,
+              }
+            });
+          });
           throw error;
         }
-      };
-      
-      context = await executor({
-        data: resolvedData,
-        nodeId: node.id,
-        context,
-        step,
-        expressionContext,
-        publish,
-        resolveCredential,
-      });
 
-      // Handle branch decisions from control nodes
-      // Requirements 5.1: Determine which output handle(s) to follow
-      if (isControlNode(node.type as NodeType) && context.__branchDecision) {
-        const branchDecision = context.__branchDecision as BranchDecision;
+        if (isControlNode(node.type as NodeType) && context.__branchDecision) {
+          const branchDecision = context.__branchDecision as BranchDecision;
+          branchDecisions[node.id] = branchDecision;
 
-        // Store branch decision for context propagation (Requirement 5.5)
-        branchDecisions[node.id] = branchDecision;
+          if (node.type === NodeType.LOOP && context.__loopNode) {
+            const loopData = context.__loopNode as {
+              nodeId: string;
+              nodeName: string;
+              items: unknown[];
+              total: number;
+              mode: string;
+              currentIndex: number;
+              results: unknown[];
+            };
 
-        // Special handling for loop nodes - execute loop body for each iteration
-        if (node.type === NodeType.LOOP && context.__loopNode) {
-          const loopData = context.__loopNode as {
-            nodeId: string;
-            nodeName: string;
-            items: unknown[];
-            total: number;
-            mode: string;
-            currentIndex: number;
-            results: unknown[];
-          };
-
-          // Find nodes connected to the "loop" output
-          const loopBodyConnections = workflowData.connections.filter(
-            c => c.fromNodeId === node.id && c.fromOutput === "loop"
-          );
-
-          if (loopBodyConnections.length > 0 && loopData.items.length > 0) {
-            // Find all nodes in the loop body (reachable from loop output)
-            const loopBodyNodeIds = new Set<string>();
-            for (const conn of loopBodyConnections) {
-              const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
-              reachable.forEach(id => loopBodyNodeIds.add(id));
-            }
-
-            // Get "done" branch nodes to exclude them from loop body
-            const doneConnections = workflowData.connections.filter(
-              c => c.fromNodeId === node.id && c.fromOutput === "done"
+            const loopBodyConnections = workflowData.connections.filter(
+              c => c.fromNodeId === node.id && c.fromOutput === "loop"
             );
-            const doneNodeIds = new Set<string>();
-            for (const conn of doneConnections) {
-              const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
-              reachable.forEach(id => doneNodeIds.add(id));
-            }
 
-            // Remove done-reachable nodes from loop body
-            for (const doneId of doneNodeIds) {
-              loopBodyNodeIds.delete(doneId);
-            }
+            if (loopBodyConnections.length > 0 && loopData.items.length > 0) {
+              const loopBodyNodeIds = new Set<string>();
+              for (const conn of loopBodyConnections) {
+                const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
+                reachable.forEach(id => loopBodyNodeIds.add(id));
+              }
 
-            // Get loop body nodes in topological order
-            const loopBodyNodes = workflowData.sortedNodes.filter(n => loopBodyNodeIds.has(n.id));
+              const doneConnections = workflowData.connections.filter(
+                c => c.fromNodeId === node.id && c.fromOutput === "done"
+              );
+              const doneNodeIds = new Set<string>();
+              for (const conn of doneConnections) {
+                const reachable = findReachableNodes(conn.toNodeId, workflowData.connections);
+                reachable.forEach(id => doneNodeIds.add(id));
+              }
 
-            logger.info({ loopBodyNodes: loopBodyNodes.map(n => n.id) }, `Loop node ${node.id}: Executing loop body nodes`);
+              for (const doneId of doneNodeIds) {
+                loopBodyNodeIds.delete(doneId);
+              }
 
-            // Collect results from all iterations
-            const iterationResults: unknown[] = [];
+              const loopBodyNodes = workflowData.sortedNodes.filter(n => loopBodyNodeIds.has(n.id));
 
-            // Execute loop body for each item
-            for (let index = 0; index < loopData.items.length; index++) {
-              const item = loopData.items[index];
+              logger.info({ loopBodyNodes: loopBodyNodes.map(n => n.id) }, `Loop node ${node.id}: Executing loop body nodes`);
 
-              logger.info(`Loop iteration ${index + 1}/${loopData.total}`);
+              const iterationResults: unknown[] = [];
 
-              // Create iteration-specific context
-              let iterationContext = {
-                ...context,
-                [`${loopData.nodeName}`]: {
-                  ...((context[loopData.nodeName] as Record<string, unknown>) || {}),
+              for (let index = 0; index < loopData.items.length; index++) {
+                const item = loopData.items[index];
+
+                logger.info(`Loop iteration ${index + 1}/${loopData.total}`);
+
+                let iterationContext = {
+                  ...context,
+                  [`${loopData.nodeName}`]: {
+                    ...((context[loopData.nodeName] as Record<string, unknown>) || {}),
+                    $item: item,
+                    $index: index,
+                    $total: loopData.total,
+                  },
                   $item: item,
                   $index: index,
                   $total: loopData.total,
-                },
-                // Global iteration variables
-                $item: item,
-                $index: index,
-                $total: loopData.total,
-              };
+                };
 
-              // Execute each loop body node for this iteration
-              for (const loopBodyNode of loopBodyNodes) {
-                const loopExpressionContext = buildExpressionContext({
-                  nodeResults: {
-                    ...iterationContext,
-                    __branchDecisions: branchDecisions,
-                  },
-                  nodes: workflowData.nodes.map(n => ({
-                    id: n.id,
-                    type: n.type,
-                    data: n.data as Record<string, unknown>,
-                  })),
-                  workflowId,
-                  workflowName: workflowData.name,
-                  executionId: event.id ?? `exec_${Date.now()}`,
-                  currentNodeId: loopBodyNode.id,
-                });
+                for (const loopBodyNode of loopBodyNodes) {
+                  const loopExpressionContext = buildExpressionContext({
+                    nodeResults: {
+                      ...iterationContext,
+                      __branchDecisions: branchDecisions,
+                    },
+                    nodes: workflowData.nodes.map(n => ({
+                      id: n.id,
+                      type: n.type,
+                      data: n.data as Record<string, unknown>,
+                    })),
+                    workflowId,
+                    workflowName: workflowData.name,
+                    executionId: inngestRunId ?? executionId,
+                    currentNodeId: loopBodyNode.id,
+                  });
 
-                const resolvedLoopData = await resolveNodeExpressions(
-                  loopBodyNode.data as Record<string, unknown>,
-                  loopExpressionContext
-                );
+                  const resolvedLoopData = await resolveNodeExpressions(
+                    loopBodyNode.data as Record<string, unknown>,
+                    loopExpressionContext
+                  );
 
-                const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
-                iterationContext = await loopExecutor({
-                  data: resolvedLoopData,
-                  nodeId: loopBodyNode.id,
-                  context: iterationContext,
-                  step,
-                  expressionContext: loopExpressionContext,
-                  publish,
-                  resolveCredential,
-                });
-
-                // Publish node data for this iteration
-                const cleanIterationOutput = filterInternalFields(iterationContext);
-                await step.run(`publish-loop-data:${loopBodyNode.id}:${index}`, async () => {
-                  await publish(workflowNodeChannel().data({
+                  const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
+                  iterationContext = await loopExecutor({
+                    data: resolvedLoopData,
                     nodeId: loopBodyNode.id,
-                    input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }),
-                    output: cleanIterationOutput,
-                    nodeType: loopBodyNode.type,
-                    iteration: { index, total: loopData.total },
-                  }));
+                    context: iterationContext,
+                    step,
+                    expressionContext: loopExpressionContext,
+                    publish,
+                    resolveCredential,
+                  });
+
+                  const cleanIterationOutput = filterInternalFields(iterationContext);
+                  await step.run(`publish-loop-data:${loopBodyNode.id}:${index}`, async () => {
+                    await publish(workflowNodeChannel().data({
+                      nodeId: loopBodyNode.id,
+                      input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }) as any,
+                      output: cleanIterationOutput as any,
+                      nodeType: loopBodyNode.type,
+                      iteration: { index, total: loopData.total },
+                    }));
+                  });
+                }
+
+                iterationResults.push({
+                  item,
+                  index,
+                  result: filterInternalFields(iterationContext),
                 });
               }
 
-              // Store iteration result
-              iterationResults.push({
-                item,
-                index,
-                result: filterInternalFields(iterationContext),
-              });
+              context = {
+                ...context,
+                [`${loopData.nodeName}`]: {
+                  items: loopData.items,
+                  total: loopData.total,
+                  mode: loopData.mode,
+                  results: iterationResults,
+                  $item: loopData.items[loopData.items.length - 1],
+                  $index: loopData.items.length - 1,
+                  $total: loopData.total,
+                },
+                __loopResults: iterationResults,
+              };
+
+              loopBodyNodeIds.forEach(id => skippedNodes.add(id));
+
+              const doneBranchDecision: BranchDecision = {
+                branch: "done",
+                data: {
+                  results: iterationResults,
+                  total: loopData.total,
+                  mode: loopData.mode,
+                },
+              };
+              branchDecisions[node.id] = doneBranchDecision;
+              context = {
+                ...context,
+                __branchDecision: doneBranchDecision,
+                __lastBranchDecision: doneBranchDecision,
+                __branchDecisions: branchDecisions,
+              };
+
+              logger.info({ results: iterationResults.length }, `Loop node ${node.id}: Completed all iterations`);
             }
-
-            // After all iterations, update context with aggregated results
+          } else {
             context = {
               ...context,
-              [`${loopData.nodeName}`]: {
-                items: loopData.items,
-                total: loopData.total,
-                mode: loopData.mode,
-                results: iterationResults,
-                $item: loopData.items[loopData.items.length - 1],
-                $index: loopData.items.length - 1,
-                $total: loopData.total,
-              },
-              __loopResults: iterationResults,
-            };
-
-            // Mark loop body nodes as processed to skip them in main loop
-            loopBodyNodeIds.forEach(id => skippedNodes.add(id));
-
-            // Update branch decision to "done" for downstream processing
-            const doneBranchDecision: BranchDecision = {
-              branch: "done",
-              data: {
-                results: iterationResults,
-                total: loopData.total,
-                mode: loopData.mode,
-              },
-            };
-            branchDecisions[node.id] = doneBranchDecision;
-            context = {
-              ...context,
-              __branchDecision: doneBranchDecision,
-              __lastBranchDecision: doneBranchDecision,
+              __lastBranchDecision: branchDecision,
               __branchDecisions: branchDecisions,
             };
 
-            logger.info({ results: iterationResults.length }, `Loop node ${node.id}: Completed all iterations`);
+            const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
+            logger.info({ connections: outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `Control node ${node.id} connections`);
+            logger.info(`Branch decision: "${branchDecision.branch}"`);
+
+            const nodesToSkip = getSkippedNodes(
+              node.id,
+              branchDecision,
+              workflowData.connections,
+              workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
+              logger
+            );
+
+            nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
+
+            logger.info({ skippedNodes: Array.from(nodesToSkip) }, `Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes`);
           }
-        } else {
-          // Non-loop control nodes - handle normally
-          // Add branch decision to context for downstream nodes
-          context = {
-            ...context,
-            __lastBranchDecision: branchDecision,
-            __branchDecisions: branchDecisions,
-          };
-
-          // Debug: log connections from this control node
-          const outgoingConns = workflowData.connections.filter(c => c.fromNodeId === node.id);
-          logger.info({ connections: outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `Control node ${node.id} connections`);
-          logger.info(`Branch decision: "${branchDecision.branch}"`);
-
-          // Determine which nodes to skip based on branch decision
-          // Requirements 5.2: Skip nodes only reachable through non-taken branches
-          const nodesToSkip = getSkippedNodes(
-            node.id,
-            branchDecision,
-            workflowData.connections,
-            workflowData.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
-            logger
-          );
-
-          nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
-
-          logger.info({ skippedNodes: Array.from(nodesToSkip) }, `Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes`);
         }
       }
 
-      // Filter out internal fields (prefixed with __) for client display
-      const cleanOutput = filterInternalFields(context);
-      const cleanInput = filterInternalFields(inputData);
+      const cleanResult = filterInternalFields(context);
 
-      // Publish node data for client display (input/output panels)
-      // Use step.run with unique ID to avoid duplicate step ID warnings
-      await step.run(`publish-data:${node.id}`, async () => {
-        await publish(workflowNodeChannel().data({
-          nodeId: node.id,
-          input: cleanInput,
-          output: cleanOutput,
-          nodeType: node.type,
-        }));
+      await step.run("mark-execution-completed", async () => {
+        await prisma.execution.update({
+          where: { id: workflowData.executionId },
+          data: {
+            status: ExecutionStatus.COMPLETED,
+            completedAt: new Date(),
+            result: cleanResult as any,
+          }
+        });
       });
+
+      return {
+        workflowId,
+        executionId: workflowData.executionId,
+        result: cleanResult,
+        branchDecisions,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+
+      await step.run("mark-execution-failed", async () => {
+        await prisma.execution.update({
+          where: { id: workflowData.executionId },
+          data: {
+            status: ExecutionStatus.FAILED,
+            completedAt: new Date(),
+            error: errorMessage,
+          }
+        });
+      });
+
+      throw error;
     }
-
-    // Filter out internal fields from final result
-    const cleanResult = filterInternalFields(context);
-
-    return {
-      workflowId,
-      result: cleanResult,
-      branchDecisions,
-    };
   },
 )

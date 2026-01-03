@@ -1,17 +1,12 @@
-import React from 'react'
-import { Play, ArrowUpRight } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty"
+import React, { Suspense } from 'react'
+import { ExecutionsContainer, ExecutionsErrorView, ExecutionsList, ExecutionsLoadingView } from '@/features/executions/components/executions'
+import { prefetchExecutions } from '@/features/executions/server/prefetch'
+import { HydrateClient } from '@/trpc/server'
+import { ErrorBoundary } from 'react-error-boundary'
 import { requireAuth } from '@/lib/auth/utils'
 import type { Metadata } from 'next'
+import { executionsParamsLoader } from '@/features/executions/server/params-loader'
+import type { SearchParams } from 'nuqs/server'
 
 export const metadata: Metadata = {
   title: "Executions",
@@ -22,37 +17,24 @@ export const metadata: Metadata = {
   },
 }
 
-async function ExecutionsPage() {
+type ExecutionsPageProps = {
+  searchParams: Promise<SearchParams>
+}
+
+async function ExecutionsPage({ searchParams }: ExecutionsPageProps) {
   await requireAuth()
+  const params = await executionsParamsLoader(searchParams)
+  await prefetchExecutions(params)
   return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Play />
-        </EmptyMedia>
-        <EmptyTitle>No Executions Yet</EmptyTitle>
-        <EmptyDescription>
-          You havent run any workflow executions yet. Start by running
-          your first workflow.
-        </EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <div className="flex gap-2">
-          <Button>Run Workflow</Button>
-          <Button variant="outline">View Workflows</Button>
-        </div>
-      </EmptyContent>
-      <Button
-        variant="link"
-        asChild
-        className="text-muted-foreground"
-        size="sm"
-      >
-        <a href="#">
-          Learn More <ArrowUpRight />
-        </a>
-      </Button>
-    </Empty>
+    <ExecutionsContainer>
+      <HydrateClient>
+        <ErrorBoundary fallback={<ExecutionsErrorView />}>
+          <Suspense fallback={<ExecutionsLoadingView />}>
+            <ExecutionsList />
+          </Suspense>
+        </ErrorBoundary>
+      </HydrateClient>
+    </ExecutionsContainer>
   )
 }
 

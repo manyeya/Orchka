@@ -10,14 +10,15 @@ A powerful workflow automation platform that lets you design, build, and execute
 - **Intuitive Canvas**: Drag-and-drop interface powered by React Flow for building workflows
 - **Step Connections**: Clean, right-angled connections for easy readability
 - **Node Palette**: Organized nodes with search functionality
-- **Organization Tools**: Group nodes and add annotations (sticky notes)
+- **Organization Tools**: Group nodes with automatic child movement and add annotations (sticky notes)
+- **Advanced Interaction**: Resizable nodes and improved canvas performance
 
 ### AI Integration
 - **AI Agent Nodes**: Connect AI agents with tool calling for intelligent automation
+- **Simplified Configuration**: Modular tool architecture using connected `AI_TOOL` nodes
 - **AI Generate**: Simple text generation for content creation and transformation
 - **AI Classify**: Categorize content with structured output (sentiment, intent, priority)
 - **Multiple Providers**: Support for OpenAI, Anthropic, and Google AI
-- **AI Tools**: Define custom tools for AI function calling
 - **Smart Automation**: AI-driven decision making and workflow execution
 
 ### Expression Engine
@@ -25,11 +26,14 @@ A powerful workflow automation platform that lets you design, build, and execute
 - **Data Mapping**: Map and transform outputs to inputs seamlessly
 - **Conditional Logic**: Complex expressions for branching and filtering
 
-### Real-time Execution
+### Real-time Execution & Monitoring
+- **Enhanced Execution View**: Detailed execution history with a visual trace timeline
+- **Trace Timeline**: D3-powered visualization of step durations and execution flow
+- **Payload Viewer**: Deep inspection of input/output data with a premium JSON viewer
 - **Live Updates**: Watch workflows execute with real-time status updates
 - **Background Processing**: Reliable execution with Inngest for job queuing
 - **Error Handling**: Robust retry mechanisms and error recovery
-- **Execution History**: Complete audit trail of all workflow runs
+
 
 ### Node Types
 - **Triggers**: Manual Trigger, Webhook Trigger
