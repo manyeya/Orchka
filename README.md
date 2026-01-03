@@ -1,6 +1,6 @@
-# Orchka
+# Flowbase (Orchka)
 
-A powerful workflow automation platform that lets you design, build, and execute complex workflows through a visual drag-and-drop interface.
+A powerful, developer-first workflow automation platform. Design, execute, and monitor complex workflows through a high-performance visual interface. Built for performance, observability, and AI-native automation.
 
 [Documentation](docs-site) • [Getting Started Guide](docs-site/content/docs/getting-started.mdx) • [Node Reference](docs-site/content/docs/nodes.mdx)
 
@@ -49,17 +49,18 @@ A powerful workflow automation platform that lets you design, build, and execute
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Workflow Canvas**: React Flow (@xyflow/react)
-- **Styling**: Tailwind CSS 4, shadcn/ui components
-- **Backend**: Next.js API routes, tRPC
-- **Database**: PostgreSQL with Prisma ORM
+- **Frontend**: Next.js 15 (Turbopack), React 19, TypeScript
+- **Workflow Canvas**: React Flow (@xyflow/react) 12
+- **Observability**: D3.js (Trace Timelines), @uiw/react-json-view (Payload Inspection)
+- **Styling**: Tailwind CSS 4, shadcn/ui, Framer Motion, GSAP
+- **Backend**: Next.js API routes, tRPC 11
+- **Database**: PostgreSQL with Prisma ORM 6
 - **Authentication**: Better Auth with Polar integration
-- **AI**: AI SDK with OpenAI, Anthropic, and Google SDKs
+- **AI**: AI SDK, LangChain (OpenAI, Anthropic, Google Gemini, Groq)
 - **Job Processing**: Inngest
 - **Expression Engine**: JSONata
-- **State Management**: Jotai, TanStack Query
-- **Forms**: React Hook Form
+- **State Management**: Jotai, TanStack Query 5
+- **Forms**: React Hook Form, Zod
 
 ## Getting Started
 
@@ -158,6 +159,7 @@ bun run docs:build
 │   ├── auth/             # Authentication forms and logic
 │   ├── credentials/      # Credential management (CRUD, encryption)
 │   ├── editor/           # Workflow editor components
+│   ├── executions/       # Execution history and monitoring
 │   ├── landing-page/     # Landing page features
 │   ├── nodes/            # Workflow node implementations
 │   ├── payments/         # Polar payment integration
