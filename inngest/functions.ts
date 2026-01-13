@@ -151,36 +151,6 @@ function findReachableNodes(
   return reachable;
 }
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello.world" },
-  async ({ event, step, }) => {
-    await step.sleep("wait-a-moment", "15s");
-
-    await step.run("send-email", async () => {
-      return prisma.workflow.create({
-        data: {
-          name: "New Workflow - " + event.data.email,
-          userId: event.data.userId,
-        }
-      })
-    });
-
-    await step.ai.wrap('gemini-generate-text', generateText, {
-      model: google('gemini-2.5-flash'),
-      system: "You are a helpful assistant",
-      prompt: "write a recipe for a pizza for 4 people",
-      experimental_telemetry: {
-        isEnabled: true,
-        recordInputs: true,
-        recordOutputs: true,
-      },
-    })
-
-    return { message: `Hello ${event.data.email}!` };
-  },
-);
-
 export const execute = inngest.createFunction(
   { id: "execute-workflow" },
   { event: "workflow/execute", channels: [workflowNodeChannel] },
