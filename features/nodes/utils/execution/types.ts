@@ -18,7 +18,11 @@ export interface NodeExecutorParams<TData = Record<string, unknown>> {
     data: TData;
     nodeId: string;
     context: WorkflowContext;
-    step: WorkflowStepTools;
+    /** 
+     * Step tools for durable execution (Inngest)
+     * Optional - not used in BullMQ execution 
+     */
+    step?: WorkflowStepTools;
     /** Expression context for evaluating dynamic expressions in node data */
     expressionContext?: ExpressionContext;
     publish: Realtime.PublishFn;

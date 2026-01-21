@@ -34,22 +34,14 @@ export async function upsertWorkflowScheduler(schedulerId: string, config: Sched
   return job;
 }
 
-export async function removeWorkflowScheduler(schedulerId: string, cronPattern?: string) {
-  let options: any = undefined;
-
-  if (cronPattern) {
-    options = { pattern: cronPattern };
-  }
-
-  await workflowQueue.removeJobScheduler(schedulerId, options);
+export async function removeWorkflowScheduler(schedulerId: string) {
+  await workflowQueue.removeJobScheduler(schedulerId);
 }
 
 export async function getWorkflowSchedulers() {
   const schedulers = await workflowQueue.getJobSchedulers();
   return schedulers;
 }
-
-
 
 export async function startWorkflowScheduler(workflowId: string, schedulerId: string, cronPattern: string) {
   await upsertWorkflowScheduler(schedulerId, {

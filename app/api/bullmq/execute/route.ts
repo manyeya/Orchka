@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { workflowQueue, webhookQueue } from '@/bullmq/setup';
+import { workflowQueue } from '@/bullmq/setup';
 import prisma from '@/lib/db';
 
 export async function POST(req: NextRequest) {
@@ -19,18 +19,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
     }
 
-    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Create the Execution record BEFORE adding the job to the queue
+    const execution = await prisma.execution.create({
+      data: {
+        workflowId,
+        userId: workflow.userId,
+        // status defaults to RUNNING in schema
+      },
+    });
 
     const job = await workflowQueue.add('execute-workflow', {
       workflowId,
-      executionId,
+      executionId: execution.id,
       userId: workflow.userId,
       initialData,
     });
 
     return NextResponse.json({
       success: true,
-      executionId,
+      executionId: execution.id,
       jobId: job.id,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { Worker } from 'bullmq';
 import { redisConnection } from './setup';
-import { executeWorkflowJob } from './orchestrator';
+import { executeWorkflowJob, executeNodeJob } from './orchestrator';
 
 export let workflowWorker: Worker | null = null;
 export let nodeWorker: Worker | null = null;
@@ -9,7 +9,7 @@ export function startWorkflowWorker() {
   workflowWorker = new Worker(
     'workflows',
     async (job) => {
-      console.log(`[Workflow Worker] Processing job ${job.id}`, job.data);
+      console.log(`[Workflow Worker] Processing workflow job ${job.id}`, job.data);
       return await executeWorkflowJob(job);
     },
     {
@@ -37,9 +37,8 @@ export function startNodeWorker() {
   nodeWorker = new Worker(
     'nodes',
     async (job) => {
-      console.log(`[Node Worker] Processing job ${job.id}`, job.data);
-      const { executor, data, nodeId, context, expressionContext, publish, resolveCredential } = job.data;
-      return await executor({ data, nodeId, context, expressionContext, publish, resolveCredential });
+      console.log(`[Node Worker] Processing node job ${job.id}:`, job.name);
+      return await executeNodeJob(job);
     },
     {
       connection: redisConnection,
@@ -48,11 +47,11 @@ export function startNodeWorker() {
   );
 
   nodeWorker.on('completed', (job, result) => {
-    console.log(`[Node Worker] Job ${job.id} completed`, result);
+    console.log(`[Node Worker] Job ${job.id} completed:`, job.name);
   });
 
   nodeWorker.on('failed', (job, error) => {
-    console.error(`[Node Worker] Job ${job?.id} failed:`, error);
+    console.error(`[Node Worker] Job ${job?.id} failed:`, job?.name, error);
   });
 
   nodeWorker.on('error', (error) => {

@@ -1,4 +1,4 @@
-import { Queue, FlowProducer, QueueEvents, Worker } from 'bullmq';
+import { Queue, FlowProducer, QueueEvents } from 'bullmq';
 
 export const redisConnection = {
   host: process.env.REDIS_HOST || 'localhost',

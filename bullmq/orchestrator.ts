@@ -1,3 +1,4 @@
+import { Job, UnrecoverableError } from "bullmq";
 import prisma from "@/lib/db";
 import { topologicalSortNodes } from "@/features/editor/utils/graph-validation";
 import { NodeType } from "@/features/nodes/types";
@@ -10,6 +11,7 @@ import { publishWorkflowEvent } from "./publisher";
 import type { BranchDecision } from "./types";
 import { getCredentialForExecution, CredentialNotFoundError } from "@/lib/credentials/execution";
 import { ExecutionStatus } from "@/lib/generated/prisma/client";
+import { nodeQueue } from "./setup";
 
 const CONTROL_NODE_TYPES: NodeType[] = [
   NodeType.IF_CONDITION,
@@ -17,6 +19,10 @@ const CONTROL_NODE_TYPES: NodeType[] = [
   NodeType.LOOP,
   NodeType.WAIT,
 ];
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 function filterInternalFields(context: Record<string, unknown>): Record<string, unknown> {
   const filtered: Record<string, unknown> = {};
@@ -42,31 +48,21 @@ interface ConnectionWithBranch {
 function getSkippedNodes(
   controlNodeId: string,
   branchDecision: BranchDecision,
-  connections: ConnectionWithBranch[],
-  _allNodes: { id: string; type: NodeType }[],
-  logger: { info: (obj: any, msg?: string) => void }
+  connections: ConnectionWithBranch[]
 ): Set<string> {
   const skippedNodes = new Set<string>();
   const outgoingConnections = connections.filter(c => c.fromNodeId === controlNodeId);
-
-  logger.info({ connections: outgoingConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `[getSkippedNodes] Control node: ${controlNodeId} - Outgoing connections`);
-  logger.info(`[getSkippedNodes] Branch decision: "${branchDecision.branch}"`);
 
   const nonTakenConnections = outgoingConnections.filter(
     c => c.fromOutput !== branchDecision.branch
   );
 
-  logger.info({ connections: nonTakenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `[getSkippedNodes] Non-taken connections`);
-
   for (const conn of nonTakenConnections) {
     const reachableFromNonTaken = findReachableNodes(conn.toNodeId, connections);
-    logger.info({ reachable: Array.from(reachableFromNonTaken) }, `[getSkippedNodes] Reachable from non-taken (${conn.fromOutput})`);
 
     const takenConnections = outgoingConnections.filter(
       c => c.fromOutput === branchDecision.branch
     );
-
-    logger.info({ connections: takenConnections.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `[getSkippedNodes] Taken connections`);
 
     const reachableFromTaken = new Set<string>();
     for (const takenConn of takenConnections) {
@@ -74,16 +70,12 @@ function getSkippedNodes(
       reachable.forEach(nodeId => reachableFromTaken.add(nodeId));
     }
 
-    logger.info({ reachable: Array.from(reachableFromTaken) }, `[getSkippedNodes] Reachable from taken`);
-
     for (const nodeId of reachableFromNonTaken) {
       if (!reachableFromTaken.has(nodeId)) {
         skippedNodes.add(nodeId);
       }
     }
   }
-
-  logger.info({ skippedNodes: Array.from(skippedNodes) }, `[getSkippedNodes] Final skipped nodes`);
 
   return skippedNodes;
 }
@@ -112,6 +104,83 @@ function findReachableNodes(
   return reachable;
 }
 
+// ============================================================================
+// Wait Node Handler (BullMQ-specific)
+// ============================================================================
+
+/**
+ * Unit multipliers for converting duration to milliseconds
+ */
+const WAIT_UNIT_MULTIPLIERS: Record<string, number> = {
+  seconds: 1000,
+  minutes: 60 * 1000,
+  hours: 60 * 60 * 1000,
+  days: 24 * 60 * 60 * 1000,
+};
+
+interface WaitNodeData {
+  name?: string;
+  mode: 'duration' | 'until';
+  duration?: {
+    value: number;
+    unit: 'seconds' | 'minutes' | 'hours' | 'days';
+  };
+  until?: string;
+}
+
+/**
+ * Handles WAIT node execution for BullMQ by calculating delay.
+ * Instead of using step.sleep (Inngest), we return the delay
+ * so the next node job can be scheduled with a delay.
+ */
+function handleWaitNode(
+  data: Record<string, unknown>,
+  nodeName: string
+): { delayMs: number; output: Record<string, unknown> } {
+  const waitData = data as unknown as WaitNodeData;
+
+  let delayMs = 0;
+  let output: Record<string, unknown> = { completed: true, mode: waitData.mode };
+
+  if (waitData.mode === 'duration') {
+    if (!waitData.duration) {
+      throw new Error('Wait Node: Duration configuration is required for duration mode');
+    }
+
+    const multiplier = WAIT_UNIT_MULTIPLIERS[waitData.duration.unit] || 1000;
+    delayMs = waitData.duration.value * multiplier;
+
+    output = {
+      completed: true,
+      mode: 'duration',
+      duration: delayMs,
+    };
+  } else if (waitData.mode === 'until') {
+    if (!waitData.until) {
+      throw new Error('Wait Node: Until timestamp is required for until mode');
+    }
+
+    const untilDate = new Date(waitData.until);
+    if (isNaN(untilDate.getTime())) {
+      throw new Error(`Wait Node: Invalid timestamp "${waitData.until}"`);
+    }
+
+    delayMs = Math.max(0, untilDate.getTime() - Date.now());
+
+    output = {
+      completed: true,
+      mode: 'until',
+      until: untilDate.toISOString(),
+    };
+  }
+
+  return { delayMs, output };
+}
+
+// ============================================================================
+// Job Data Types
+// ============================================================================
+
 export interface WorkflowJobData {
   workflowId: string;
   executionId: string;
@@ -119,18 +188,50 @@ export interface WorkflowJobData {
   initialData?: Record<string, unknown>;
 }
 
-export async function executeWorkflowJob(job: any) {
-  const { workflowId, executionId, userId, initialData } = job.data as WorkflowJobData;
-  const logger = {
-    info: (obj: any, msg?: string) => {
-      console.log(msg || 'log', obj);
-    }
-  };
+export interface NodeJobData {
+  workflowId: string;
+  executionId: string;
+  nodeId: string;
+  nodeName: string;
+  nodeType: string;
+  nodeData: Record<string, unknown>;
+  nodeIndex: number;
+  totalNodes: number;
+  // Accumulated context from previous nodes - passed via job.data
+  context: Record<string, unknown>;
+  // Branch decisions from control nodes
+  branchDecisions: Record<string, BranchDecision>;
+  // Node IDs to skip
+  skippedNodeIds: string[];
+  // All sorted node IDs for this workflow
+  sortedNodeIds: string[];
+}
+
+// ============================================================================
+// Workflow Job Handler - Starts the chain by spawning first node job
+// ============================================================================
+
+export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any> {
+  const { workflowId, executionId, initialData } = job.data;
+  const jobId = job.id;
+
+  console.log(`[Workflow] Starting workflow ${workflowId}, execution ${executionId}`);
 
   if (!workflowId) {
-    throw new Error('Workflow ID is required');
+    throw new UnrecoverableError('Workflow ID is required');
   }
 
+  if (!executionId) {
+    throw new UnrecoverableError('Execution ID is required');
+  }
+
+  // Update execution with job ID
+  await prisma.execution.update({
+    where: { id: executionId },
+    data: { inngestRunId: jobId },
+  });
+
+  // Fetch workflow
   const workflow = await prisma.workflow.findUniqueOrThrow({
     where: { id: workflowId },
     include: {
@@ -139,326 +240,275 @@ export async function executeWorkflowJob(job: any) {
     }
   });
 
-  let context = initialData || {};
-  const skippedNodes = new Set<string>();
-  const branchDecisions: Record<string, BranchDecision> = {};
+  // Get sorted nodes
+  const sortedNodes = topologicalSortNodes(workflow.nodes, workflow.connections);
 
-  const stepStub = {
-    run: async (name: string, fn: () => Promise<any>) => {
-      return await fn();
-    },
-    sleep: async (name: string, duration: number) => {
-      throw new Error('step.sleep() not yet implemented in BullMQ - use delay jobs');
-    },
-    sleepUntil: async (name: string, date: Date) => {
-      throw new Error('step.sleepUntil() not yet implemented in BullMQ - use delay jobs');
-    },
-  };
-
-  try {
-    for (const node of topologicalSortNodes(workflow.nodes, workflow.connections)) {
-      logger.info({ skippedNodes: Array.from(skippedNodes) }, `[execute] Processing node ${node.id} (${node.type})`);
-
-      if (skippedNodes.has(node.id)) {
-        logger.info(`[execute] Skipping node ${node.id} - not on active branch`);
-        continue;
-      }
-
-      logger.info(`[execute] Executing node ${node.id}`);
-
-      const inputData = { ...context };
-
-      const expressionContext = buildExpressionContext({
-        nodeResults: {
-          ...context,
-          __branchDecisions: branchDecisions,
-        },
-        nodes: workflow.nodes.map(n => ({
-          id: n.id,
-          type: n.type,
-          data: n.data as Record<string, unknown>,
-        })),
-        workflowId,
-        workflowName: workflow.name,
-        executionId,
-        currentNodeId: node.id,
-      });
-
-      const resolvedData = await resolveNodeExpressions(
-        node.data as Record<string, unknown>,
-        expressionContext
-      );
-
-      const executor = getExecutor(node.type as NodeType);
-
-      const resolveCredential = async (credentialId: string) => {
-        try {
-          return await getCredentialForExecution(credentialId, workflowId);
-        } catch (error) {
-          if (error instanceof CredentialNotFoundError) {
-            throw new Error(`Credential not found: ${credentialId}. The credential may have been deleted.`);
-          }
-          throw error;
-        }
-      };
-
-      const stepStartedAt = new Date();
-      const stepRecord = await prisma.executionStep.create({
-        data: {
-          executionId,
-          nodeId: node.id,
-          nodeName: node.name,
-          nodeType: node.type,
-          status: "RUNNING",
-          startedAt: stepStartedAt,
-          input: filterInternalFields(inputData) as any,
-        }
-      });
-
-      try {
-        const publish = async (payload: any) => {
-          await publishWorkflowEvent(workflowId, payload);
-        };
-
-        context = await executor({
-          data: resolvedData,
-          nodeId: node.id,
-          context,
-          expressionContext,
-          publish,
-          resolveCredential,
-          step: stepStub as any,
-        });
-
-        const cleanOutput = filterInternalFields(context);
-
-        await prisma.executionStep.update({
-          where: { id: stepRecord.id },
-          data: {
-            status: "COMPLETED",
-            completedAt: new Date(),
-            output: cleanOutput as any,
-          }
-        });
-
-        await publishWorkflowEvent(workflowId, {
-          nodeId: node.id,
-          input: filterInternalFields(inputData) as any,
-          output: cleanOutput as any,
-          nodeType: node.type,
-        });
-      } catch (error) {
-        const stepErrorMessage = error instanceof Error ? error.message : "Step failed";
-
-        await prisma.executionStep.update({
-          where: { id: stepRecord.id },
-          data: {
-            status: "FAILED",
-            completedAt: new Date(),
-            error: stepErrorMessage,
-          }
-        });
-
-        throw error;
-      }
-
-      if (isControlNode(node.type as NodeType) && context.__branchDecision) {
-        const branchDecision = context.__branchDecision as BranchDecision;
-        branchDecisions[node.id] = branchDecision;
-
-        if (node.type === NodeType.LOOP && context.__loopNode) {
-          const loopData = context.__loopNode as {
-            nodeId: string;
-            nodeName: string;
-            items: unknown[];
-            total: number;
-            mode: string;
-            currentIndex: number;
-            results: unknown[];
-          };
-
-          const loopBodyConnections = workflow.connections.filter(
-            c => c.fromNodeId === node.id && c.fromOutput === "loop"
-          );
-
-          if (loopBodyConnections.length > 0 && loopData.items.length > 0) {
-            const loopBodyNodeIds = new Set<string>();
-            for (const conn of loopBodyConnections) {
-              const reachable = findReachableNodes(conn.toNodeId, workflow.connections);
-              reachable.forEach(id => loopBodyNodeIds.add(id));
-            }
-
-            const doneConnections = workflow.connections.filter(
-              c => c.fromNodeId === node.id && c.fromOutput === "done"
-            );
-            const doneNodeIds = new Set<string>();
-            for (const conn of doneConnections) {
-              const reachable = findReachableNodes(conn.toNodeId, workflow.connections);
-              reachable.forEach(id => doneNodeIds.add(id));
-            }
-
-            for (const doneId of doneNodeIds) {
-              loopBodyNodeIds.delete(doneId);
-            }
-
-            const loopBodyNodes = topologicalSortNodes(workflow.nodes, workflow.connections).filter(n => loopBodyNodeIds.has(n.id));
-
-            logger.info({ loopBodyNodes: loopBodyNodes.map(n => n.id) }, `Loop node ${node.id}: Executing loop body nodes`);
-
-            const iterationResults: unknown[] = [];
-
-            for (let index = 0; index < loopData.items.length; index++) {
-              const item = loopData.items[index];
-
-              logger.info(`Loop iteration ${index + 1}/${loopData.total}`);
-
-              let iterationContext = {
-                ...context,
-                [`${loopData.nodeName}`]: {
-                  ...((context[loopData.nodeName] as Record<string, unknown>) || {}),
-                  $item: item,
-                  $index: index,
-                  $total: loopData.total,
-                },
-                $item: item,
-                $index: index,
-                $total: loopData.total,
-              };
-
-              for (const loopBodyNode of loopBodyNodes) {
-                const loopExpressionContext = buildExpressionContext({
-                  nodeResults: {
-                    ...iterationContext,
-                    __branchDecisions: branchDecisions,
-                  },
-                  nodes: workflow.nodes.map(n => ({
-                    id: n.id,
-                    type: n.type,
-                    data: n.data as Record<string, unknown>,
-                  })),
-                  workflowId,
-                  workflowName: workflow.name,
-                  executionId,
-                  currentNodeId: loopBodyNode.id,
-                });
-
-                const resolvedLoopData = await resolveNodeExpressions(
-                  loopBodyNode.data as Record<string, unknown>,
-                  loopExpressionContext
-                );
-
-                const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
-
-                 const publish = async (payload: any) => {
-                  await publishWorkflowEvent(workflowId, payload);
-                };
-
-                const executorResult = await loopExecutor({
-                  data: resolvedLoopData,
-                  nodeId: loopBodyNode.id,
-                  context: iterationContext as any,
-                  expressionContext: loopExpressionContext,
-                  publish,
-                  resolveCredential,
-                  step: stepStub as any,
-                });
-
-                iterationContext = { ...iterationContext, ...executorResult };
-
-                const cleanIterationOutput = filterInternalFields(iterationContext);
-
-                await publishWorkflowEvent(workflowId, {
-                  nodeId: loopBodyNode.id,
-                  input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }) as any,
-                  output: cleanIterationOutput as any,
-                  nodeType: loopBodyNode.type,
-                  iteration: { index, total: loopData.total },
-                });
-              }
-
-              iterationResults.push({
-                item,
-                index,
-                result: filterInternalFields(iterationContext),
-              });
-            }
-
-            context = {
-              ...context,
-              [`${loopData.nodeName}`]: {
-                items: loopData.items,
-                total: loopData.total,
-                mode: loopData.mode,
-                results: iterationResults,
-              },
-              __loopResults: iterationResults,
-            };
-
-            loopBodyNodeIds.forEach(id => skippedNodes.add(id));
-
-            const doneBranchDecision: BranchDecision = {
-              branch: "done",
-              data: {
-                results: iterationResults,
-                total: loopData.total,
-                mode: loopData.mode,
-              },
-            };
-            branchDecisions[node.id] = doneBranchDecision;
-            context = {
-              ...context,
-              __branchDecision: doneBranchDecision,
-              __lastBranchDecision: doneBranchDecision,
-              __branchDecisions: branchDecisions,
-            };
-
-            logger.info({ results: iterationResults.length }, `Loop node ${node.id}: Completed all iterations`);
-          }
-        } else {
-          context = {
-            ...context,
-            __lastBranchDecision: branchDecision,
-            __branchDecisions: branchDecisions,
-          };
-
-          const outgoingConns = workflow.connections.filter(c => c.fromNodeId === node.id);
-          logger.info({ connections: outgoingConns.map(c => ({ to: c.toNodeId, output: c.fromOutput })) }, `Control node ${node.id} connections`);
-          logger.info(`Branch decision: "${branchDecision.branch}"`);
-
-          const nodesToSkip = getSkippedNodes(
-            node.id,
-            branchDecision,
-            workflow.connections,
-            workflow.nodes.map(n => ({ id: n.id, type: n.type as NodeType })),
-            logger
-          );
-
-          nodesToSkip.forEach(nodeId => skippedNodes.add(nodeId));
-
-          logger.info({ skippedNodes: Array.from(nodesToSkip) }, `Control node ${node.id} took branch "${branchDecision.branch}", skipping nodes`);
-        }
-      }
-    }
-
-    const cleanResult = filterInternalFields(context);
-
+  if (sortedNodes.length === 0) {
     await prisma.execution.update({
       where: { id: executionId },
       data: {
         status: ExecutionStatus.COMPLETED,
         completedAt: new Date(),
-        result: cleanResult as any,
+        result: {},
+      }
+    });
+    return { success: true, result: {} };
+  }
+
+  const firstNode = sortedNodes[0];
+
+  // Add first node job - it will chain to the next nodes
+  await nodeQueue.add(
+    `node:${firstNode.type}:${firstNode.name}`,
+    {
+      workflowId,
+      executionId,
+      nodeId: firstNode.id,
+      nodeName: firstNode.name,
+      nodeType: firstNode.type,
+      nodeData: firstNode.data as Record<string, unknown>,
+      nodeIndex: 0,
+      totalNodes: sortedNodes.length,
+      context: initialData || {},
+      branchDecisions: {},
+      skippedNodeIds: [],
+      sortedNodeIds: sortedNodes.map(n => n.id),
+    } as NodeJobData,
+    {
+      attempts: 3, // Per-node retry
+      backoff: { type: 'exponential', delay: 1000 },
+    }
+  );
+
+  console.log(`[Workflow] Queued first node: ${firstNode.name}`);
+
+  return {
+    workflowId,
+    executionId,
+    message: 'Workflow started, first node queued',
+  };
+}
+
+// ============================================================================
+// Node Job Handler - Executes a single node, chains to next
+// ============================================================================
+
+export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
+  const {
+    workflowId,
+    executionId,
+    nodeId,
+    nodeName,
+    nodeType,
+    nodeData,
+    nodeIndex,
+    totalNodes,
+    context,
+    branchDecisions,
+    skippedNodeIds,
+    sortedNodeIds,
+  } = job.data;
+
+  console.log(`[Node ${nodeIndex + 1}/${totalNodes}] Executing ${nodeName} (${nodeType})`);
+
+  // Check if this node should be skipped
+  if (skippedNodeIds.includes(nodeId)) {
+    console.log(`[Node] Skipping ${nodeName} - not on active branch`);
+
+    // Chain to next node if there is one
+    await chainToNextNode(job.data, context, branchDecisions, skippedNodeIds);
+
+    return { skipped: true, nodeId, nodeName };
+  }
+
+  // Fetch workflow for expression context
+  const workflow = await prisma.workflow.findUniqueOrThrow({
+    where: { id: workflowId },
+    include: {
+      nodes: true,
+      connections: true,
+    }
+  });
+
+  // Build expression context
+  const expressionContext = buildExpressionContext({
+    nodeResults: {
+      ...context,
+      __branchDecisions: branchDecisions,
+    },
+    nodes: workflow.nodes.map(n => ({
+      id: n.id,
+      type: n.type,
+      data: n.data as Record<string, unknown>,
+    })),
+    workflowId,
+    workflowName: workflow.name,
+    executionId,
+    currentNodeId: nodeId,
+  });
+
+  // Resolve expressions in node data
+  const resolvedData = await resolveNodeExpressions(nodeData, expressionContext);
+
+  // Get executor for this node type
+  const executor = getExecutor(nodeType as NodeType);
+
+  // Create credential resolver
+  const resolveCredential = async (credentialId: string) => {
+    try {
+      return await getCredentialForExecution(credentialId, workflowId);
+    } catch (error) {
+      if (error instanceof CredentialNotFoundError) {
+        throw new UnrecoverableError(`Credential not found: ${credentialId}`);
+      }
+      throw error;
+    }
+  };
+
+  // Create step record
+  const stepStartedAt = new Date();
+  const stepRecord = await prisma.executionStep.create({
+    data: {
+      executionId,
+      nodeId,
+      nodeName,
+      nodeType,
+      status: "RUNNING",
+      startedAt: stepStartedAt,
+      input: filterInternalFields(context) as any,
+    }
+  });
+
+  try {
+    const publish = async (payload: any) => {
+      await publishWorkflowEvent(workflowId, payload);
+    };
+
+    let result: Record<string, unknown>;
+    let delayForNextNode: number | undefined;
+
+    // Special handling for WAIT node - use BullMQ delayed jobs instead of step.sleep
+    if (nodeType === NodeType.WAIT) {
+      const waitResult = handleWaitNode(resolvedData, nodeName);
+      result = {
+        ...context,
+        [nodeName]: waitResult.output,
+        __branchDecision: { branch: "main", data: waitResult.output },
+      };
+      delayForNextNode = waitResult.delayMs;
+      console.log(`[Node] Wait node ${nodeName}: ${waitResult.delayMs}ms delay for next node`);
+    } else {
+      // Execute the node normally
+      result = await executor({
+        data: resolvedData,
+        nodeId,
+        context,
+        expressionContext,
+        publish,
+        resolveCredential,
+      });
+    }
+
+    const cleanOutput = filterInternalFields(result);
+
+    // Update step record
+    await prisma.executionStep.update({
+      where: { id: stepRecord.id },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        output: cleanOutput as any,
       }
     });
 
-    return {
-      workflowId,
-      executionId,
-      result: cleanResult,
-      branchDecisions,
+    // Publish realtime event
+    await publishWorkflowEvent(workflowId, {
+      nodeId,
+      input: filterInternalFields(context) as any,
+      output: cleanOutput as any,
+      nodeType,
+    });
+
+    // Update context with this node's result
+    const newContext = {
+      ...context,
+      [nodeName]: cleanOutput,
     };
+
+    // Handle control node branch decisions
+    let newBranchDecisions = { ...branchDecisions };
+    let newSkippedNodeIds = [...skippedNodeIds];
+
+    if (isControlNode(nodeType as NodeType) && result.__branchDecision) {
+      const branchDecision = result.__branchDecision as BranchDecision;
+      newBranchDecisions[nodeId] = branchDecision;
+
+      // Special handling for LOOP nodes
+      if (nodeType === NodeType.LOOP && result.__loopNode) {
+        const loopResult = await executeLoopBody(
+          workflow,
+          nodeId,
+          nodeName,
+          result,
+          newContext,
+          newBranchDecisions,
+          executionId,
+          workflowId,
+          publish,
+          resolveCredential
+        );
+
+        // Update context and skipped nodes from loop execution
+        Object.assign(newContext, loopResult.context);
+        newSkippedNodeIds.push(...loopResult.skippedNodeIds);
+        newBranchDecisions = loopResult.branchDecisions;
+      } else {
+        // For IF/SWITCH - calculate skipped nodes
+        const nodesToSkip = getSkippedNodes(
+          nodeId,
+          branchDecision,
+          workflow.connections.map(c => ({
+            fromNodeId: c.fromNodeId,
+            toNodeId: c.toNodeId,
+            fromOutput: c.fromOutput,
+            toInput: c.toInput,
+          }))
+        );
+        newSkippedNodeIds.push(...Array.from(nodesToSkip));
+
+        console.log(`[Node] Control node ${nodeName} took branch "${branchDecision.branch}", skipping ${nodesToSkip.size} nodes`);
+      }
+    }
+
+    console.log(`[Node] Completed ${nodeName}`);
+
+    // Chain to next node (with delay if this was a WAIT node)
+    await chainToNextNode(
+      job.data,
+      newContext,
+      newBranchDecisions,
+      newSkippedNodeIds,
+      delayForNextNode
+    );
+
+    return {
+      nodeId,
+      nodeName,
+      nodeType,
+      output: cleanOutput,
+    };
+
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    const errorMessage = error instanceof Error ? error.message : "Node execution failed";
+
+    await prisma.executionStep.update({
+      where: { id: stepRecord.id },
+      data: {
+        status: "FAILED",
+        completedAt: new Date(),
+        error: errorMessage,
+      }
+    });
 
     await prisma.execution.update({
       where: { id: executionId },
@@ -469,6 +519,251 @@ export async function executeWorkflowJob(job: any) {
       }
     });
 
+    console.error(`[Node] Failed ${nodeName}: ${errorMessage}`);
     throw error;
   }
+}
+
+// ============================================================================
+// Chain to Next Node
+// ============================================================================
+
+async function chainToNextNode(
+  currentJobData: NodeJobData,
+  newContext: Record<string, unknown>,
+  newBranchDecisions: Record<string, BranchDecision>,
+  newSkippedNodeIds: string[],
+  delayMs?: number
+): Promise<void> {
+  const { workflowId, executionId, nodeIndex, totalNodes, sortedNodeIds } = currentJobData;
+
+  const nextIndex = nodeIndex + 1;
+
+  if (nextIndex >= totalNodes) {
+    // All nodes completed - mark execution as complete
+    const cleanResult = filterInternalFields(newContext);
+
+    await prisma.execution.update({
+      where: { id: executionId },
+      data: {
+        status: ExecutionStatus.COMPLETED,
+        completedAt: new Date(),
+        result: cleanResult as any,
+      }
+    });
+
+    console.log(`[Workflow] Completed execution ${executionId}`);
+    return;
+  }
+
+  // Get next node
+  const workflow = await prisma.workflow.findUniqueOrThrow({
+    where: { id: workflowId },
+    include: { nodes: true }
+  });
+
+  const nextNodeId = sortedNodeIds[nextIndex];
+  const nextNode = workflow.nodes.find(n => n.id === nextNodeId);
+
+  if (!nextNode) {
+    throw new Error(`Next node not found: ${nextNodeId}`);
+  }
+
+  // Add next node job with accumulated context
+  const jobOptions: any = {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 1000 },
+  };
+
+  // Add delay for WAIT nodes
+  if (delayMs && delayMs > 0) {
+    jobOptions.delay = delayMs;
+    console.log(`[Node] Adding next job with ${delayMs}ms delay`);
+  }
+
+  await nodeQueue.add(
+    `node:${nextNode.type}:${nextNode.name}`,
+    {
+      workflowId,
+      executionId,
+      nodeId: nextNode.id,
+      nodeName: nextNode.name,
+      nodeType: nextNode.type,
+      nodeData: nextNode.data as Record<string, unknown>,
+      nodeIndex: nextIndex,
+      totalNodes,
+      context: newContext,
+      branchDecisions: newBranchDecisions,
+      skippedNodeIds: newSkippedNodeIds,
+      sortedNodeIds,
+    } as NodeJobData,
+    jobOptions
+  );
+
+  console.log(`[Node] Chained to next node: ${nextNode.name}`);
+}
+
+// ============================================================================
+// Loop Body Execution
+// ============================================================================
+
+async function executeLoopBody(
+  workflow: any,
+  loopNodeId: string,
+  loopNodeName: string,
+  result: Record<string, unknown>,
+  context: Record<string, unknown>,
+  branchDecisions: Record<string, BranchDecision>,
+  executionId: string,
+  workflowId: string,
+  publish: (payload: any) => Promise<void>,
+  resolveCredential: (id: string) => Promise<any>
+): Promise<{
+  context: Record<string, unknown>;
+  skippedNodeIds: string[];
+  branchDecisions: Record<string, BranchDecision>;
+}> {
+  const loopData = result.__loopNode as {
+    nodeId: string;
+    nodeName: string;
+    items: unknown[];
+    total: number;
+    mode: string;
+  };
+
+  // Find loop body nodes
+  const loopBodyConnections = workflow.connections.filter(
+    (c: any) => c.fromNodeId === loopNodeId && c.fromOutput === "loop"
+  );
+
+  const skippedNodeIds: string[] = [];
+
+  if (loopBodyConnections.length === 0 || loopData.items.length === 0) {
+    return { context, skippedNodeIds, branchDecisions };
+  }
+
+  // Get loop body node IDs
+  const connections = workflow.connections.map((c: any) => ({
+    fromNodeId: c.fromNodeId,
+    toNodeId: c.toNodeId,
+    fromOutput: c.fromOutput,
+    toInput: c.toInput,
+  }));
+
+  const loopBodyNodeIds = new Set<string>();
+  for (const conn of loopBodyConnections) {
+    const reachable = findReachableNodes(conn.toNodeId, connections);
+    reachable.forEach((id: string) => loopBodyNodeIds.add(id));
+  }
+
+  // Exclude done branch nodes
+  const doneConnections = workflow.connections.filter(
+    (c: any) => c.fromNodeId === loopNodeId && c.fromOutput === "done"
+  );
+  for (const conn of doneConnections) {
+    const reachable = findReachableNodes(conn.toNodeId, connections);
+    reachable.forEach((id: string) => loopBodyNodeIds.delete(id));
+  }
+
+  // Get sorted loop body nodes
+  const loopBodyNodes = topologicalSortNodes(workflow.nodes, workflow.connections)
+    .filter((n: any) => loopBodyNodeIds.has(n.id));
+
+  console.log(`[Loop] Executing ${loopData.items.length} iterations for ${loopNodeName}`);
+
+  const iterationResults: unknown[] = [];
+
+  for (let index = 0; index < loopData.items.length; index++) {
+    const item = loopData.items[index];
+    console.log(`[Loop] Iteration ${index + 1}/${loopData.total}`);
+
+    let iterationContext = {
+      ...context,
+      [loopNodeName]: {
+        ...((context[loopNodeName] as Record<string, unknown>) || {}),
+        $item: item,
+        $index: index,
+        $total: loopData.total,
+      },
+      $item: item,
+      $index: index,
+      $total: loopData.total,
+    };
+
+    for (const loopBodyNode of loopBodyNodes) {
+      const loopExpressionContext = buildExpressionContext({
+        nodeResults: { ...iterationContext, __branchDecisions: branchDecisions },
+        nodes: workflow.nodes.map((n: any) => ({
+          id: n.id,
+          type: n.type,
+          data: n.data as Record<string, unknown>,
+        })),
+        workflowId,
+        workflowName: workflow.name,
+        executionId,
+        currentNodeId: loopBodyNode.id,
+      });
+
+      const resolvedLoopData = await resolveNodeExpressions(
+        loopBodyNode.data as Record<string, unknown>,
+        loopExpressionContext
+      );
+
+      const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
+      const executorResult = await loopExecutor({
+        data: resolvedLoopData,
+        nodeId: loopBodyNode.id,
+        context: iterationContext as any,
+        expressionContext: loopExpressionContext,
+        publish,
+        resolveCredential,
+      });
+
+      iterationContext = { ...iterationContext, ...executorResult };
+
+      await publish({
+        nodeId: loopBodyNode.id,
+        input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }) as any,
+        output: filterInternalFields(iterationContext) as any,
+        nodeType: loopBodyNode.type,
+        iteration: { index, total: loopData.total },
+      });
+    }
+
+    iterationResults.push({
+      item,
+      index,
+      result: filterInternalFields(iterationContext),
+    });
+  }
+
+  // Mark loop body nodes as skipped for main execution flow
+  skippedNodeIds.push(...Array.from(loopBodyNodeIds));
+
+  // Update branch decision to done
+  const doneBranchDecision: BranchDecision = {
+    branch: "done",
+    data: { results: iterationResults, total: loopData.total, mode: loopData.mode },
+  };
+
+  const newContext = {
+    ...context,
+    [loopNodeName]: {
+      items: loopData.items,
+      total: loopData.total,
+      mode: loopData.mode,
+      results: iterationResults,
+      $item: loopData.items[loopData.items.length - 1],
+      $index: loopData.items.length - 1,
+      $total: loopData.total,
+    },
+  };
+
+  console.log(`[Loop] Completed all ${iterationResults.length} iterations`);
+
+  return {
+    context: newContext,
+    skippedNodeIds,
+    branchDecisions: { ...branchDecisions, [loopNodeId]: doneBranchDecision },
+  };
 }
