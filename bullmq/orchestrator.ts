@@ -137,10 +137,13 @@ function handleWaitNode(
   data: Record<string, unknown>,
   nodeName: string
 ): { delayMs: number; output: Record<string, unknown> } {
+  console.log(`[Wait Debug] handleWaitNode called with data:`, JSON.stringify(data, null, 2));
   const waitData = data as unknown as WaitNodeData;
 
   let delayMs = 0;
   let output: Record<string, unknown> = { completed: true, mode: waitData.mode };
+
+  console.log(`[Wait Debug] mode=${waitData.mode}, duration=`, waitData.duration, `until=${waitData.until}`);
 
   if (waitData.mode === 'duration') {
     if (!waitData.duration) {
@@ -205,6 +208,8 @@ export interface NodeJobData {
   skippedNodeIds: string[];
   // All sorted node IDs for this workflow
   sortedNodeIds: string[];
+  // Previous WAIT node ID (to mark as success when this node starts)
+  previousWaitNodeId?: string;
 }
 
 // ============================================================================
@@ -307,9 +312,25 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     branchDecisions,
     skippedNodeIds,
     sortedNodeIds,
+    previousWaitNodeId,
   } = job.data;
 
   console.log(`[Node ${nodeIndex + 1}/${totalNodes}] Executing ${nodeName} (${nodeType})`);
+  console.log(`[Node Debug] nodeType="${nodeType}", NodeType.WAIT="${NodeType.WAIT}", NodeType.LOOP="${NodeType.LOOP}"`);
+  console.log(`[Node Debug] isWait=${nodeType === NodeType.WAIT}, isLoop=${nodeType === NodeType.LOOP}`);
+  console.log(`[Node Debug] isControlNode=${isControlNode(nodeType as NodeType)}`);
+
+  // If this job was delayed after a WAIT node, mark the WAIT node as success now
+  if (previousWaitNodeId) {
+    console.log(`[Node] Marking previous WAIT node ${previousWaitNodeId} as success (delay completed)`);
+    await publishWorkflowEvent(workflowId, {
+      nodeId: previousWaitNodeId,
+      type: 'node-status',
+      status: 'success',
+      nodeType: NodeType.WAIT,
+    });
+  }
+
 
   // Check if this node should be skipped
   if (skippedNodeIds.includes(nodeId)) {
@@ -431,13 +452,25 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     });
 
     // Publish realtime event
+    // For WAIT nodes with a delay, show "waiting" status until the delay completes
+    const publishedStatus = (nodeType === NodeType.WAIT && delayForNextNode && delayForNextNode > 0)
+      ? 'loading'  // Keep loading/waiting state
+      : 'success';
+
     await publishWorkflowEvent(workflowId, {
       nodeId,
       input: filterInternalFields(context) as any,
       output: cleanOutput as any,
       nodeType,
       type: 'node-status',
-      status: 'success',
+      status: publishedStatus,
+      // Include wait info for frontend to potentially show countdown
+      ...(nodeType === NodeType.WAIT && delayForNextNode ? {
+        waitInfo: {
+          delayMs: delayForNextNode,
+          endsAt: Date.now() + delayForNextNode,
+        }
+      } : {}),
     });
 
     // Update context with this node's result
@@ -556,13 +589,23 @@ async function chainToNextNode(
   newSkippedNodeIds: string[],
   delayMs?: number
 ): Promise<void> {
-  const { workflowId, executionId, nodeIndex, totalNodes, sortedNodeIds } = currentJobData;
+  const { workflowId, executionId, nodeType, nodeId, nodeIndex, totalNodes, sortedNodeIds } = currentJobData;
 
   const nextIndex = nodeIndex + 1;
 
   if (nextIndex >= totalNodes) {
     // All nodes completed - mark execution as complete
     const cleanResult = filterInternalFields(newContext);
+
+    // If this was a WAIT node with a delay, mark it as success now
+    if (nodeType === NodeType.WAIT && delayMs && delayMs > 0) {
+      await publishWorkflowEvent(workflowId, {
+        nodeId,
+        type: 'node-status',
+        status: 'success',
+        nodeType: NodeType.WAIT,
+      });
+    }
 
     await prisma.execution.update({
       where: { id: executionId },
@@ -617,6 +660,8 @@ async function chainToNextNode(
       branchDecisions: newBranchDecisions,
       skippedNodeIds: newSkippedNodeIds,
       sortedNodeIds,
+      // Pass the WAIT node ID so we can mark it as success when this job starts
+      previousWaitNodeId: (nodeType === NodeType.WAIT && delayMs && delayMs > 0) ? nodeId : undefined,
     } as NodeJobData,
     jobOptions
   );
@@ -652,14 +697,21 @@ async function executeLoopBody(
     mode: string;
   };
 
+  console.log(`[Loop Debug] executeLoopBody called for ${loopNodeName}`);
+  console.log(`[Loop Debug] loopData =`, JSON.stringify(loopData, null, 2));
+
   // Find loop body nodes
   const loopBodyConnections = workflow.connections.filter(
     (c: any) => c.fromNodeId === loopNodeId && c.fromOutput === "loop"
   );
 
+  console.log(`[Loop Debug] loopBodyConnections.length = ${loopBodyConnections.length}`);
+  console.log(`[Loop Debug] loopBodyConnections =`, JSON.stringify(loopBodyConnections, null, 2));
+
   const skippedNodeIds: string[] = [];
 
   if (loopBodyConnections.length === 0 || loopData.items.length === 0) {
+    console.log(`[Loop Debug] EARLY EXIT: loopBodyConnections.length=${loopBodyConnections.length}, items.length=${loopData.items.length}`);
     return { context, skippedNodeIds, branchDecisions };
   }
 
@@ -677,6 +729,8 @@ async function executeLoopBody(
     reachable.forEach((id: string) => loopBodyNodeIds.add(id));
   }
 
+  console.log(`[Loop Debug] loopBodyNodeIds before exclusion =`, Array.from(loopBodyNodeIds));
+
   // Exclude done branch nodes
   const doneConnections = workflow.connections.filter(
     (c: any) => c.fromNodeId === loopNodeId && c.fromOutput === "done"
@@ -686,17 +740,22 @@ async function executeLoopBody(
     reachable.forEach((id: string) => loopBodyNodeIds.delete(id));
   }
 
+  console.log(`[Loop Debug] loopBodyNodeIds after exclusion =`, Array.from(loopBodyNodeIds));
+
   // Get sorted loop body nodes
   const loopBodyNodes = topologicalSortNodes(workflow.nodes, workflow.connections)
     .filter((n: any) => loopBodyNodeIds.has(n.id));
 
+  console.log(`[Loop Debug] loopBodyNodes =`, loopBodyNodes.map((n: any) => ({ id: n.id, name: n.name, type: n.type })));
+  console.log(`[Loop Debug] loopData.items =`, loopData.items);
+  console.log(`[Loop Debug] loopBodyNodes.length =`, loopBodyNodes.length);
   console.log(`[Loop] Executing ${loopData.items.length} iterations for ${loopNodeName}`);
 
   const iterationResults: unknown[] = [];
 
   for (let index = 0; index < loopData.items.length; index++) {
     const item = loopData.items[index];
-    console.log(`[Loop] Iteration ${index + 1}/${loopData.total}`);
+    console.log(`[Loop Debug] Starting iteration ${index + 1}/${loopData.total}, item=`, item);
 
     let iterationContext = {
       ...context,
@@ -730,24 +789,56 @@ async function executeLoopBody(
         loopExpressionContext
       );
 
-      const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
-      const executorResult = await loopExecutor({
-        data: resolvedLoopData,
-        nodeId: loopBodyNode.id,
-        context: iterationContext as any,
-        expressionContext: loopExpressionContext,
-        publish,
-        resolveCredential,
-      });
+      let executorResult: Record<string, unknown>;
+
+      // Special handling for WAIT nodes inside loop body
+      if (loopBodyNode.type === NodeType.WAIT) {
+        const waitNodeName = String(loopBodyNode.name || 'Wait');
+        const waitResult = handleWaitNode(resolvedLoopData, waitNodeName);
+
+        // Actually wait using setTimeout
+        if (waitResult.delayMs > 0) {
+          console.log(`[Loop] Wait node ${waitNodeName}: sleeping for ${waitResult.delayMs}ms`);
+          await new Promise(resolve => setTimeout(resolve, waitResult.delayMs));
+        }
+
+        executorResult = {
+          ...iterationContext,
+          [waitNodeName]: waitResult.output,
+          __branchDecision: { branch: "main", data: waitResult.output },
+        };
+      } else {
+        const loopExecutor = getExecutor(loopBodyNode.type as NodeType);
+        executorResult = await loopExecutor({
+          data: resolvedLoopData,
+          nodeId: loopBodyNode.id,
+          context: iterationContext as any,
+          expressionContext: loopExpressionContext,
+          publish,
+          resolveCredential,
+        });
+      }
 
       iterationContext = { ...iterationContext, ...executorResult };
 
+      // Publish status for the loop body node being executed
       await publish({
         nodeId: loopBodyNode.id,
+        type: 'node-status',
+        status: 'success',
         input: filterInternalFields({ $item: item, $index: index, $total: loopData.total }) as any,
         output: filterInternalFields(iterationContext) as any,
         nodeType: loopBodyNode.type,
         iteration: { index, total: loopData.total },
+      });
+
+      // Also publish iteration progress for the LOOP node itself
+      await publish({
+        nodeId: loopNodeId,
+        type: 'node-status',
+        status: 'loading',
+        nodeType: NodeType.LOOP,
+        iteration: { index: index + 1, total: loopData.total },
       });
     }
 
@@ -781,6 +872,20 @@ async function executeLoopBody(
   };
 
   console.log(`[Loop] Completed all ${iterationResults.length} iterations`);
+
+  // Publish success status for the loop node now that all iterations are done
+  await publish({
+    nodeId: loopNodeId,
+    type: 'node-status',
+    status: 'success',
+    nodeType: NodeType.LOOP,
+    output: {
+      items: loopData.items,
+      total: loopData.total,
+      mode: loopData.mode,
+      results: iterationResults,
+    },
+  });
 
   return {
     context: newContext,

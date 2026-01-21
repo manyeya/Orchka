@@ -54,9 +54,20 @@ export interface NodeExecutionData {
   input: unknown;
   output: unknown;
   timestamp: number;
+  iteration?: {
+    index: number;
+    total: number;
+  };
 }
 export const nodeExecutionDataAtom = atom<Record<string, NodeExecutionData>>({});
 export const nodeStatusesAtom = atom<Record<string, WorkflowNodeStatus>>({});
+
+/** Stores iteration progress for loop nodes, keyed by nodeId */
+export interface LoopIterationProgress {
+  index: number;  // 1-based (iteration 1 of 10)
+  total: number;
+}
+export const nodeIterationAtom = atom<Record<string, LoopIterationProgress>>({});
 
 // Constants
 const MAX_HISTORY_SIZE = 50;

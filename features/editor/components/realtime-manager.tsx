@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { workflowIdAtom, nodeStatusesAtom, nodeExecutionDataAtom, type NodeExecutionData } from '../store';
+import { workflowIdAtom, nodeStatusesAtom, nodeExecutionDataAtom, nodeIterationAtom, type NodeExecutionData, type LoopIterationProgress } from '../store';
 import { WorkflowNodeStatus } from '@/components/workflow-node';
 
 /**
@@ -13,6 +13,7 @@ export function RealtimeManager() {
     const workflowId = useAtomValue(workflowIdAtom);
     const setNodeStatuses = useSetAtom(nodeStatusesAtom);
     const setNodeExecutionData = useSetAtom(nodeExecutionDataAtom);
+    const setNodeIteration = useSetAtom(nodeIterationAtom);
 
     useEffect(() => {
         if (!workflowId) return;
@@ -51,11 +52,24 @@ export function RealtimeManager() {
                         input: data.input,
                         output: data.output,
                         timestamp: Date.now(),
+                        iteration: data.iteration,
                     };
 
                     setNodeExecutionData(prev => ({
                         ...prev,
                         [nodeId]: newData
+                    }));
+                }
+
+                // 3. Update Loop Iteration Progress
+                if (data.iteration) {
+                    const iterationProgress: LoopIterationProgress = {
+                        index: data.iteration.index,
+                        total: data.iteration.total,
+                    };
+                    setNodeIteration(prev => ({
+                        ...prev,
+                        [nodeId]: iterationProgress
                     }));
                 }
             } catch (error) {
@@ -72,7 +86,8 @@ export function RealtimeManager() {
             console.log(`[RealtimeManager] Closing SSE for workflow: ${workflowId}`);
             eventSource.close();
         };
-    }, [workflowId, setNodeStatuses, setNodeExecutionData]);
+    }, [workflowId, setNodeStatuses, setNodeExecutionData, setNodeIteration]);
 
     return null; // This component doesn't render anything
 }
+

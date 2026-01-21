@@ -8,6 +8,7 @@ import { useSetAtom } from "jotai";
 import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
+import { useNodeIteration } from "@/features/nodes/utils/use-node-iteration";
 import { BaseControlNode } from "../base-control-node";
 import type { LoopNodeData } from "../types";
 import { LoopSettingsForm, type LoopSettingsFormValues } from "./loop-settings-form";
@@ -27,9 +28,20 @@ type LoopNodeType = Node<LoopNodeData>;
 export const LoopNode = memo((props: NodeProps<LoopNodeType>) => {
   const nodeData = props.data as LoopNodeData;
 
-  // Build description based on mode
+  const status = useNodeStatus({
+    nodeId: props.id,
+  });
+
+  const iteration = useNodeIteration({
+    nodeId: props.id,
+  });
+
+  // Build description based on mode and iteration progress
   let description: string;
-  if (nodeData.mode === "array") {
+  if (iteration && status === 'loading') {
+    // Show iteration progress when running
+    description = `Iteration ${iteration.index}/${iteration.total}`;
+  } else if (nodeData.mode === "array") {
     description = nodeData.arrayExpression
       ? `${nodeData.arrayExpression.substring(0, 25)}${nodeData.arrayExpression.length > 25 ? "..." : ""}`
       : "No array set";
@@ -38,10 +50,6 @@ export const LoopNode = memo((props: NodeProps<LoopNodeType>) => {
       ? `${nodeData.count} iterations`
       : "No count set";
   }
-
-  const status = useNodeStatus({
-    nodeId: props.id,
-  });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);
   const updateNode = useSetAtom(updateNodeAtom);

@@ -1,17 +1,8 @@
-import { NodeType } from "@/features/nodes/types";
 import { NodeExecutor } from "../../utils/execution/types";
-import { publishNodeStatus } from "../../utils/realtime";
 
 export const manualTriggerExecutor: NodeExecutor = async ({
-    data,
-    nodeId,
     context,
-    step,
-    publish
 }) => {
-    await publishNodeStatus(publish, nodeId, "loading", NodeType.MANUAL_TRIGGER, undefined, step)
-    //TODO: Publish Loading State
-    const result = await step.run('manual-trigger', async () => context)
-    await publishNodeStatus(publish, nodeId, "success", NodeType.MANUAL_TRIGGER, undefined, step)
-    return result;
+    // Manual trigger simply passes through the initial context (input data)
+    return context;
 }
