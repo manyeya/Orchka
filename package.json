@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "inngest": "pnpm dlx inngest-cli@latest dev",
+    "bullmq": "tsx bullmq/index.ts",
     "dev:all": "mprocs",
     "docs:dev": "cd docs-site && bun dev",
     "docs:build": "cd docs-site && bun run build"
@@ -69,6 +70,7 @@
     "@xyflow/react": "^12.9.3",
     "ai": "^5.0.89",
     "better-auth": "^1.3.34",
+    "bullmq": "^5.66.5",
     "class-variance-authority": "^0.7.1",
     "client-only": "^0.0.1",
     "clsx": "^2.1.1",
@@ -80,6 +82,7 @@
     "gsap": "^3.13.0",
     "inngest": "^3.45.0",
     "input-otp": "^1.4.2",
+    "ioredis": "^5.9.2",
     "jotai": "^2.15.1",
     "jsonata": "^2.1.0",
     "ky": "^1.14.1",

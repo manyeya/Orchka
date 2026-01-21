@@ -1,7 +1,5 @@
-import { generateText } from "ai";
 import { inngest } from "./client";
 import prisma from "@/lib/db";
-import { google } from "@ai-sdk/google";
 import { NonRetriableError } from "inngest";
 import { topologicalSortNodes } from "@/features/editor/utils/graph-validation";
 import { NodeType } from "@/features/nodes/types";
