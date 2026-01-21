@@ -31,7 +31,7 @@ A powerful, developer-first workflow automation platform. Design, execute, and m
 - **Trace Timeline**: D3-powered visualization of step durations and execution flow
 - **Payload Viewer**: Deep inspection of input/output data with a premium JSON viewer
 - **Live Updates**: Watch workflows execute with real-time status updates
-- **Background Processing**: Reliable execution with Inngest for job queuing
+- **Background Processing**: Reliable execution with BullMQ and Redis for job queuing
 - **Error Handling**: Robust retry mechanisms and error recovery
 
 
@@ -57,7 +57,7 @@ A powerful, developer-first workflow automation platform. Design, execute, and m
 - **Database**: PostgreSQL with Prisma ORM 6
 - **Authentication**: Better Auth with Polar integration
 - **AI**: AI SDK, LangChain (OpenAI, Anthropic, Google Gemini, Groq)
-- **Job Processing**: Inngest
+- **Job Processing**: BullMQ with Redis
 - **Expression Engine**: JSONata
 - **State Management**: Jotai, TanStack Query 5
 - **Forms**: React Hook Form, Zod
@@ -96,9 +96,7 @@ Configure the following environment variables:
 - `ANTHROPIC_API_KEY`: Anthropic API key (optional, can use stored credentials)
 - `GOOGLE_GENERATIVE_AI_API_KEY`: Google AI API key (optional, can use stored credentials)
 - `GROQ_API_KEY`: Groq API key (optional)
-- `INNGEST_SIGNING_KEY`: Inngest signing key
-- `INNGEST_EVENT_KEY`: Inngest event key
-- `INNGEST_APP_URL`: Inngest application URL
+- `REDIS_URL`: Redis connection URL (for BullMQ job processing)
 
 4. Set up the database:
 ```bash
@@ -119,7 +117,7 @@ The application will be available at [http://localhost:3000](http://localhost:30
 # Start development server
 bun run dev
 
-# Start all services (dev server + Inngest)
+# Start all services (dev server + BullMQ worker)
 bun run dev:all
 
 # Build for production
@@ -136,8 +134,8 @@ bun run prisma studio    # Open Prisma Studio
 bun run prisma migrate dev  # Run migrations
 bun run prisma generate  # Generate Prisma client
 
-# Inngest development
-bun run inngest
+# BullMQ worker
+bun run bullmq:worker
 
 # Docs site
 bun run docs:dev
@@ -166,7 +164,7 @@ bun run docs:build
 │   └── workflows/        # Workflow management
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Utility libraries
-├── inngest/              # Background job functions
+├── bullmq/               # BullMQ job processing and workflow orchestration
 ├── trpc/                 # tRPC routers and configuration
 ├── prisma/               # Database schema and migrations
 └── docs-site/            # Documentation site
