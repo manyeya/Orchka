@@ -13,6 +13,7 @@ import { validateConnection, validateWorkflowGraph, ValidationResult } from './u
 import { downloadWorkflow, uploadWorkflow } from './utils/import-export';
 import { toast } from 'sonner';
 import { NodeType } from '@/config/node-components';
+import { WorkflowNodeStatus } from '@/components/workflow-node';
 
 interface HistoryState {
   nodes: Node[];
@@ -27,12 +28,14 @@ interface HistoryState {
 export const nodesAtom = atom<Node[]>([]);
 export const edgesAtom = atom<Edge[]>([]);
 export const selectedNodeIdAtom = atom<string | null>(null);
+export const workflowIdAtom = atom<string | null>(null);
 /** ID of the node whose modal is currently open */
 export const activeNodeModalIdAtom = atom<string | null>(null);
 /** @deprecated Use activeNodeModalIdAtom instead */
 export const activeSettingsNodeIdAtom = activeNodeModalIdAtom;
 
 export const currentRunIdAtom = atom<string | null>(null);
+export const currentExecutionIdAtom = currentRunIdAtom; // Alias for clarity
 export const historyAtom = atom<HistoryState[]>([]);
 export const historyIndexAtom = atom<number>(-1);
 export const isDirtyAtom = atom<boolean>(false);
@@ -51,8 +54,20 @@ export interface NodeExecutionData {
   input: unknown;
   output: unknown;
   timestamp: number;
+  iteration?: {
+    index: number;
+    total: number;
+  };
 }
 export const nodeExecutionDataAtom = atom<Record<string, NodeExecutionData>>({});
+export const nodeStatusesAtom = atom<Record<string, WorkflowNodeStatus>>({});
+
+/** Stores iteration progress for loop nodes, keyed by nodeId */
+export interface LoopIterationProgress {
+  index: number;  // 1-based (iteration 1 of 10)
+  total: number;
+}
+export const nodeIterationAtom = atom<Record<string, LoopIterationProgress>>({});
 
 // Constants
 const MAX_HISTORY_SIZE = 50;

@@ -1,9 +1,9 @@
 /**
  * AI Extract Executor
- * Uses AI SDK v6 generateObject with Inngest step.ai.wrap() for structured extraction
+ * Uses AI SDK v6 generateObject for structured extraction
  */
 import { generateObject } from "ai";
-import { NonRetriableError } from "inngest";
+import { NonRetriableError } from "@/lib/errors/workflow-errors";
 import { z } from "zod";
 import type { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import type { AIExtractSettings } from "./types";
@@ -15,14 +15,12 @@ export const aiExtractExecutor: NodeExecutor<AIExtractSettings> = async ({
   data,
   nodeId,
   context,
-  step,
   publish,
   resolveCredential,
 }): Promise<WorkflowContext> => {
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_EXTRACT, undefined, step);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_EXTRACT);
 
   const nodeName = data.name || "AI Extract";
-  const stepName = `${nodeName} (${nodeId})`;
 
   try {
     // Resolve credential
@@ -49,46 +47,42 @@ export const aiExtractExecutor: NodeExecutor<AIExtractSettings> = async ({
     // Parse JSON schema to Zod schema
     const zodSchema = jsonSchemaToZod(data.outputSchema);
 
-    // Execute AI extraction within a step for durability
-    const result = await step.run(stepName, async () => {
-      const model = await createAIModelAsync(data.model, credentialConfig);
+    // Create model and execute AI extraction
+    const model = await createAIModelAsync(data.model, credentialConfig);
 
-      const response = await generateObject({
-        model,
-        system: data.systemPrompt,
-        prompt: input,
-        schema: zodSchema,
-        temperature: data.temperature,
-      });
-
-      return {
-        object: response.object,
-        usage: response.usage,
-      };
+    const response = await generateObject({
+      model,
+      system: data.systemPrompt,
+      prompt: input,
+      schema: zodSchema,
+      temperature: data.temperature,
     });
 
-    await publishNodeStatus(publish, nodeId, "success", NodeType.AI_EXTRACT, undefined, step);
+    const result = {
+      object: response.object,
+      usage: response.usage,
+    };
+
+    await publishNodeStatus(publish, nodeId, "success", NodeType.AI_EXTRACT);
 
     return {
       ...context,
       [nodeName]: result,
     };
   } catch (error) {
-    await publishNodeStatus(publish, nodeId, "error", NodeType.AI_EXTRACT, undefined, step);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.AI_EXTRACT);
     throw error;
   }
 };
 
 /**
  * Convert JSON Schema to Zod schema
- * Supports basic types: string, number, boolean, array, object
  */
 function jsonSchemaToZod(schemaString: string): z.ZodTypeAny {
   try {
     const schema = JSON.parse(schemaString);
     return convertToZod(schema);
   } catch {
-    // Fallback to a generic object schema
     return z.object({ result: z.unknown() });
   }
 }
@@ -100,7 +94,6 @@ function convertToZod(schema: any): z.ZodTypeAny {
 
   const { type, properties, items, required = [], nullable, enum: enumValues } = schema;
 
-  // Handle enum
   if (enumValues && Array.isArray(enumValues)) {
     const enumSchema = z.enum(enumValues as [string, ...string[]]);
     return nullable ? enumSchema.nullable() : enumSchema;
@@ -126,9 +119,9 @@ function convertToZod(schema: any): z.ZodTypeAny {
       return nullable ? base.nullable() : base;
     }
     case "object": {
-      if (!properties) {
-        return z.record(z.unknown());
-      }
+      // if (!properties) {
+      //   return z.record(z.unknown());
+      // }
       const shape: Record<string, z.ZodTypeAny> = {};
       for (const [key, propSchema] of Object.entries(properties)) {
         let fieldSchema = convertToZod(propSchema);

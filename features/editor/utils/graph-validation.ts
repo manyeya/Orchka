@@ -1,4 +1,4 @@
-import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-components';
+import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-required-fields';
 import { Node, Edge } from '@xyflow/react';
 import { NodeType } from '@/features/nodes/types';
 

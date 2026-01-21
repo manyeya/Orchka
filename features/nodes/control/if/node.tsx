@@ -8,7 +8,6 @@ import { useSetAtom } from "jotai";
 import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 import { BaseControlNode } from "../base-control-node";
 import type { IfNodeData } from "../types";
 import { IfSettingsForm, type IfSettingsFormValues } from "./if-settings-form";
@@ -29,9 +28,6 @@ export const IfNode = memo((props: NodeProps<IfNodeType>) => {
 
   const status = useNodeStatus({
     nodeId: props.id,
-    channel: workflowNodeChannel().name,
-    topic: "status",
-    refreshToken: getWorkflowNodeToken,
   });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);

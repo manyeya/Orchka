@@ -9,7 +9,6 @@ import { HttpSettingsForm, type HttpSettingsFormValues } from "./http-settings-f
 import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 type HttpRequestNodeType = Node<HttpSettingsFormValues>;
 
@@ -20,9 +19,6 @@ export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         : "Not Configured"
     const status = useNodeStatus({
         nodeId: props.id,
-        channel: workflowNodeChannel().name,
-        topic: 'status',
-        refreshToken: getWorkflowNodeToken
     })
     const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);
     const updateNode = useSetAtom(updateNodeAtom);

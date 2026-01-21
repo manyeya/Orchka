@@ -3,7 +3,7 @@
  * Uses AI SDK unified provider interface
  */
 import { google } from "@ai-sdk/google";
-import { NonRetriableError } from "inngest";
+import { NonRetriableError } from "@/lib/errors/workflow-errors";
 import {
   CredentialType,
   isOpenAICredential,
@@ -30,25 +30,25 @@ export function extractAICredentialConfig(
 ): AICredentialConfig {
   const { type, data } = credential;
   const expectedType = getExpectedCredentialType(modelString);
-  
+
   if (expectedType && type !== expectedType) {
     throw new NonRetriableError(
       `Credential type mismatch: expected ${expectedType} for model ${modelString}, got ${type}`
     );
   }
-  
+
   if (type === CredentialType.OPENAI && isOpenAICredential(data)) {
     return { apiKey: data.apiKey, organization: data.organization };
   }
-  
+
   if (type === CredentialType.ANTHROPIC && isAnthropicCredential(data)) {
     return { apiKey: data.apiKey };
   }
-  
+
   if (type === CredentialType.GOOGLE_AI && isGoogleAICredential(data)) {
     return { apiKey: data.apiKey };
   }
-  
+
   throw new NonRetriableError(`Unsupported credential type for AI: ${type}`);
 }
 

@@ -1,13 +1,33 @@
 import { PrismaClient } from "@/lib/generated/prisma/client";
+import { config } from "dotenv";
+
+config();
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const prisma = globalForPrisma.prisma || new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
 
-// In development, if the client is stale (missing new models after migration), force a new instance
+if (!databaseUrl && process.env.NODE_ENV !== 'test') {
+    console.warn("⚠️  DATABASE_URL is not defined in environment variables. Prisma Client may fail.");
+}
+
+const prisma = globalForPrisma.prisma || new PrismaClient({
+    datasources: {
+        db: {
+            url: databaseUrl,
+        },
+    },
+});
+
 if (process.env.NODE_ENV !== "production") {
-    if (prisma && !(prisma as any).executionStep) {
-        globalForPrisma.prisma = new PrismaClient();
+    if (prisma && !(prisma as unknown as { executionStep: unknown }).executionStep) {
+        globalForPrisma.prisma = new PrismaClient({
+            datasources: {
+                db: {
+                    url: databaseUrl,
+                },
+            },
+        });
     } else {
         globalForPrisma.prisma = prisma;
     }

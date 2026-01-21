@@ -10,7 +10,6 @@ import type { AIAgentExpSettings } from "./types";
 import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 type AIAgentExpNodeType = Node<AIAgentExpSettings>;
 
@@ -23,9 +22,6 @@ export const AIAgentExpNode = memo((props: NodeProps<AIAgentExpNodeType>) => {
 
   const status = useNodeStatus({
     nodeId: props.id,
-    channel: workflowNodeChannel().name,
-    topic: "status",
-    refreshToken: getWorkflowNodeToken,
   });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);

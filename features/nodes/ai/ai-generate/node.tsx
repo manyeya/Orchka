@@ -10,7 +10,6 @@ import type { AIGenerateSettings } from "./types";
 import { useSetAtom } from "jotai";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 type AIGenerateNodeType = Node<AIGenerateSettings>;
 
@@ -20,9 +19,6 @@ export const AIGenerateNode = memo((props: NodeProps<AIGenerateNodeType>) => {
 
   const status = useNodeStatus({
     nodeId: props.id,
-    channel: workflowNodeChannel().name,
-    topic: "status",
-    refreshToken: getWorkflowNodeToken,
   });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);

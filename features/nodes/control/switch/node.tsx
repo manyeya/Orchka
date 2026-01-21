@@ -8,7 +8,6 @@ import { useSetAtom } from "jotai";
 import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 import { BaseControlNode, type OutputHandle } from "../base-control-node";
 import type { SwitchNodeData } from "../types";
 import { SwitchSettingsForm, type SwitchSettingsFormValues } from "./switch-settings-form";
@@ -30,9 +29,6 @@ export const SwitchNode = memo((props: NodeProps<SwitchNodeType>) => {
 
   const status = useNodeStatus({
     nodeId: props.id,
-    channel: workflowNodeChannel().name,
-    topic: "status",
-    refreshToken: getWorkflowNodeToken,
   });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);
