@@ -20,6 +20,13 @@ const CONTROL_NODE_TYPES: NodeType[] = [
   NodeType.WAIT,
 ];
 
+// Visual-only nodes that should be skipped during execution
+// These are frontend tools and don't have execution logic
+const VISUAL_ONLY_NODE_TYPES: NodeType[] = [
+  NodeType.ANNOTATION,
+  NodeType.GROUP,
+];
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -36,6 +43,10 @@ function filterInternalFields(context: Record<string, unknown>): Record<string, 
 
 function isControlNode(nodeType: NodeType): boolean {
   return CONTROL_NODE_TYPES.includes(nodeType);
+}
+
+function isVisualOnlyNode(nodeType: NodeType): boolean {
+  return VISUAL_ONLY_NODE_TYPES.includes(nodeType);
 }
 
 interface ConnectionWithBranch {
@@ -340,6 +351,16 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     await chainToNextNode(job.data, context, branchDecisions, skippedNodeIds);
 
     return { skipped: true, nodeId, nodeName };
+  }
+
+  // Skip visual-only nodes (ANNOTATION, GROUP) - they don't have execution logic
+  if (isVisualOnlyNode(nodeType as NodeType)) {
+    console.log(`[Node] Skipping ${nodeName} (${nodeType}) - visual-only node`);
+
+    // Chain to next node without creating any execution history
+    await chainToNextNode(job.data, context, branchDecisions, skippedNodeIds);
+
+    return { skipped: true, nodeId, nodeName, reason: 'visual-only' };
   }
 
   // Fetch workflow for expression context
