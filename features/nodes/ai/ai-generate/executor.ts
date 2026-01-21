@@ -1,9 +1,9 @@
 /**
  * AI Generate Executor
- * Uses AI SDK v6 with Inngest step.run() for durable execution
+ * Uses AI SDK v6 for text generation
  */
 import { generateText } from "ai";
-import { NonRetriableError } from "inngest";
+import { NonRetriableError } from "@/lib/errors/workflow-errors";
 import type { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import type { AIGenerateSettings } from "./types";
 import { publishNodeStatus } from "../../utils/realtime";
@@ -17,21 +17,12 @@ export const aiGenerateExecutor: NodeExecutor<AIGenerateSettings> = async ({
   data,
   nodeId,
   context,
-  step,
   publish,
   resolveCredential,
 }): Promise<WorkflowContext> => {
-  await publishNodeStatus(
-    publish,
-    nodeId,
-    "loading",
-    NodeType.AI_GENERATE,
-    undefined,
-    step
-  );
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_GENERATE);
 
   const nodeName = data.name || "AI Generate";
-  const stepName = `${nodeName} (${nodeId})`;
 
   try {
     // Resolve credential if configured
@@ -57,48 +48,31 @@ export const aiGenerateExecutor: NodeExecutor<AIGenerateSettings> = async ({
       throw new NonRetriableError("No prompt or input variable configured");
     }
 
-    // Execute AI generation within a step for durability
-    const result = await step.run(stepName, async () => {
-      // Create model inside the step to ensure proper execution
-      const model = await createAIModelAsync(data.model, credentialConfig);
+    // Create model and execute AI generation
+    const model = await createAIModelAsync(data.model, credentialConfig);
 
-      const response = await generateText({
-        model,
-        system: data.systemPrompt,
-        prompt: input,
-        temperature: data.temperature,
-        ...(data.maxTokens && { maxOutputTokens: data.maxTokens }),
-      });
-
-      return {
-        text: response.text,
-        usage: response.usage,
-        finishReason: response.finishReason,
-      };
+    const response = await generateText({
+      model,
+      system: data.systemPrompt,
+      prompt: input,
+      temperature: data.temperature,
+      ...(data.maxTokens && { maxOutputTokens: data.maxTokens }),
     });
 
-    await publishNodeStatus(
-      publish,
-      nodeId,
-      "success",
-      NodeType.AI_GENERATE,
-      undefined,
-      step
-    );
+    const result = {
+      text: response.text,
+      usage: response.usage,
+      finishReason: response.finishReason,
+    };
+
+    await publishNodeStatus(publish, nodeId, "success", NodeType.AI_GENERATE);
 
     return {
       ...context,
       [nodeName]: result,
     };
   } catch (error) {
-    await publishNodeStatus(
-      publish,
-      nodeId,
-      "error",
-      NodeType.AI_GENERATE,
-      undefined,
-      step
-    );
+    await publishNodeStatus(publish, nodeId, "error", NodeType.AI_GENERATE);
     throw error;
   }
 };

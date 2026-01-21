@@ -7,11 +7,12 @@ import { ReactFlow, Background, Panel, ConnectionLineType } from '@xyflow/react'
 import '@xyflow/react/dist/style.css';
 import { useEffect, useMemo } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom } from '../store';
+import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom, workflowIdAtom } from '../store';
 import { AddNodeButton } from './add-node-button';
 import { ExecuteWorkflowButton } from './execute-workflow-butto';
 import { resolveCollisions } from '../utils/resolve-collisions';
 import { GroupButton } from './group-button';
+import { RealtimeManager } from './realtime-manager';
 
 export const EditorLoadingView = () => {
     return (
@@ -36,17 +37,24 @@ function Editor({ workflowId }: { workflowId: string }) {
     const onEdgesChange = useSetAtom(onEdgesChangeAtom);
     const onConnect = useSetAtom(onConnectAtom);
     const loadWorkflow = useSetAtom(loadWorkflowAtom);
+    const setWorkflowId = useSetAtom(workflowIdAtom);
 
     const hasManualTriggerNode = useMemo(() => nodes.some(node => node.type === NodeType.MANUAL_TRIGGER), [nodes]);
     // Load workflow data when component mounts or workflow changes
     useEffect(() => {
+        setWorkflowId(workflowId);
+    }, [workflowId, setWorkflowId]);
+
+    useEffect(() => {
         if (workflow.nodes && workflow.edges) {
             loadWorkflow({ nodes: workflow.nodes, edges: workflow.edges });
         }
-    }, [workflow.nodes, workflow.edges, loadWorkflow]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workflow.id, loadWorkflow]); // Use workflow.id as stable anchor instead of full nodes/edges arrays
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
+            <RealtimeManager />
             <ReactFlow nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}

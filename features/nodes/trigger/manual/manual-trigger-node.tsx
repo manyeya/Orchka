@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useNodeStatus } from "../../utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 
 interface ManualTriggerData {
     name?: string;
@@ -24,9 +23,6 @@ export const ManualTriggerNode = memo((props: NodeProps) => {
     const updateNode = useSetAtom(updateNodeAtom);
     const status = useNodeStatus({
         nodeId: props.id,
-        channel: workflowNodeChannel().name,
-        topic: 'status',
-        refreshToken: getWorkflowNodeToken
     });
     const [name, setName] = useState(nodeData.name || "Manual Trigger");
 

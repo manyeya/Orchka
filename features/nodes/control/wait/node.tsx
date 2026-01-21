@@ -8,7 +8,6 @@ import { useSetAtom } from "jotai";
 import { NodeDetailModal } from "@/features/editor/components/node-detail-modal";
 import { updateNodeAtom, activeNodeModalIdAtom } from "@/features/editor/store";
 import { useNodeStatus } from "@/features/nodes/utils/use-node-status";
-import { getWorkflowNodeToken, workflowNodeChannel } from "@/features/nodes/utils/realtime";
 import { BaseControlNode } from "../base-control-node";
 import type { WaitNodeData } from "../types";
 import { WaitSettingsForm, type WaitSettingsFormValues } from "./wait-settings-form";
@@ -27,7 +26,7 @@ type WaitNodeType = Node<WaitNodeData>;
  */
 export const WaitNode = memo((props: NodeProps<WaitNodeType>) => {
   const nodeData = props.data as WaitNodeData;
-  
+
   // Build description based on mode
   let description: string;
   if (nodeData.mode === "duration") {
@@ -44,9 +43,6 @@ export const WaitNode = memo((props: NodeProps<WaitNodeType>) => {
 
   const status = useNodeStatus({
     nodeId: props.id,
-    channel: workflowNodeChannel().name,
-    topic: "status",
-    refreshToken: getWorkflowNodeToken,
   });
 
   const setActiveNodeId = useSetAtom(activeNodeModalIdAtom);

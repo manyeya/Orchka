@@ -2,7 +2,7 @@ import { workflowQueueEvents, nodeQueueEvents } from './setup';
 import { publishWorkflowEvent } from './publisher';
 
 export function setupQueueEvents() {
-  workflowQueueEvents.on('waiting', ({ jobId }) => {
+  workflowQueueEvents.on('waiting', ({ jobId, }) => {
     console.log(`[Workflow Queue] Job ${jobId} is waiting`);
   });
 

@@ -5,20 +5,33 @@ import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/i
 import { Edge, Node } from "@xyflow/react";
 import { generateSlug } from "random-word-slugs";
 import z from "zod";
-import { inngest } from "@/inngest/client";
+import { workflowQueue } from "@/bullmq/setup";
 
 export const workflowsRouter = createTRPCRouter({
-    executeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
-        const workflow = prisma.workflow.findUniqueOrThrow({
+    executeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+        const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
                 id: input.id,
                 userId: ctx.auth.user.id,
             }
-        })
+        });
 
-        inngest.send({ name: "workflow/execute", data: { workflowId: input.id } })
+        // Create execution record
+        const execution = await prisma.execution.create({
+            data: {
+                workflowId: input.id,
+                userId: ctx.auth.user.id,
+            }
+        });
 
-        return workflow
+        // Queue workflow execution via BullMQ
+        await workflowQueue.add('execute-workflow', {
+            workflowId: input.id,
+            executionId: execution.id,
+            userId: ctx.auth.user.id,
+        });
+
+        return workflow;
     }),
     createWorkflow: premiumProcedure.mutation(({ ctx }) => {
         return prisma.workflow.create({

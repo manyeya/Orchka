@@ -3,7 +3,7 @@
  * Uses AI SDK v6 generateObject for classification with enum output
  */
 import { generateObject } from "ai";
-import { NonRetriableError } from "inngest";
+import { NonRetriableError } from "@/lib/errors/workflow-errors";
 import { z } from "zod";
 import type { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 import type { AIClassifySettings } from "./types";
@@ -15,14 +15,12 @@ export const aiClassifyExecutor: NodeExecutor<AIClassifySettings> = async ({
   data,
   nodeId,
   context,
-  step,
   publish,
   resolveCredential,
 }): Promise<WorkflowContext> => {
-  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_CLASSIFY, undefined, step);
+  await publishNodeStatus(publish, nodeId, "loading", NodeType.AI_CLASSIFY);
 
   const nodeName = data.name || "AI Classify";
-  const stepName = `${nodeName} (${nodeId})`;
 
   try {
     // Resolve credential
@@ -51,14 +49,11 @@ export const aiClassifyExecutor: NodeExecutor<AIClassifySettings> = async ({
       .map(c => `- ${c.value}: ${c.description || c.label}`)
       .join("\n");
 
-    const systemPrompt = `${data.systemPrompt}
-
-Available categories:
-${categoriesDescription}`;
+    const systemPrompt = `${data.systemPrompt}\n\nAvailable categories:\n${categoriesDescription}`;
 
     // Build schema based on settings
     const categoryValues = data.categories.map(c => c.value) as [string, ...string[]];
-    
+
     const schemaShape: Record<string, z.ZodTypeAny> = {
       category: z.enum(categoryValues).describe("The classification category"),
     };
@@ -73,25 +68,23 @@ ${categoriesDescription}`;
 
     const schema = z.object(schemaShape);
 
-    // Execute AI classification within a step for durability
-    const result = await step.run(stepName, async () => {
-      const model = await createAIModelAsync(data.model, credentialConfig);
+    // Create model and execute AI classification
+    const model = await createAIModelAsync(data.model, credentialConfig);
 
-      const response = await generateObject({
-        model,
-        system: systemPrompt,
-        prompt: input,
-        schema,
-        temperature: data.temperature,
-      });
-
-      return {
-        object: response.object,
-        usage: response.usage,
-      };
+    const response = await generateObject({
+      model,
+      system: systemPrompt,
+      prompt: input,
+      schema,
+      temperature: data.temperature,
     });
 
-    await publishNodeStatus(publish, nodeId, "success", NodeType.AI_CLASSIFY, undefined, step);
+    const result = {
+      object: response.object,
+      usage: response.usage,
+    };
+
+    await publishNodeStatus(publish, nodeId, "success", NodeType.AI_CLASSIFY);
 
     // Type the result object
     const resultObject = result.object as {
@@ -114,7 +107,7 @@ ${categoriesDescription}`;
       },
     };
   } catch (error) {
-    await publishNodeStatus(publish, nodeId, "error", NodeType.AI_CLASSIFY, undefined, step);
+    await publishNodeStatus(publish, nodeId, "error", NodeType.AI_CLASSIFY);
     throw error;
   }
 };

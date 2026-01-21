@@ -12,7 +12,9 @@ export type PublishFn = (payload: {
 
 export async function publishWorkflowEvent(workflowId: string, payload: unknown) {
     const channel = `workflow:${workflowId}:events`;
-    await redis.publish(channel, JSON.stringify(payload));
+    console.log(`[Publisher] Publishing to ${channel}:`, JSON.stringify(payload).slice(0, 100));
+    const result = await redis.publish(channel, JSON.stringify(payload));
+    console.log(`[Publisher] Publish result: ${result}`);
 
     await redis.lpush(`workflow:${workflowId}:history`, JSON.stringify({ payload, timestamp: Date.now() }));
     await redis.ltrim(`workflow:${workflowId}:history`, 0, 100);

@@ -1,8 +1,16 @@
-import { startWorkflowWorker, startNodeWorker } from './workers';
-import { setupQueueEvents } from './events';
-import { closeBullMQConnections } from './setup';
+import { config } from 'dotenv';
+config();
 
 async function main() {
+  console.log('[BullMQ] Loading environment variables...');
+
+  // Dynamic imports to ensure dotenv loads before modules that might use process.env
+  const { startWorkflowWorker, startNodeWorker } = await import('./workers');
+  const { setupQueueEvents } = await import('./events');
+  const { closeBullMQConnections } = await import('./setup');
+
+  console.log('[BullMQ] DATABASE_URL present:', !!process.env.DATABASE_URL);
+
   console.log('[BullMQ] Starting workers...');
 
   setupQueueEvents();

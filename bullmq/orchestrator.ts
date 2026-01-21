@@ -384,6 +384,15 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       await publishWorkflowEvent(workflowId, payload);
     };
 
+    // Publish starting event
+    await publish({
+      nodeId,
+      nodeType,
+      type: 'node-status',
+      status: 'loading',
+      input: filterInternalFields(context) as any,
+    });
+
     let result: Record<string, unknown>;
     let delayForNextNode: number | undefined;
 
@@ -427,6 +436,8 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       input: filterInternalFields(context) as any,
       output: cleanOutput as any,
       nodeType,
+      type: 'node-status',
+      status: 'success',
     });
 
     // Update context with this node's result
@@ -520,6 +531,16 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     });
 
     console.error(`[Node] Failed ${nodeName}: ${errorMessage}`);
+
+    // Publish error event
+    await publishWorkflowEvent(workflowId, {
+      nodeId,
+      nodeType,
+      type: 'node-status',
+      status: 'error',
+      error: errorMessage,
+    });
+
     throw error;
   }
 }
