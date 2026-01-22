@@ -27,6 +27,13 @@ const TRIGGER_NODES: NodeTypeOption[] = [
         description: "Trigger a workflow manually",
         icon: MousePointerIcon,
         tags: ["trigger", "start"]
+    },
+    {
+        type: NodeType.CRON_TRIGGER,
+        label: "Cron Trigger",
+        description: "Schedule workflow execution with cron",
+        icon: Clock,
+        tags: ["trigger", "schedule", "cron", "timer", "recurring"]
     }
 ]
 

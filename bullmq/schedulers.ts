@@ -43,6 +43,20 @@ export async function getWorkflowSchedulers() {
   return schedulers;
 }
 
+export async function getWorkflowScheduler(workflowId: string) {
+  const schedulerId = `workflow-${workflowId}`;
+  const schedulers = await workflowQueue.getJobSchedulers();
+
+  console.log(`[Scheduler Debug] Looking for schedulerId: ${schedulerId}`);
+  console.log(`[Scheduler Debug] Found schedulers:`, schedulers.map(s => ({ id: s.id, key: s.key, name: s.name })));
+
+  // BullMQ stores the scheduler with the ID we provided
+  const found = schedulers.find(s => s.id === schedulerId || s.key === schedulerId);
+  console.log(`[Scheduler Debug] Match found:`, found ? 'yes' : 'no');
+
+  return found || null;
+}
+
 export async function startWorkflowScheduler(workflowId: string, schedulerId: string, cronPattern: string) {
   await upsertWorkflowScheduler(schedulerId, {
     workflowId,

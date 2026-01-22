@@ -6,8 +6,29 @@ import { Edge, Node } from "@xyflow/react";
 import { generateSlug } from "random-word-slugs";
 import z from "zod";
 import { workflowQueue } from "@/bullmq/setup";
+import { upsertWorkflowScheduler, removeWorkflowScheduler, getWorkflowScheduler } from "@/bullmq/schedulers";
 
 export const workflowsRouter = createTRPCRouter({
+    getScheduleStatus: protectedProcedure
+        .input(z.object({ id: z.string() }))
+        .query(async ({ ctx, input }) => {
+            // Verify user owns this workflow
+            await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            // Check if there's an active scheduler for this workflow
+            const scheduler = await getWorkflowScheduler(input.id);
+
+            return {
+                isScheduled: !!scheduler,
+                schedulerId: scheduler?.id || null,
+                pattern: scheduler?.pattern || null,
+            };
+        }),
     executeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
         const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
@@ -33,6 +54,56 @@ export const workflowsRouter = createTRPCRouter({
 
         return workflow;
     }),
+
+    scheduleWorkflow: protectedProcedure
+        .input(z.object({
+            id: z.string(),
+            cronPattern: z.string(),
+            timezone: z.string().optional().default("UTC"),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const workflow = await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            // Create scheduler ID based on workflow
+            const schedulerId = `workflow-${input.id}`;
+
+            // Register the cron schedule with BullMQ
+            await upsertWorkflowScheduler(schedulerId, {
+                workflowId: input.id,
+                cronPattern: input.cronPattern,
+            });
+
+            return {
+                ...workflow,
+                scheduled: true,
+                schedulerId,
+                cronPattern: input.cronPattern,
+                timezone: input.timezone,
+            };
+        }),
+
+    unscheduleWorkflow: protectedProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const workflow = await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            const schedulerId = `workflow-${input.id}`;
+
+            // Remove the scheduler
+            await removeWorkflowScheduler(schedulerId);
+
+            return { ...workflow, scheduled: false };
+        }),
     createWorkflow: premiumProcedure.mutation(({ ctx }) => {
         return prisma.workflow.create({
             data: {

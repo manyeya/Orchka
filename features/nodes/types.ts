@@ -1,6 +1,7 @@
 export const NodeType = {
     INITIAL: "INITIAL",
     MANUAL_TRIGGER: "MANUAL_TRIGGER",
+    CRON_TRIGGER: "CRON_TRIGGER",
     HTTP_REQUEST: "HTTP_REQUEST",
     IF_CONDITION: "IF_CONDITION",
     SWITCH: "SWITCH",
@@ -16,3 +17,19 @@ export const NodeType = {
 } as const;
 
 export type NodeType = string;
+
+/**
+ * List of all trigger node types.
+ * Add new trigger types here to automatically enable execution button and other trigger-specific behavior.
+ */
+export const TRIGGER_NODE_TYPES: string[] = [
+    NodeType.MANUAL_TRIGGER,
+    NodeType.CRON_TRIGGER,
+];
+
+/**
+ * Check if a node type is a trigger node.
+ */
+export const isTriggerNode = (nodeType: string): boolean => {
+    return TRIGGER_NODE_TYPES.includes(nodeType);
+};

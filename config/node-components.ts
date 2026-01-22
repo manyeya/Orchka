@@ -1,5 +1,6 @@
 import InitialNode from "@/features/nodes/utils/initial-node";
 import { ManualTriggerNode } from "@/features/nodes/trigger/manual/manual-trigger-node";
+import { CronTriggerNode } from "@/features/nodes/trigger/cron/cron-trigger-node";
 import { HttpRequestNode } from "@/features/nodes/action/https-request/node";
 import { AIAgentNode } from "@/features/nodes/ai/ai-agent/node";
 import { AIGenerateNode } from "@/features/nodes/ai/ai-generate/node";
@@ -20,6 +21,7 @@ export { NODE_REQUIRED_FIELDS, DEFAULT_REQUIRED_FIELDS } from "./node-required-f
 export enum NodeType {
     INITIAL = 'INITIAL',
     MANUAL_TRIGGER = 'MANUAL_TRIGGER',
+    CRON_TRIGGER = 'CRON_TRIGGER',
     HTTP_REQUEST = 'HTTP_REQUEST',
     AI_AGENT = 'AI_AGENT',
     AI_GENERATE = 'AI_GENERATE',
@@ -37,6 +39,7 @@ export enum NodeType {
 export const NODE_COMPONENTS = {
     [NodeType.INITIAL]: InitialNode,
     [NodeType.MANUAL_TRIGGER]: ManualTriggerNode,
+    [NodeType.CRON_TRIGGER]: CronTriggerNode,
     [NodeType.HTTP_REQUEST]: HttpRequestNode,
     [NodeType.AI_AGENT]: AIAgentNode,
     [NodeType.AI_GENERATE]: AIGenerateNode,

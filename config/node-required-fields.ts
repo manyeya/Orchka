@@ -8,6 +8,7 @@ import { NodeType } from "@/features/nodes/types";
 export const NODE_REQUIRED_FIELDS: Record<string, string[]> = {
     [NodeType.INITIAL]: [],
     [NodeType.MANUAL_TRIGGER]: ['name'],
+    [NodeType.CRON_TRIGGER]: ['name', 'cronPattern'],
     [NodeType.HTTP_REQUEST]: ['name', 'url'],
     [NodeType.AI_AGENT]: ['name', 'model'],
     [NodeType.AI_GENERATE]: ['name', 'model'],

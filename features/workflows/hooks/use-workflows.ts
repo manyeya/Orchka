@@ -95,6 +95,34 @@ export const useExecuteWorkflow = () => {
     }))
 }
 
+//schedule workflow (for cron triggers)
+export const useScheduleWorkflow = () => {
+    const trpc = useTRPC()
+    return useMutation(trpc.workflows.scheduleWorkflow.mutationOptions({
+        onSuccess: (data) => {
+            toast.success(`Workflow "${data.name}" scheduled successfully with pattern: ${data.cronPattern}`)
+        },
+        onError: (error) => {
+            toast.error(`Failed to schedule workflow: ${error.message}`)
+        }
+    }))
+}
 
+//unschedule workflow
+export const useUnscheduleWorkflow = () => {
+    const trpc = useTRPC()
+    return useMutation(trpc.workflows.unscheduleWorkflow.mutationOptions({
+        onSuccess: (data) => {
+            toast.success(`Workflow "${data.name}" unscheduled successfully`)
+        },
+        onError: (error) => {
+            toast.error(`Failed to unschedule workflow: ${error.message}`)
+        }
+    }))
+}
 
-    
+//get schedule status
+export const useScheduleStatus = (workflowId: string) => {
+    const trpc = useTRPC()
+    return useSuspenseQuery(trpc.workflows.getScheduleStatus.queryOptions({ id: workflowId }))
+}

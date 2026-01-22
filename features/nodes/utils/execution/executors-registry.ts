@@ -1,6 +1,7 @@
 import { NodeType } from "../../types";
 import { NodeExecutor } from "./types";
 import { manualTriggerExecutor } from "../../trigger/manual/executor";
+import { cronTriggerExecutor } from "../../trigger/cron/executor";
 import { httpsRequestExecutor } from "../../action/https-request/executor";
 import { aiAgentExecutor } from "../../ai/ai-agent/executor";
 import { aiGenerateExecutor } from "../../ai/ai-generate/executor";
@@ -15,6 +16,7 @@ import { waitNodeExecutor } from "../../control/wait/executor";
 export const executorsRegistry: Record<NodeType, NodeExecutor<any>> = {
     [NodeType.INITIAL]: () => Promise.resolve({}),
     [NodeType.MANUAL_TRIGGER]: manualTriggerExecutor,
+    [NodeType.CRON_TRIGGER]: cronTriggerExecutor,
     [NodeType.HTTP_REQUEST]: httpsRequestExecutor,
     [NodeType.AI_AGENT]: aiAgentExecutor,
     [NodeType.AI_GENERATE]: aiGenerateExecutor,

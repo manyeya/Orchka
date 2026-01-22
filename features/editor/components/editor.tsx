@@ -2,6 +2,7 @@
 
 import { ErrorView, LoadingView } from '@/components/entity-component';
 import { NODE_COMPONENTS, NodeType } from '@/config/node-components';
+import { isTriggerNode } from '@/features/nodes/types';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
 import { ReactFlow, Background, Panel, ConnectionLineType } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -39,7 +40,7 @@ function Editor({ workflowId }: { workflowId: string }) {
     const loadWorkflow = useSetAtom(loadWorkflowAtom);
     const setWorkflowId = useSetAtom(workflowIdAtom);
 
-    const hasManualTriggerNode = useMemo(() => nodes.some(node => node.type === NodeType.MANUAL_TRIGGER), [nodes]);
+    const hasTriggerNode = useMemo(() => nodes.some(node => isTriggerNode(node.type as string)), [nodes]);
     // Load workflow data when component mounts or workflow changes
     useEffect(() => {
         setWorkflowId(workflowId);
@@ -216,7 +217,7 @@ function Editor({ workflowId }: { workflowId: string }) {
                     <AddNodeButton />
                     <GroupButton />
                 </Panel>
-                {hasManualTriggerNode && (
+                {hasTriggerNode && (
                     <Panel position="bottom-center">
                         <ExecuteWorkflowButton workflowId={workflowId} />
                     </Panel>

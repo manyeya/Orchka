@@ -228,7 +228,7 @@ export interface NodeJobData {
 // ============================================================================
 
 export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any> {
-  const { workflowId, executionId, initialData } = job.data;
+  let { workflowId, executionId, initialData } = job.data;
   const jobId = job.id;
 
   console.log(`[Workflow] Starting workflow ${workflowId}, execution ${executionId}`);
@@ -237,15 +237,34 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
     throw new UnrecoverableError('Workflow ID is required');
   }
 
+  // For scheduled jobs (from cron triggers), executionId may not exist
+  // We need to create the execution record
   if (!executionId) {
-    throw new UnrecoverableError('Execution ID is required');
-  }
+    console.log(`[Workflow] No execution ID provided (scheduled run), creating execution record...`);
 
-  // Update execution with job ID
-  await prisma.execution.update({
-    where: { id: executionId },
-    data: { inngestRunId: jobId },
-  });
+    // Fetch workflow to get userId
+    const workflow = await prisma.workflow.findUniqueOrThrow({
+      where: { id: workflowId },
+    });
+
+    // Create execution record for scheduled run
+    const execution = await prisma.execution.create({
+      data: {
+        workflowId,
+        userId: workflow.userId,
+        inngestRunId: jobId,
+      }
+    });
+
+    executionId = execution.id;
+    console.log(`[Workflow] Created execution ${executionId} for scheduled run`);
+  } else {
+    // Update existing execution with job ID
+    await prisma.execution.update({
+      where: { id: executionId },
+      data: { inngestRunId: jobId },
+    });
+  }
 
   // Fetch workflow
   const workflow = await prisma.workflow.findUniqueOrThrow({
