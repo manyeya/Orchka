@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   BarChart3,
   GalleryVerticalEnd,
+  Zap,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -58,6 +59,11 @@ const data = {
       title: "Settings",
       url: "/settings",
       icon: Settings2,
+    },
+    {
+      title: "BullMQ Engine",
+      url: "/admin/bullmq",
+      icon: Zap,
     },
   ],
   projects: [
