@@ -60,11 +60,6 @@ const data = {
       url: "/settings",
       icon: Settings2,
     },
-    {
-      title: "BullMQ Engine",
-      url: "/admin/bullmq",
-      icon: Zap,
-    },
   ],
   projects: [
     {

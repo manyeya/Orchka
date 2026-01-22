@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { Settings, Users, CreditCard, BarChart3 } from "lucide-react"
+import { Settings, Users, CreditCard, BarChart3, Zap } from "lucide-react"
 
 export interface SettingsNavItem {
   title: string
@@ -11,9 +10,6 @@ export interface SettingsNavItem {
 }
 
 export function useSettingsSidebar() {
-  const [activeItem, setActiveItem] = useState<string>("/settings")
-  const [collapsed, setCollapsed] = useState(false)
-
   const settingsNav: SettingsNavItem[] = [
     {
       title: "General",
@@ -39,13 +35,15 @@ export function useSettingsSidebar() {
       icon: BarChart3,
       description: "Usage limits and resource quotas",
     },
+    {
+      title: "Engine",
+      href: "/settings/engine",
+      icon: Zap,
+      description: "BullMQ background task processing engine",
+    },
   ]
 
   return {
-    activeItem,
-    setActiveItem,
-    collapsed,
-    setCollapsed,
     settingsNav,
   }
 }

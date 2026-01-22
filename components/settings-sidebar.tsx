@@ -2,77 +2,41 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSettingsSidebar } from "@/hooks/use-settings-sidebar"
 import { cn } from "@/lib/utils"
-import { useSettingsSidebarContext } from "./settings-sidebar-provider"
 
 export function SettingsSidebar() {
   const pathname = usePathname()
-  const { collapsed, settingsNav } = useSettingsSidebarContext()
-
-  if (collapsed) {
-    return (
-      <div className="w-16 border-r bg-muted/10 flex flex-col items-center py-6">
-        <nav className="space-y-2">
-          {settingsNav.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href
-            return (
-              <Link
-                prefetch
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground",
-                  isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                )}
-                title={item.title}
-              >
-                <Icon className="h-4 w-4" />
-              </Link>
-            )
-          })}
-        </nav>
-      </div>
-    )
-  }
+  const { settingsNav } = useSettingsSidebar()
 
   return (
-    <div className="w-[calc(var(--spacing) * 100)] border-r bg-muted/10">
-      <div className="p-6">
-        <h2 className="text-lg font-semibold">Settings</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your account settings and preferences.
-        </p>
-      </div>
-      <nav className="space-y-1 px-3">
+    <aside className="w-64 hidden md:flex flex-col border-r bg-muted/5">
+      <nav className="flex-1 p-4 space-y-0.5">
         {settingsNav.map((item) => {
-          const Icon = item.icon
           const isActive = pathname === item.href
           return (
             <Link
-              prefetch
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all",
                 isActive
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground"
+                  ? "bg-accent text-accent-foreground font-medium shadow-sm"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
               )}
             >
-              <Icon className="h-4 w-4" />
-              <div className="flex flex-col">
-                <span>{item.title}</span>
-                <span className="text-xs text-muted-foreground/70">
-                  {item.description}
-                </span>
+              <item.icon className={cn(
+                "h-4 w-4 shrink-0",
+                isActive ? "text-accent-foreground" : "text-muted-foreground group-hover:text-accent-foreground"
+              )} />
+              <div className="flex flex-col min-w-0">
+                <span className="truncate leading-none">{item.title}</span>
+                {/* Description removed for a cleaner look, or could be kept if wanted */}
               </div>
             </Link>
           )
         })}
       </nav>
-    </div>
+    </aside>
   )
 }

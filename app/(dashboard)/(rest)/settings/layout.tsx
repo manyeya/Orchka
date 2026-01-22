@@ -1,19 +1,15 @@
-import { Card } from "@/components/ui/card"
-import { SettingsSidebarProvider } from "@/components/settings-sidebar-provider"
+"use client"
+
 import { SettingsSidebar } from "@/components/settings-sidebar"
 
 function SettingsLayoutContent({ children }: { children: React.ReactNode }) {
   return (
-    <SettingsSidebarProvider>
-      <div className="flex h-full">
-        <SettingsSidebar />
-        <div className="flex-1 p-6">
-          <Card className="p-6 h-full">
-            {children}
-          </Card>
-        </div>
-      </div>
-    </SettingsSidebarProvider>
+    <div className="flex">
+      <SettingsSidebar />
+      <main className="overflow-y-auto p-8 mx-auto">
+        {children}
+      </main>
+    </div>
   )
 }
 
