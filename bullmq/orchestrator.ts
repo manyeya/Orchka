@@ -250,13 +250,10 @@ function handleWaitNode(
   data: Record<string, unknown>,
   nodeName: string
 ): { delayMs: number; output: Record<string, unknown> } {
-  console.log(`[Wait Debug] handleWaitNode called with data:`, JSON.stringify(data, null, 2));
   const waitData = data as unknown as WaitNodeData;
 
   let delayMs = 0;
   let output: Record<string, unknown> = { completed: true, mode: waitData.mode };
-
-  console.log(`[Wait Debug] mode=${waitData.mode}, duration=`, waitData.duration, `until=${waitData.until}`);
 
   if (waitData.mode === 'duration') {
     if (!waitData.duration) {
@@ -657,13 +654,12 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     // Special handling for WAIT node - use BullMQ delayed jobs instead of step.sleep
     if (nodeType === NodeType.WAIT) {
       const waitResult = handleWaitNode(resolvedData, nodeName);
+      // Don't spread context here - orchestrator handles accumulation
       result = {
-        ...context,
         [nodeName]: waitResult.output,
         __branchDecision: { branch: "main", data: waitResult.output },
       };
       delayForNextNode = waitResult.delayMs;
-      console.log(`[Node] Wait node ${nodeName}: ${waitResult.delayMs}ms delay for next node`);
     } else {
       // Execute the node normally
       result = await executor({
@@ -678,6 +674,13 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
 
     const cleanOutput = filterInternalFields(result);
 
+    // FIX: Extract only this node's own output (executors spread context, but we handle accumulation here)
+    // Executors return { ...context, [nodeName]: output }, so we extract just the [nodeName] property
+    const extractedOutput = (result as Record<string, unknown>)[nodeName];
+    const nodeOutput: Record<string, unknown> = extractedOutput != null
+      ? (extractedOutput as Record<string, unknown>)
+      : cleanOutput;
+
     // OPTIMIZATION: No DB write - Redis publisher handles real-time updates
     // Step data will be lazily persisted to DB when viewing execution history
 
@@ -691,7 +694,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       nodeId,
       nodeName,
       input: filterInternalFields(context) as any,
-      output: cleanOutput as any,
+      output: filterInternalFields(nodeOutput) as any,
       nodeType,
       type: 'node-status',
       status: publishedStatus,
@@ -704,10 +707,10 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       } : {}),
     });
 
-    // Update context with this node's result
+    // Update context with this node's result (flat structure, like n8n)
     const newContext = {
       ...context,
-      [nodeName]: cleanOutput,
+      [nodeName]: nodeOutput,
     };
 
     // Handle control node branch decisions
