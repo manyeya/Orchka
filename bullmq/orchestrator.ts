@@ -202,6 +202,15 @@ export interface WorkflowJobData {
   initialData?: Record<string, unknown>;
 }
 
+// Serialized workflow data for passing through jobs (avoids repeated DB fetches)
+export interface SerializedWorkflow {
+  id: string;
+  name: string;
+  userId: string;
+  nodes: Array<{ id: string; type: string; name: string; data: Record<string, unknown> }>;
+  connections: Array<{ fromNodeId: string; toNodeId: string; fromOutput: string; toInput: string }>;
+}
+
 export interface NodeJobData {
   workflowId: string;
   executionId: string;
@@ -221,11 +230,13 @@ export interface NodeJobData {
   sortedNodeIds: string[];
   // Previous WAIT node ID (to mark as success when this node starts)
   previousWaitNodeId?: string;
-  // NEW: Dependency tracking for branch-level execution
+  // Dependency tracking for branch-level execution
   // Array of [nodeId, parentIds] tuples (Map doesn't serialize in JSON)
   dependencies?: [string, string[]][];
   // Array of node IDs that have completed execution
   completedNodeIds?: string[];
+  // OPTIMIZATION: Pass workflow data to avoid repeated DB fetches
+  workflowData?: SerializedWorkflow;
 }
 
 // ============================================================================
@@ -318,6 +329,25 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
 
   const firstNode = sortedNodes[0];
 
+  // Serialize workflow data to pass through jobs (avoids repeated DB fetches)
+  const workflowData: SerializedWorkflow = {
+    id: workflow.id,
+    name: workflow.name,
+    userId: workflow.userId,
+    nodes: workflow.nodes.map(n => ({
+      id: n.id,
+      type: n.type,
+      name: n.name,
+      data: n.data as Record<string, unknown>,
+    })),
+    connections: workflow.connections.map(c => ({
+      fromNodeId: c.fromNodeId,
+      toNodeId: c.toNodeId,
+      fromOutput: c.fromOutput,
+      toInput: c.toInput,
+    })),
+  };
+
   // Add first node job - it will chain to the next nodes
   await nodeQueue.add(
     `node:${firstNode.type}:${firstNode.name}`,
@@ -337,6 +367,8 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
       // Pass dependencies and empty completed set
       dependencies: Array.from(dependencies.entries()),
       completedNodeIds: [],
+      // OPTIMIZATION: Pass workflow data to avoid repeated DB fetches
+      workflowData,
     } as NodeJobData,
     {
       attempts: 3, // Per-node retry
@@ -370,10 +402,10 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     context,
     branchDecisions,
     skippedNodeIds,
-    sortedNodeIds,
     previousWaitNodeId,
     dependencies: depsArray,
     completedNodeIds: completed,
+    workflowData,
   } = job.data;
 
   // Reconstruct Map from array (Maps don't serialize in JSON)
@@ -433,14 +465,37 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     return { skipped: true, nodeId, nodeName, reason: 'visual-only' };
   }
 
-  // Fetch workflow for expression context
-  const workflow = await prisma.workflow.findUniqueOrThrow({
-    where: { id: workflowId },
-    include: {
-      nodes: true,
-      connections: true,
-    }
-  });
+  // OPTIMIZATION: Use passed workflowData instead of fetching from DB
+  // If workflowData is not available (old jobs), fall back to DB fetch
+  let workflow: SerializedWorkflow;
+  if (workflowData) {
+    workflow = workflowData;
+  } else {
+    const dbWorkflow = await prisma.workflow.findUniqueOrThrow({
+      where: { id: workflowId },
+      include: {
+        nodes: true,
+        connections: true,
+      }
+    });
+    workflow = {
+      id: dbWorkflow.id,
+      name: dbWorkflow.name,
+      userId: dbWorkflow.userId,
+      nodes: dbWorkflow.nodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        name: n.name,
+        data: n.data as Record<string, unknown>,
+      })),
+      connections: dbWorkflow.connections.map(c => ({
+        fromNodeId: c.fromNodeId,
+        toNodeId: c.toNodeId,
+        fromOutput: c.fromOutput,
+        toInput: c.toInput,
+      })),
+    };
+  }
 
   // Build expression context
   const expressionContext = buildExpressionContext({
@@ -451,7 +506,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     nodes: workflow.nodes.map(n => ({
       id: n.id,
       type: n.type,
-      data: n.data as Record<string, unknown>,
+      data: n.data,
     })),
     workflowId,
     workflowName: workflow.name,
@@ -684,7 +739,7 @@ async function chainToNextNode(
   dependencies?: Map<string, string[]>,
   completedNodeIds?: Set<string>
 ): Promise<void> {
-  const { workflowId, executionId, nodeType, nodeId, nodeIndex, totalNodes, sortedNodeIds } = currentJobData;
+  const { workflowId, executionId, nodeType, nodeId, nodeIndex, totalNodes, sortedNodeIds, workflowData } = currentJobData;
 
   // Reconstruct Map/Set if not passed (for skipped/visual-only nodes that call this before main execution)
   const depsMap = dependencies || new Map<string, string[]>(currentJobData.dependencies || []);
@@ -697,10 +752,34 @@ async function chainToNextNode(
 
   // Find all nodes that are ready to execute (all dependencies satisfied)
   // We prioritize depth-first: execute children of the current branch first
-  const workflow = await prisma.workflow.findUniqueOrThrow({
-    where: { id: workflowId },
-    include: { nodes: true, connections: true }
-  });
+
+  // OPTIMIZATION: Use passed workflowData instead of fetching from DB
+  let workflow: SerializedWorkflow;
+  if (workflowData) {
+    workflow = workflowData;
+  } else {
+    const dbWorkflow = await prisma.workflow.findUniqueOrThrow({
+      where: { id: workflowId },
+      include: { nodes: true, connections: true }
+    });
+    workflow = {
+      id: dbWorkflow.id,
+      name: dbWorkflow.name,
+      userId: dbWorkflow.userId,
+      nodes: dbWorkflow.nodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        name: n.name,
+        data: n.data as Record<string, unknown>,
+      })),
+      connections: dbWorkflow.connections.map(c => ({
+        fromNodeId: c.fromNodeId,
+        toNodeId: c.toNodeId,
+        fromOutput: c.fromOutput,
+        toInput: c.toInput,
+      })),
+    };
+  }
 
   // Build adjacency list for finding children
   const children = new Map<string, string[]>();
@@ -799,7 +878,7 @@ async function chainToNextNode(
       nodeId: nextNode.id,
       nodeName: nextNode.name,
       nodeType: nextNode.type,
-      nodeData: nextNode.data as Record<string, unknown>,
+      nodeData: nextNode.data,
       nodeIndex: nextIndex,
       totalNodes,
       context: newContext,
@@ -809,6 +888,8 @@ async function chainToNextNode(
       // Pass updated dependencies and completed set
       dependencies: Array.from(depsMap.entries()),
       completedNodeIds: Array.from(completed),
+      // OPTIMIZATION: Pass workflow data to avoid repeated DB fetches
+      workflowData: workflow,
       // Pass the WAIT node ID so we can mark it as success when this job starts
       previousWaitNodeId: (nodeType === NodeType.WAIT && delayMs && delayMs > 0) ? nodeId : undefined,
     } as NodeJobData,
