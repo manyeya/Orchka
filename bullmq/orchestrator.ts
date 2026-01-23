@@ -221,6 +221,11 @@ export interface NodeJobData {
   sortedNodeIds: string[];
   // Previous WAIT node ID (to mark as success when this node starts)
   previousWaitNodeId?: string;
+  // NEW: Dependency tracking for branch-level execution
+  // Array of [nodeId, parentIds] tuples (Map doesn't serialize in JSON)
+  dependencies?: [string, string[]][];
+  // Array of node IDs that have completed execution
+  completedNodeIds?: string[];
 }
 
 // ============================================================================
@@ -278,6 +283,27 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
   // Get sorted nodes
   const sortedNodes = topologicalSortNodes(workflow.nodes, workflow.connections);
 
+  // Build dependency map: for each node, which parent nodes must complete first?
+  const dependencies = new Map<string, string[]>();
+  const incomingMap = new Map<string, string[]>();
+
+  // Initialize empty arrays for all nodes
+  for (const node of workflow.nodes) {
+    incomingMap.set(node.id, []);
+  }
+
+  // Build incoming edges map
+  for (const conn of workflow.connections) {
+    const incoming = incomingMap.get(conn.toNodeId) || [];
+    incoming.push(conn.fromNodeId);
+    incomingMap.set(conn.toNodeId, incoming);
+  }
+
+  // Store the dependencies
+  for (const [nodeId, parents] of incomingMap.entries()) {
+    dependencies.set(nodeId, parents);
+  }
+
   if (sortedNodes.length === 0) {
     await prisma.execution.update({
       where: { id: executionId },
@@ -308,6 +334,9 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
       branchDecisions: {},
       skippedNodeIds: [],
       sortedNodeIds: sortedNodes.map(n => n.id),
+      // Pass dependencies and empty completed set
+      dependencies: Array.from(dependencies.entries()),
+      completedNodeIds: [],
     } as NodeJobData,
     {
       attempts: 3, // Per-node retry
@@ -343,7 +372,13 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     skippedNodeIds,
     sortedNodeIds,
     previousWaitNodeId,
+    dependencies: depsArray,
+    completedNodeIds: completed,
   } = job.data;
+
+  // Reconstruct Map from array (Maps don't serialize in JSON)
+  const dependencies = new Map<string, string[]>(depsArray || []);
+  const completedNodeIds = new Set(completed || []);
 
   console.log(`[Node ${nodeIndex + 1}/${totalNodes}] Executing ${nodeName} (${nodeType})`);
   console.log(`[Node Debug] nodeType="${nodeType}", NodeType.WAIT="${NodeType.WAIT}", NodeType.LOOP="${NodeType.LOOP}"`);
@@ -367,7 +402,15 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     console.log(`[Node] Skipping ${nodeName} - not on active branch`);
 
     // Chain to next node if there is one
-    await chainToNextNode(job.data, context, branchDecisions, skippedNodeIds);
+    await chainToNextNode(
+      job.data,
+      context,
+      branchDecisions,
+      skippedNodeIds,
+      undefined,
+      dependencies,
+      completedNodeIds
+    );
 
     return { skipped: true, nodeId, nodeName };
   }
@@ -377,7 +420,15 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     console.log(`[Node] Skipping ${nodeName} (${nodeType}) - visual-only node`);
 
     // Chain to next node without creating any execution history
-    await chainToNextNode(job.data, context, branchDecisions, skippedNodeIds);
+    await chainToNextNode(
+      job.data,
+      context,
+      branchDecisions,
+      skippedNodeIds,
+      undefined,
+      dependencies,
+      completedNodeIds
+    );
 
     return { skipped: true, nodeId, nodeName, reason: 'visual-only' };
   }
@@ -572,7 +623,9 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       newContext,
       newBranchDecisions,
       newSkippedNodeIds,
-      delayForNextNode
+      delayForNextNode,
+      dependencies,
+      completedNodeIds
     );
 
     return {
@@ -619,7 +672,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
 }
 
 // ============================================================================
-// Chain to Next Node
+// Chain to Next Node (Dependency-Based for Branch Sequential Execution)
 // ============================================================================
 
 async function chainToNextNode(
@@ -627,14 +680,69 @@ async function chainToNextNode(
   newContext: Record<string, unknown>,
   newBranchDecisions: Record<string, BranchDecision>,
   newSkippedNodeIds: string[],
-  delayMs?: number
+  delayMs?: number,
+  dependencies?: Map<string, string[]>,
+  completedNodeIds?: Set<string>
 ): Promise<void> {
   const { workflowId, executionId, nodeType, nodeId, nodeIndex, totalNodes, sortedNodeIds } = currentJobData;
 
-  const nextIndex = nodeIndex + 1;
+  // Reconstruct Map/Set if not passed (for skipped/visual-only nodes that call this before main execution)
+  const depsMap = dependencies || new Map<string, string[]>(currentJobData.dependencies || []);
+  const completed = completedNodeIds || new Set(currentJobData.completedNodeIds || []);
 
-  if (nextIndex >= totalNodes) {
-    // All nodes completed - mark execution as complete
+  // Add current node to completed set (if not already skipped)
+  if (!newSkippedNodeIds.includes(nodeId)) {
+    completed.add(nodeId);
+  }
+
+  // Find all nodes that are ready to execute (all dependencies satisfied)
+  // We prioritize depth-first: execute children of the current branch first
+  const workflow = await prisma.workflow.findUniqueOrThrow({
+    where: { id: workflowId },
+    include: { nodes: true, connections: true }
+  });
+
+  // Build adjacency list for finding children
+  const children = new Map<string, string[]>();
+  for (const conn of workflow.connections) {
+    const siblings = children.get(conn.fromNodeId) || [];
+    siblings.push(conn.toNodeId);
+    children.set(conn.fromNodeId, siblings);
+  }
+
+  // Find ready nodes: not completed, not skipped, all dependencies satisfied
+  const readyNodes: string[] = [];
+  const currentChildren = children.get(nodeId) || [];
+
+  // First, check direct children of current node (depth-first within branch)
+  for (const childId of currentChildren) {
+    if (completed.has(childId) || newSkippedNodeIds.includes(childId)) {
+      continue;
+    }
+    const childDeps = depsMap.get(childId) || [];
+    // Check if all dependencies are completed
+    const allDepsComplete = childDeps.every(depId => completed.has(depId));
+    if (allDepsComplete) {
+      readyNodes.push(childId);
+    }
+  }
+
+  // If no direct children are ready, check all remaining nodes
+  if (readyNodes.length === 0) {
+    for (const candidateId of sortedNodeIds) {
+      if (completed.has(candidateId) || newSkippedNodeIds.includes(candidateId)) {
+        continue;
+      }
+      const candidateDeps = depsMap.get(candidateId) || [];
+      const allDepsComplete = candidateDeps.every(depId => completed.has(depId));
+      if (allDepsComplete) {
+        readyNodes.push(candidateId);
+      }
+    }
+  }
+
+  // Check if workflow is complete
+  if (readyNodes.length === 0) {
     const cleanResult = filterInternalFields(newContext);
 
     // If this was a WAIT node with a delay, mark it as success now
@@ -660,18 +768,16 @@ async function chainToNextNode(
     return;
   }
 
-  // Get next node
-  const workflow = await prisma.workflow.findUniqueOrThrow({
-    where: { id: workflowId },
-    include: { nodes: true }
-  });
-
-  const nextNodeId = sortedNodeIds[nextIndex];
+  // Pick the first ready node (depth-first priority)
+  const nextNodeId = readyNodes[0];
   const nextNode = workflow.nodes.find(n => n.id === nextNodeId);
 
   if (!nextNode) {
     throw new Error(`Next node not found: ${nextNodeId}`);
   }
+
+  // Calculate next node index for display purposes
+  const nextIndex = sortedNodeIds.indexOf(nextNodeId);
 
   // Add next node job with accumulated context
   const jobOptions: any = {
@@ -700,13 +806,16 @@ async function chainToNextNode(
       branchDecisions: newBranchDecisions,
       skippedNodeIds: newSkippedNodeIds,
       sortedNodeIds,
+      // Pass updated dependencies and completed set
+      dependencies: Array.from(depsMap.entries()),
+      completedNodeIds: Array.from(completed),
       // Pass the WAIT node ID so we can mark it as success when this job starts
       previousWaitNodeId: (nodeType === NodeType.WAIT && delayMs && delayMs > 0) ? nodeId : undefined,
     } as NodeJobData,
     jobOptions
   );
 
-  console.log(`[Node] Chained to next node: ${nextNode.name}`);
+  console.log(`[Node] Chained to next node: ${nextNode.name} (branch continuation)`);
 }
 
 // ============================================================================
