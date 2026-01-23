@@ -52,6 +52,7 @@ export const flowProducer = new FlowProducer({
   connection: redisConnection,
 });
 
+
 export const workflowQueueEvents = new QueueEvents('workflows', {
   connection: redisConnection,
 });

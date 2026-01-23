@@ -10,14 +10,14 @@ export function setupQueueEvents() {
     console.log(`[Workflow Queue] Job ${jobId} is now active (was: ${prev})`);
   });
 
+  
   workflowQueueEvents.on('completed', ({ jobId, returnvalue }) => {
     console.log(`[Workflow Queue] Job ${jobId} completed:`, returnvalue);
 
     if (returnvalue && typeof returnvalue === 'object') {
       const { workflowId, executionId } = returnvalue as any;
-      publishWorkflowEvent(workflowId, {
+      publishWorkflowEvent(workflowId, executionId, {
         type: 'workflow-completed',
-        executionId,
         result: returnvalue,
       });
     }
@@ -29,9 +29,9 @@ export function setupQueueEvents() {
     if (failedReason && typeof failedReason === 'object') {
       const { workflowId, executionId } = (failedReason as any).data || {};
       if (workflowId) {
-        publishWorkflowEvent(workflowId, {
+        publishWorkflowEvent(workflowId, executionId || '', {
           type: 'workflow-failed',
-          executionId,
+
           error: failedReason,
         });
       }

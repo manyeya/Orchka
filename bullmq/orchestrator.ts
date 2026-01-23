@@ -12,6 +12,9 @@ import type { BranchDecision } from "./types";
 import { getCredentialForExecution, CredentialNotFoundError } from "@/lib/credentials/execution";
 import { ExecutionStatus } from "@/lib/generated/prisma/client";
 import { nodeQueue } from "./setup";
+import Redis from "ioredis";
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 const CONTROL_NODE_TYPES: NodeType[] = [
   NodeType.IF_CONDITION,
@@ -113,6 +116,105 @@ function findReachableNodes(
   }
 
   return reachable;
+}
+
+// ============================================================================
+// Step Persistence Helper (Redis → DB)
+// ============================================================================
+
+/**
+ * Persist execution steps from Redis to database.
+ * Called on workflow completion/failure to ensure data isn't lost.
+ */
+async function persistExecutionSteps(executionId: string, workflowId: string): Promise<void> {
+  try {
+    const historyKey = `workflow:${workflowId}:execution:${executionId}:history`;
+    const redisEvents = await redis.lrange(historyKey, 0, 100);
+
+    if (redisEvents.length === 0) {
+      console.log(`[Persist Steps] No events in Redis for execution ${executionId}`);
+      return;
+    }
+
+    // Build steps from Redis events
+    const nodeStates = new Map<string, {
+      startedAt: number | null;
+      completedAt: number | null;
+      nodeName: string;
+      nodeType: string;
+      input: any;
+      output: any;
+      status: string;
+      error: string | null;
+    }>();
+
+    for (const eventStr of redisEvents.reverse()) {
+      try {
+        const { payload, timestamp } = JSON.parse(eventStr);
+        if (payload.type !== 'node-status') continue;
+
+        const nodeId = payload.nodeId;
+        const state = nodeStates.get(nodeId) || {
+          startedAt: null,
+          completedAt: null,
+          nodeName: '',
+          nodeType: '',
+          input: null,
+          output: null,
+          status: 'PENDING',
+          error: null,
+        };
+
+        if (payload.status === 'loading' && !state.startedAt) {
+          state.startedAt = timestamp;
+          state.nodeName = payload.nodeName || '';
+          state.nodeType = payload.nodeType || '';
+          state.input = payload.input;
+          state.status = 'RUNNING';
+        } else if (payload.status === 'success') {
+          state.completedAt = timestamp;
+          state.output = payload.output;
+          state.status = 'COMPLETED';
+        } else if (payload.status === 'error') {
+          state.completedAt = timestamp;
+          state.error = payload.error;
+          state.status = 'FAILED';
+        }
+
+        nodeStates.set(nodeId, state);
+      } catch (e) {
+        console.error('[Persist Steps] Failed to parse event:', e);
+      }
+    }
+
+    // Convert to Prisma format and bulk insert
+    const steps = Array.from(nodeStates.entries())
+      .filter(([, state]) => state.startedAt !== null)
+      .map(([nodeId, state]) => ({
+        id: `${executionId}-${nodeId}`,
+        executionId,
+        nodeId,
+        nodeName: state.nodeName,
+        nodeType: state.nodeType,
+        status: state.status as "RUNNING" | "COMPLETED" | "FAILED",
+        startedAt: new Date(state.startedAt!),
+        completedAt: state.completedAt ? new Date(state.completedAt) : null,
+        input: state.input,
+        output: state.output,
+        error: state.error,
+      }));
+
+    if (steps.length > 0) {
+      await prisma.executionStep.createMany({
+        data: steps,
+        skipDuplicates: true,
+      });
+      console.log(`[Persist Steps] Persisted ${steps.length} steps to DB for execution ${executionId}`);
+    }
+  } catch (e) {
+    console.error('[Persist Steps] Failed to persist steps:', e);
+    // Don't throw - we don't want to fail the execution if persistence fails
+  }
 }
 
 // ============================================================================
@@ -420,14 +522,13 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   // If this job was delayed after a WAIT node, mark the WAIT node as success now
   if (previousWaitNodeId) {
     console.log(`[Node] Marking previous WAIT node ${previousWaitNodeId} as success (delay completed)`);
-    await publishWorkflowEvent(workflowId, {
+    await publishWorkflowEvent(workflowId, executionId, {
       nodeId: previousWaitNodeId,
       type: 'node-status',
       status: 'success',
       nodeType: NodeType.WAIT,
     });
   }
-
 
   // Check if this node should be skipped
   if (skippedNodeIds.includes(nodeId)) {
@@ -532,28 +633,18 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     }
   };
 
-  // Create step record
-  const stepStartedAt = new Date();
-  const stepRecord = await prisma.executionStep.create({
-    data: {
-      executionId,
-      nodeId,
-      nodeName,
-      nodeType,
-      status: "RUNNING",
-      startedAt: stepStartedAt,
-      input: filterInternalFields(context) as any,
-    }
-  });
+  // Track step timing for the publisher (no DB write - Redis handles real-time updates)
+  const stepStartedAt = Date.now();
 
   try {
     const publish = async (payload: any) => {
-      await publishWorkflowEvent(workflowId, payload);
+      await publishWorkflowEvent(workflowId, executionId, payload);
     };
 
     // Publish starting event
     await publish({
       nodeId,
+      nodeName,
       nodeType,
       type: 'node-status',
       status: 'loading',
@@ -587,15 +678,8 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
 
     const cleanOutput = filterInternalFields(result);
 
-    // Update step record
-    await prisma.executionStep.update({
-      where: { id: stepRecord.id },
-      data: {
-        status: "COMPLETED",
-        completedAt: new Date(),
-        output: cleanOutput as any,
-      }
-    });
+    // OPTIMIZATION: No DB write - Redis publisher handles real-time updates
+    // Step data will be lazily persisted to DB when viewing execution history
 
     // Publish realtime event
     // For WAIT nodes with a delay, show "waiting" status until the delay completes
@@ -603,8 +687,9 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       ? 'loading'  // Keep loading/waiting state
       : 'success';
 
-    await publishWorkflowEvent(workflowId, {
+    await publishWorkflowEvent(workflowId, executionId, {
       nodeId,
+      nodeName,
       input: filterInternalFields(context) as any,
       output: cleanOutput as any,
       nodeType,
@@ -693,14 +778,8 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Node execution failed";
 
-    await prisma.executionStep.update({
-      where: { id: stepRecord.id },
-      data: {
-        status: "FAILED",
-        completedAt: new Date(),
-        error: errorMessage,
-      }
-    });
+    // RELIABILITY: Persist steps from Redis to DB on failure
+    await persistExecutionSteps(executionId, workflowId);
 
     await prisma.execution.update({
       where: { id: executionId },
@@ -714,8 +793,9 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     console.error(`[Node] Failed ${nodeName}: ${errorMessage}`);
 
     // Publish error event
-    await publishWorkflowEvent(workflowId, {
+    await publishWorkflowEvent(workflowId, executionId, {
       nodeId,
+      nodeName,
       nodeType,
       type: 'node-status',
       status: 'error',
@@ -826,13 +906,16 @@ async function chainToNextNode(
 
     // If this was a WAIT node with a delay, mark it as success now
     if (nodeType === NodeType.WAIT && delayMs && delayMs > 0) {
-      await publishWorkflowEvent(workflowId, {
+      await publishWorkflowEvent(workflowId, executionId, {
         nodeId,
         type: 'node-status',
         status: 'success',
         nodeType: NodeType.WAIT,
       });
     }
+
+    // RELIABILITY: Persist steps from Redis to DB on completion
+    await persistExecutionSteps(executionId, workflowId);
 
     await prisma.execution.update({
       where: { id: executionId },

@@ -3,7 +3,145 @@ import prisma from "@/lib/db";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { ExecutionStatus } from "@/lib/generated/prisma/client";
 import { TRPCError } from "@trpc/server";
+import Redis from "ioredis";
 import z from "zod";
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
+/**
+ * Lazy persistence: Fetch execution steps from Redis if not in DB
+ * This allows us to avoid DB writes during execution while maintaining history
+ */
+async function getExecutionStepsWithLazyPersist(executionId: string, workflowId: string) {
+  // First, try to get steps from database
+  const dbSteps = await prisma.executionStep.findMany({
+    where: { executionId },
+    orderBy: { startedAt: "asc" },
+  });
+
+  // If steps exist in DB, return them
+  if (dbSteps.length > 0) {
+    return dbSteps;
+  }
+
+  // No steps in DB - fetch from Redis history and persist
+  console.log(`[Lazy Persist] No steps found in DB for execution ${executionId}, fetching from Redis...`);
+
+  // Use execution-specific Redis key
+  const historyKey = `workflow:${workflowId}:execution:${executionId}:history`;
+  const redisEvents = await redis.lrange(historyKey, 0, 100);
+
+  if (redisEvents.length === 0) {
+    console.log(`[Lazy Persist] No events in Redis for execution ${executionId}`);
+    return [];
+  }
+
+  // Parse events and build steps
+  const steps: Array<{
+    id: string;
+    executionId: string;
+    nodeId: string;
+    nodeName: string;
+    nodeType: string;
+    status: string;
+    startedAt: Date;
+    completedAt: Date | null;
+    input: any;
+    output: any;
+    error: string | null;
+  }> = [];
+
+  const nodeStates = new Map<string, {
+    startedAt: number | null;
+    completedAt: number | null;
+    nodeName: string;
+    nodeType: string;
+    input: any;
+    output: any;
+    status: string;
+    error: string | null;
+  }>();
+
+  // Process events to build step records
+  for (const eventStr of redisEvents.reverse()) {
+    try {
+      const { payload, timestamp } = JSON.parse(eventStr);
+
+      // Only process node-status events
+      if (payload.type !== 'node-status') {
+        continue;
+      }
+
+      const nodeId = payload.nodeId;
+      const state = nodeStates.get(nodeId) || {
+        startedAt: null,
+        completedAt: null,
+        nodeName: '',
+        nodeType: '',
+        input: null,
+        output: null,
+        status: 'PENDING',
+        error: null,
+      };
+
+      if (payload.status === 'loading' && !state.startedAt) {
+        state.startedAt = timestamp;
+        state.nodeName = payload.nodeName || '';
+        state.nodeType = payload.nodeType || '';
+        state.input = payload.input;
+        state.status = 'RUNNING';
+      } else if (payload.status === 'success') {
+        state.completedAt = timestamp;
+        state.output = payload.output;
+        state.status = 'COMPLETED';
+      } else if (payload.status === 'error') {
+        state.completedAt = timestamp;
+        state.error = payload.error;
+        state.status = 'FAILED';
+      }
+
+      nodeStates.set(nodeId, state);
+    } catch (e) {
+      console.error('[Lazy Persist] Failed to parse Redis event:', e);
+    }
+  }
+
+  // Convert to step records and persist to DB
+  for (const [nodeId, state] of nodeStates.entries()) {
+    if (state.startedAt) {
+      const step = {
+        id: `${executionId}-${nodeId}`,
+        executionId,
+        nodeId,
+        nodeName: state.nodeName,
+        nodeType: state.nodeType,
+        status: state.status as "RUNNING" | "COMPLETED" | "FAILED",
+        startedAt: new Date(state.startedAt),
+        completedAt: state.completedAt ? new Date(state.completedAt) : null,
+        input: state.input,
+        output: state.output,
+        error: state.error,
+      };
+      steps.push(step);
+    }
+  }
+
+  // Bulk insert steps to DB for future queries
+  if (steps.length > 0) {
+    try {
+      await prisma.executionStep.createMany({
+        data: steps,
+        skipDuplicates: true,
+      });
+      console.log(`[Lazy Persist] Persisted ${steps.length} steps to DB for execution ${executionId}`);
+    } catch (e) {
+      console.error('[Lazy Persist] Failed to persist steps:', e);
+      // Return steps from memory even if persist fails
+    }
+  }
+
+  return steps;
+}
 
 const listExecutionsSchema = z.object({
   workflowId: z.string().optional(),
@@ -94,9 +232,6 @@ export const executionsRouter = createTRPCRouter({
               name: true,
             },
           },
-          steps: {
-            orderBy: { startedAt: "asc" },
-          }
         },
       });
 
@@ -114,6 +249,9 @@ export const executionsRouter = createTRPCRouter({
         });
       }
 
+      // OPTIMIZATION: Lazy load steps from Redis if not in DB
+      const steps = await getExecutionStepsWithLazyPersist(execution.id, execution.workflowId);
+
       return {
         id: execution.id,
         workflowId: execution.workflowId,
@@ -124,7 +262,7 @@ export const executionsRouter = createTRPCRouter({
         completedAt: execution.completedAt,
         result: execution.result,
         error: execution.error,
-        steps: execution.steps,
+        steps,
       };
     }),
 
