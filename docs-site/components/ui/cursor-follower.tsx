@@ -1,65 +1,91 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 export function CursorFollower() {
-  const cursorRef = useRef<HTMLDivElement>(null);
-  const cursorOuterRef = useRef<HTMLDivElement>(null);
+  const cursorDot = useRef<HTMLDivElement>(null);
+  const cursorOutline = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    const cursor = cursorRef.current;
-    const cursorOuter = cursorOuterRef.current;
+    const dot = cursorDot.current;
+    const outline = cursorOutline.current;
 
-    if (!cursor || !cursorOuter) return;
+    if (!dot || !outline) return;
 
-    let mouseX = 0;
-    let mouseY = 0;
-    let cursorX = 0;
-    let cursorY = 0;
-    let cursorOuterX = 0;
-    let cursorOuterY = 0;
+    // Cursor position state
+    let pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    let dotPos = { x: pos.x, y: pos.y };
+    let outlinePos = { x: pos.x, y: pos.y };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+    // Track mouse movement
+    const updateCursor = (e: MouseEvent) => {
+      pos.x = e.clientX;
+      pos.y = e.clientY;
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
-
-    // Smooth cursor animation
+    // Animate cursor smoothly
     gsap.ticker.add(() => {
-      const dt = 1.0;
+      // Fast follow for dot
+      dotPos.x += (pos.x - dotPos.x) * 0.5;
+      dotPos.y += (pos.y - dotPos.y) * 0.5;
 
-      // Inner cursor (fast)
-      cursorX += (mouseX - cursorX) * 0.2;
-      cursorY += (mouseY - cursorY) * 0.2;
-      gsap.set(cursor, { x: cursorX, y: cursorY });
+      // Slower follow for outline
+      outlinePos.x += (pos.x - outlinePos.x) * 0.15;
+      outlinePos.y += (pos.y - outlinePos.y) * 0.15;
 
-      // Outer cursor (slower)
-      cursorOuterX += (mouseX - cursorOuterX) * 0.1;
-      cursorOuterY += (mouseY - cursorOuterY) * 0.1;
-      gsap.set(cursorOuter, { x: cursorOuterX, y: cursorOuterY });
+      gsap.set(dot, { x: dotPos.x, y: dotPos.y });
+      gsap.set(outline, { x: outlinePos.x, y: outlinePos.y });
     });
 
-    // Hover effects on interactive elements
-    const interactiveElements = document.querySelectorAll("a, button, .interactive");
+    document.addEventListener("mousemove", updateCursor);
 
-    interactiveElements.forEach((el) => {
-      el.addEventListener("mouseenter", () => {
-        gsap.to(cursor, { scale: 0.5, duration: 0.3 });
-        gsap.to(cursorOuter, { scale: 2, duration: 0.3 });
+    // Snap hover effects - instant state changes
+    const handleMouseEnter = () => {
+      // Instant snap - no duration
+      gsap.set(outline, {
+        width: 40,
+        height: 40,
+        scale: 1.5,
+        borderColor: "var(--primary)",
+        opacity: 1,
       });
+      gsap.set(dot, { scale: 0.5 });
+    };
 
-      el.addEventListener("mouseleave", () => {
-        gsap.to(cursor, { scale: 1, duration: 0.3 });
-        gsap.to(cursorOuter, { scale: 1, duration: 0.3 });
+    const handleMouseLeave = () => {
+      // Instant snap back
+      gsap.set(outline, {
+        width: 32,
+        height: 32,
+        scale: 1,
+        borderColor: "var(--primary)",
+        opacity: 0.5,
       });
-    });
+      gsap.set(dot, { scale: 1 });
+    };
+
+    // Attach to all interactive elements
+    const attachToElements = () => {
+      const elements = document.querySelectorAll("a, button, .interactive");
+      elements.forEach((el) => {
+        el.removeEventListener("mouseenter", handleMouseEnter);
+        el.removeEventListener("mouseleave", handleMouseLeave);
+        el.addEventListener("mouseenter", handleMouseEnter);
+        el.addEventListener("mouseleave", handleMouseLeave);
+      });
+    };
+
+    // Initial attachment
+    attachToElements();
+
+    // Re-attach periodically for dynamically added elements
+    const interval = setInterval(attachToElements, 2000);
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mousemove", updateCursor);
+      clearInterval(interval);
       gsap.ticker.remove(() => {});
     };
   });
@@ -67,12 +93,14 @@ export function CursorFollower() {
   return (
     <>
       <div
-        ref={cursorOuterRef}
-        className="pointer-events-none fixed top-0 left-0 w-12 h-12 border border-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block mix-blend-difference"
+        ref={cursorOutline}
+        className="pointer-events-none fixed top-0 left-0 border border-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block opacity-50 will-change-transform"
+        style={{ width: 32, height: 32 }}
       />
       <div
-        ref={cursorRef}
-        className="pointer-events-none fixed top-0 left-0 w-3 h-3 bg-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block mix-blend-difference"
+        ref={cursorDot}
+        className="pointer-events-none fixed top-0 left-0 bg-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block will-change-transform"
+        style={{ width: 6, height: 6 }}
       />
     </>
   );

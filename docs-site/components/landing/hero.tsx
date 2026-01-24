@@ -216,7 +216,7 @@ export function Hero() {
         </div>
 
         {/* Tech stack badges */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-16 md:mb-0">
           <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
             Next.js 15
           </span>
