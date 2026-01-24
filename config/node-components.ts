@@ -11,6 +11,7 @@ import { IfNode } from "@/features/nodes/control/if/node";
 import { SwitchNode } from "@/features/nodes/control/switch/node";
 import { LoopNode } from "@/features/nodes/control/loop/node";
 import { WaitNode } from "@/features/nodes/control/wait/node";
+import { MergeNode } from "@/features/nodes/control/merge/node";
 import GroupNode from "@/features/nodes/tools/group-node";
 import AnnotationNode from "@/features/nodes/tools/annotation-node";
 import type { NodeTypes } from "@xyflow/react";
@@ -32,6 +33,7 @@ export enum NodeType {
     SWITCH = 'SWITCH',
     LOOP = 'LOOP',
     WAIT = 'WAIT',
+    MERGE = 'MERGE',
     GROUP = 'GROUP',
     ANNOTATION = 'ANNOTATION'
 }
@@ -50,6 +52,7 @@ export const NODE_COMPONENTS = {
     [NodeType.SWITCH]: SwitchNode,
     [NodeType.LOOP]: LoopNode,
     [NodeType.WAIT]: WaitNode,
+    [NodeType.MERGE]: MergeNode,
     [NodeType.GROUP]: GroupNode,
     [NodeType.ANNOTATION]: AnnotationNode,
 } as const satisfies NodeTypes

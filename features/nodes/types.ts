@@ -7,6 +7,7 @@ export const NodeType = {
     SWITCH: "SWITCH",
     LOOP: "LOOP",
     WAIT: "WAIT",
+    MERGE: "MERGE",
     AI_AGENT: "AI_AGENT",
     AI_GENERATE: "AI_GENERATE",
     AI_EXTRACT: "AI_EXTRACT",

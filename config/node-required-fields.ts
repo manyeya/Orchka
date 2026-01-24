@@ -20,6 +20,7 @@ export const NODE_REQUIRED_FIELDS: Record<string, string[]> = {
     [NodeType.LOOP]: ['name', 'mode'],
     [NodeType.WAIT]: ['name', 'mode'],
     [NodeType.GROUP]: [],
+    [NodeType.MERGE]: [],
     [NodeType.ANNOTATION]: [],
 };
 

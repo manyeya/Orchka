@@ -12,6 +12,7 @@ import { ifNodeExecutor } from "../../control/if/executor";
 import { switchNodeExecutor } from "../../control/switch/executor";
 import { loopNodeExecutor } from "../../control/loop/executor";
 import { waitNodeExecutor } from "../../control/wait/executor";
+import { mergeNodeExecutor } from "../../control/merge/executor";
 
 export const executorsRegistry: Record<NodeType, NodeExecutor<any>> = {
     [NodeType.INITIAL]: () => Promise.resolve({}),
@@ -27,6 +28,7 @@ export const executorsRegistry: Record<NodeType, NodeExecutor<any>> = {
     [NodeType.SWITCH]: switchNodeExecutor,
     [NodeType.LOOP]: loopNodeExecutor,
     [NodeType.WAIT]: waitNodeExecutor,
+    [NodeType.MERGE]: mergeNodeExecutor,
     [NodeType.GROUP]: () => Promise.resolve({}),
     [NodeType.ANNOTATION]: () => Promise.resolve({}),
 };

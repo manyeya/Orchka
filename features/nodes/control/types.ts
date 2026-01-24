@@ -57,6 +57,24 @@ export interface BranchDecision {
   };
 }
 
+/** Merge Node source configuration */
+export interface MergeSource {
+  id: string;
+  label: string;
+}
+
+/** Merge Node configuration */
+export interface MergeNodeData {
+  name: string;
+  mode: "append" | "mergeByKey" | "keepFirst" | "keepLast" | "combine" | "custom";
+  sources: MergeSource[];
+  keyField?: string; // For mergeByKey mode - field to join on
+  includeAllFields?: boolean;
+  /** JSONata expression for custom mode (e.g., $append($input1, $input2, $input3)) */
+  expression?: string;
+  [key: string]: unknown;
+}
+
 /** Extended executor result for control nodes */
 export interface ControlNodeResult {
   context: WorkflowContext;

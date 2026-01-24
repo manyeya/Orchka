@@ -3,12 +3,11 @@ import { createId } from "@paralleldrive/cuid2"
 import { useReactFlow } from "@xyflow/react"
 import { useCallback, useState, useMemo } from "react"
 import { toast } from "sonner"
-import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge, Repeat, Clock, Bot, Search, StickyNote, Grid2X2, Sparkles, FileJson, Tags, BotMessageSquare } from 'lucide-react'
+import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge,GitFork,GitCompare, Repeat, Clock, Bot, Search, StickyNote, Grid2X2, Sparkles, FileJson, Tags, BotMessageSquare } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
 import { NodeType } from "@/features/nodes/types"
 import Image from "next/image"
 import { Item, ItemContent, ItemMedia, ItemTitle, ItemDescription } from "@/components/ui/item"
-import { Separator } from "@/components/ui/separator"
 import { generateUniqueNodeName, getNodeNames } from "@/features/editor/utils/graph-validation"
 import { Input } from "@/components/ui/input"
 
@@ -97,14 +96,21 @@ const CONTROL_NODES: NodeTypeOption[] = [
         type: NodeType.SWITCH,
         label: "Switch",
         description: "Route to multiple paths based on a value",
-        icon: GitMerge,
+        icon: GitFork,
         tags: ["logic", "route"]
+    },
+    {
+        type: NodeType.MERGE,
+        label: "Merge",
+        description: "Combine data from multiple branches",
+        icon: GitMerge,
+        tags: ["logic", "merge", "combine", "join"]
     },
     {
         type: NodeType.LOOP,
         label: "Loop",
         description: "Iterate over an array or count",
-        icon: Repeat,
+        icon: GitCompare,
         tags: ["iteration", "foreach"]
     },
     {
