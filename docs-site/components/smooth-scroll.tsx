@@ -1,32 +1,39 @@
 "use client";
 
 import { ReactNode, useRef } from "react";
+import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ScrollSmoother } from "gsap/ScrollSmoother";
-import { useGSAP } from "@gsap/react";
 
-export const SmoothScroll = ({ children }: { children: ReactNode }) => {
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
+interface SmoothScrollProps {
+  children: ReactNode;
+}
 
-    useGSAP(() => {
-        gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+export const SmoothScroll = ({ children }: SmoothScrollProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
 
-        ScrollSmoother.create({
-            wrapper: wrapperRef.current,
-            content: contentRef.current,
-            smooth: 1.5,
-            effects: true,
-            smoothTouch: 0.1,
-        });
-    }, { scope: wrapperRef });
+  useGSAP(() => {
+    gsap.registerPlugin(ScrollTrigger);
 
-    return (
-        <div ref={wrapperRef} id="smooth-wrapper">
-            <div ref={contentRef} id="smooth-content">
-                {children}
-            </div>
-        </div>
-    );
+    // Smooth scroll behavior using CSS for better performance
+    document.documentElement.style.scrollBehavior = "smooth";
+
+    // Refresh ScrollTrigger on window resize
+    const handleResize = () => {
+      ScrollTrigger.refresh();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="w-full">
+      {children}
+    </div>
+  );
 };
