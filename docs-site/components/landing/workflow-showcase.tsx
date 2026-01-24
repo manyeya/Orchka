@@ -13,32 +13,32 @@ import {
   Handle,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Webhook, Bot, MessageSquare, Database, ArrowRight } from "lucide-react";
+import { Webhook, Bot, MessageSquare, Database, ArrowRight, Code2 } from "lucide-react";
 
 const initialNodes: Node[] = [
   {
     id: "1",
     type: "trigger",
     position: { x: 50, y: 150 },
-    data: { label: "Webhook", icon: Webhook, status: "active" },
+    data: { label: "Webhook", icon: Webhook },
   },
   {
     id: "2",
     type: "ai",
     position: { x: 350, y: 230 },
-    data: { label: "AI Agent", icon: Bot, status: "active" },
+    data: { label: "AI Agent", icon: Bot },
   },
   {
     id: "3",
     type: "action",
     position: { x: 650, y: 170 },
-    data: { label: "Slack", icon: MessageSquare, status: "pending" },
+    data: { label: "Slack", icon: MessageSquare },
   },
   {
     id: "4",
     type: "action",
     position: { x: 650, y: 310 },
-    data: { label: "Database", icon: Database, status: "pending" },
+    data: { label: "Database", icon: Database },
   },
 ];
 
@@ -69,22 +69,22 @@ const initialEdges: Edge[] = [
 function TriggerNode({ data }: { data: any }) {
   const Icon = data.icon;
   return (
-    <div className="relative bg-[var(--background)] border-2 border-[var(--primary)] text-[var(--foreground)] px-4 py-3 min-w-[140px]">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-[var(--primary)]/10">
-          <Icon className="w-4 h-4 text-[var(--primary)]" />
+    <div className="relative bg-[var(--background)] border-2 border-[var(--primary)] text-[var(--foreground)] px-3 py-2.5 min-w-[100px] md:px-4 md:py-3 md:min-w-[140px]">
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="p-1.5 md:p-2 bg-[var(--primary)]/10">
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-[var(--primary)]" />
         </div>
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider font-semibold">
+          <p className="text-[10px] md:text-xs font-mono uppercase tracking-wider font-semibold">
             {data.label}
           </p>
-          <p className="text-[10px] text-[var(--muted-foreground)]">Trigger</p>
+          <p className="text-[8px] md:text-[10px] text-[var(--muted-foreground)]">Trigger</p>
         </div>
       </div>
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
+        className="w-2 h-2 md:w-3 md:h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
       />
     </div>
   );
@@ -93,27 +93,27 @@ function TriggerNode({ data }: { data: any }) {
 function AINode({ data }: { data: any }) {
   const Icon = data.icon;
   return (
-    <div className="relative bg-[var(--background)] border-2 border-[var(--primary)] text-[var(--foreground)] px-4 py-3 min-w-[140px]">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-[var(--primary)]/10">
-          <Icon className="w-4 h-4 text-[var(--primary)]" />
+    <div className="relative bg-[var(--background)] border-2 border-[var(--primary)] text-[var(--foreground)] px-3 py-2.5 min-w-[100px] md:px-4 md:py-3 md:min-w-[140px]">
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="p-1.5 md:p-2 bg-[var(--primary)]/10">
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-[var(--primary)]" />
         </div>
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider font-semibold">
+          <p className="text-[10px] md:text-xs font-mono uppercase tracking-wider font-semibold">
             {data.label}
           </p>
-          <p className="text-[10px] text-[var(--muted-foreground)]">GPT-4</p>
+          <p className="text-[8px] md:text-[10px] text-[var(--muted-foreground)]">GPT-4</p>
         </div>
       </div>
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
+        className="w-2 h-2 md:w-3 md:h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
+        className="w-2 h-2 md:w-3 md:h-3 bg-[var(--primary)] border-2 border-[var(--background)]"
       />
     </div>
   );
@@ -122,22 +122,22 @@ function AINode({ data }: { data: any }) {
 function ActionNode({ data }: { data: any }) {
   const Icon = data.icon;
   return (
-    <div className="relative bg-[var(--background)] border-2 border-[var(--border)] text-[var(--foreground)] px-4 py-3 min-w-[140px]">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-[var(--muted)]">
-          <Icon className="w-4 h-4 text-[var(--muted-foreground)]" />
+    <div className="relative bg-[var(--background)] border-2 border-[var(--border)] text-[var(--foreground)] px-3 py-2.5 min-w-[100px] md:px-4 md:py-3 md:min-w-[140px]">
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="p-1.5 md:p-2 bg-[var(--muted)]">
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-[var(--muted-foreground)]" />
         </div>
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider font-semibold">
+          <p className="text-[10px] md:text-xs font-mono uppercase tracking-wider font-semibold">
             {data.label}
           </p>
-          <p className="text-[10px] text-[var(--muted-foreground)]">Action</p>
+          <p className="text-[8px] md:text-[10px] text-[var(--muted-foreground)]">Action</p>
         </div>
       </div>
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-[var(--border)] border-2 border-[var(--background)]"
+        className="w-2 h-2 md:w-3 md:h-3 bg-[var(--border)] border-2 border-[var(--background)]"
       />
     </div>
   );
@@ -195,7 +195,7 @@ export function WorkflowShowcase() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full py-32 bg-[var(--accent)] overflow-hidden"
+      className="relative w-full py-20 md:py-32 bg-[var(--accent)] overflow-hidden"
     >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
@@ -204,35 +204,37 @@ export function WorkflowShowcase() {
 
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
         {/* Header */}
-        <div className="showcase-header text-center mb-20">
+        <div className="showcase-header text-center mb-12 md:mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 text-xs font-mono uppercase tracking-[0.2em] border border-[var(--primary)] text-[var(--primary)]">
             <span>Live Demo</span>
           </div>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter uppercase font-mono leading-[0.95]">
+          <h2 className="text-3xl md:text-4xl lg:text-6xl font-bold tracking-tighter uppercase font-mono leading-[0.95]">
             Build workflows
             <br />
             <span className="text-[var(--primary)]">visually</span>
           </h2>
         </div>
 
-        {/* Split layout */}
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
+        {/* Stacked layout for mobile, side-by-side for desktop */}
+        <div className="grid lg:grid-cols-2 gap-6 md:gap-8 items-center">
           {/* Code block */}
-          <div className="code-block relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-[var(--primary)]/20 to-transparent blur-2xl" />
-            <div className="relative bg-[var(--background)] border border-[var(--border)] overflow-hidden">
+          <div className="code-block relative order-2 lg:order-1">
+            <div className="absolute -inset-2 md:-inset-4 bg-gradient-to-r from-[var(--primary)]/20 to-transparent blur-xl md:blur-2xl" />
+            <div className="relative bg-[var(--background)] border border-[var(--border)] overflow-hidden rounded-lg">
               {/* Window controls */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] bg-[var(--muted)]/30">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                <span className="ml-4 text-xs font-mono text-[var(--muted-foreground)]">
+              <div className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 border-b border-[var(--border)] bg-[var(--muted)]/30">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-500/80" />
+                  <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500/80" />
+                </div>
+                <span className="ml-2 md:ml-4 text-[10px] md:text-xs font-mono text-[var(--muted-foreground)]">
                   executor.ts
                 </span>
               </div>
               {/* Code content */}
-              <div className="p-6 text-sm font-mono overflow-x-auto bg-[var(--accent)]">
-                <pre className="text-[var(--foreground)]">{`export const aiAgentExecutor: NodeExecutor = {
+              <div className="p-4 md:p-6 text-xs md:text-sm font-mono overflow-x-auto bg-[var(--accent)] max-h-[280px] md:max-h-none overflow-y-auto">
+                <pre className="text-[var(--foreground)] whitespace-pre-wrap">{`export const aiAgentExecutor: NodeExecutor = {
   // Initialize AI agent
   const agent = new Agent({
     model: "gpt-4-turbo",
@@ -248,9 +250,9 @@ export function WorkflowShowcase() {
           </div>
 
           {/* Flow preview */}
-          <div className="flow-preview relative">
-            <div className="absolute -inset-4 bg-gradient-to-l from-[var(--primary)]/20 to-transparent blur-2xl" />
-            <div className="relative bg-[var(--background)] border-2 border-[var(--border)] overflow-hidden h-[400px]">
+          <div className="flow-preview relative order-1 lg:order-2">
+            <div className="absolute -inset-2 md:-inset-4 bg-gradient-to-l from-[var(--primary)]/20 to-transparent blur-xl md:blur-2xl" />
+            <div className="relative bg-[var(--background)] border-2 border-[var(--border)] overflow-hidden rounded-lg h-[300px] md:h-[400px]">
               {/* Grid background */}
               <div className="absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-size-[20px_20px] opacity-50" />
 
@@ -280,12 +282,15 @@ export function WorkflowShowcase() {
         </div>
 
         {/* CTA */}
-        <div className="mt-16 text-center">
+        <div className="mt-12 md:mt-16 text-center">
           <a
             href="/docs"
             className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-[var(--primary)] hover:gap-4 transition-all"
           >
-            Explore all node types
+            <span className="flex items-center gap-2">
+              <Code2 className="w-4 h-4" />
+              Explore all node types
+            </span>
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>

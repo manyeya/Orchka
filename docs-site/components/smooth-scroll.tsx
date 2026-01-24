@@ -1,9 +1,7 @@
 "use client";
 
-import { ReactNode, useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ReactNode, useEffect, useRef } from "react";
+import Lenis from "@studio-freight/lenis";
 
 interface SmoothScrollProps {
   children: ReactNode;
@@ -12,22 +10,27 @@ interface SmoothScrollProps {
 export const SmoothScroll = ({ children }: SmoothScrollProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useGSAP(() => {
-    gsap.registerPlugin(ScrollTrigger);
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: "vertical",
+      gestureDirection: "vertical",
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+    });
 
-    // Smooth scroll behavior using CSS for better performance
-    document.documentElement.style.scrollBehavior = "smooth";
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
 
-    // Refresh ScrollTrigger on window resize
-    const handleResize = () => {
-      ScrollTrigger.refresh();
-    };
-
-    window.addEventListener("resize", handleResize);
+    requestAnimationFrame(raf);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      lenis.destroy();
     };
   }, []);
 
