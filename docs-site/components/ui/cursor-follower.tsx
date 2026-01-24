@@ -5,68 +5,46 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 export function CursorFollower() {
-  const cursorDot = useRef<HTMLDivElement>(null);
-  const cursorOutline = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    const dot = cursorDot.current;
-    const outline = cursorOutline.current;
+    const cursor = cursorRef.current;
 
-    if (!dot || !outline) return;
+    if (!cursor) return;
 
-    // Cursor position state
-    let pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-    let dotPos = { x: pos.x, y: pos.y };
-    let outlinePos = { x: pos.x, y: pos.y };
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let cursorX = mouseX;
+    let cursorY = mouseY;
 
-    // Track mouse movement
-    const updateCursor = (e: MouseEvent) => {
-      pos.x = e.clientX;
-      pos.y = e.clientY;
-    };
-
-    // Animate cursor smoothly
+    // Smooth follow
     gsap.ticker.add(() => {
-      // Fast follow for dot
-      dotPos.x += (pos.x - dotPos.x) * 0.5;
-      dotPos.y += (pos.y - dotPos.y) * 0.5;
-
-      // Slower follow for outline
-      outlinePos.x += (pos.x - outlinePos.x) * 0.15;
-      outlinePos.y += (pos.y - outlinePos.y) * 0.15;
-
-      gsap.set(dot, { x: dotPos.x, y: dotPos.y });
-      gsap.set(outline, { x: outlinePos.x, y: outlinePos.y });
+      cursorX += (mouseX - cursorX) * 0.2;
+      cursorY += (mouseY - cursorY) * 0.2;
+      gsap.set(cursor, { x: cursorX, y: cursorY });
     });
 
-    document.addEventListener("mousemove", updateCursor);
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
 
-    // Snap hover effects - instant state changes
+    document.addEventListener("mousemove", handleMouseMove);
+
+    // Hover effects - instant snap
     const handleMouseEnter = () => {
-      // Instant snap - no duration
-      gsap.set(outline, {
-        width: 40,
-        height: 40,
+      gsap.set(cursor, {
         scale: 1.5,
-        borderColor: "var(--primary)",
-        opacity: 1,
       });
-      gsap.set(dot, { scale: 0.5 });
     };
 
     const handleMouseLeave = () => {
-      // Instant snap back
-      gsap.set(outline, {
-        width: 32,
-        height: 32,
+      gsap.set(cursor, {
         scale: 1,
-        borderColor: "var(--primary)",
-        opacity: 0.5,
       });
-      gsap.set(dot, { scale: 1 });
     };
 
-    // Attach to all interactive elements
+    // Attach to interactive elements
     const attachToElements = () => {
       const elements = document.querySelectorAll("a, button, .interactive");
       elements.forEach((el) => {
@@ -77,31 +55,25 @@ export function CursorFollower() {
       });
     };
 
-    // Initial attachment
     attachToElements();
-
-    // Re-attach periodically for dynamically added elements
     const interval = setInterval(attachToElements, 2000);
 
     return () => {
-      document.removeEventListener("mousemove", updateCursor);
+      document.removeEventListener("mousemove", handleMouseMove);
       clearInterval(interval);
       gsap.ticker.remove(() => {});
     };
   });
 
   return (
-    <>
-      <div
-        ref={cursorOutline}
-        className="pointer-events-none fixed top-0 left-0 border border-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block opacity-50 will-change-transform"
-        style={{ width: 32, height: 32 }}
-      />
-      <div
-        ref={cursorDot}
-        className="pointer-events-none fixed top-0 left-0 bg-[var(--primary)] rounded-full -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block will-change-transform"
-        style={{ width: 6, height: 6 }}
-      />
-    </>
+    <div
+      ref={cursorRef}
+      className="pointer-events-none fixed top-0 left-0 -translate-x-1/2 -translate-y-1/2 z-[9999] hidden md:block will-change-transform mix-blend-difference"
+      style={{
+        width: 12,
+        height: 12,
+        backgroundColor: "var(--primary)",
+      }}
+    />
   );
 }

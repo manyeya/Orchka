@@ -45,7 +45,7 @@ export function Marquee() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full py-16 md:py-20 overflow-hidden border-y border-[var(--border)] bg-[var(--background)]"
+      className="relative w-full py-16 md:py-20 overflow-hidden"
     >
       {/* Subtle gradient overlay */}
       <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[var(--background)] to-transparent z-10 pointer-events-none" />

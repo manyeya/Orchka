@@ -216,24 +216,24 @@ export function Hero() {
         </div>
 
         {/* Tech stack badges */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-16 md:mb-0">
-          <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-16 md:mb-0">
+          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
             Next.js 15
           </span>
           <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
             React Flow
           </span>
           <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
             BullMQ
           </span>
           <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
             Prisma
           </span>
           <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge px-3 py-1.5 border border-[var(--border)] text-xs font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
+          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
             tRPC
           </span>
         </div>
