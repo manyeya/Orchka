@@ -10,6 +10,8 @@ interface MagneticButtonProps {
   className?: string;
   onClick?: () => void;
   href?: string;
+  target?: string;
+  rel?: string;
   variant?: "primary" | "secondary" | "outline";
 }
 
@@ -18,6 +20,8 @@ export function MagneticButton({
   className = "",
   onClick,
   href,
+  target,
+  rel,
   variant = "primary",
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
@@ -52,12 +56,12 @@ export function MagneticButton({
       });
     };
 
-    element.addEventListener("mousemove", handleMouseMove);
-    element.addEventListener("mouseleave", handleMouseLeave);
+    element.addEventListener("mousemove", handleMouseMove as EventListener);
+    element.addEventListener("mouseleave", handleMouseLeave as EventListener);
 
     return () => {
-      element.removeEventListener("mousemove", handleMouseMove);
-      element.removeEventListener("mouseleave", handleMouseLeave);
+      element.removeEventListener("mousemove", handleMouseMove as EventListener);
+      element.removeEventListener("mouseleave", handleMouseLeave as EventListener);
     };
   }, { scope: ref });
 
@@ -80,7 +84,7 @@ export function MagneticButton({
 
   if (href) {
     return (
-      <Link ref={ref as any} href={href} onClick={onClick} className={combinedClassName}>
+      <Link ref={ref as any} href={href} onClick={onClick} target={target} rel={rel} className={combinedClassName}>
         {inner}
       </Link>
     );
