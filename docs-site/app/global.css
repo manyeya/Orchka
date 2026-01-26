@@ -76,3 +76,12 @@ html.lenis {
 .lenis.lenis-scrolling iframe {
     pointer-events: none;
 }
+
+/* 3D perspective transforms */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+.will-change-transform {
+    will-change: transform;
+}

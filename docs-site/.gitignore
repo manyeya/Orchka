@@ -1,5 +1,6 @@
 # deps
 /node_modules
+claude
 
 # generated content
 .source
