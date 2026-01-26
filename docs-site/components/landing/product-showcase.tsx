@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Image from "next/image";
 
 export function ProductShowcase() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -260,14 +259,12 @@ export function ProductShowcase() {
             >
               {/* Product Image */}
               <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-[var(--border)]">
-                <Image
+                <img
                   src="/orckha.png"
                   alt="Orchka Workflow Editor Interface"
                   width={2830}
                   height={1674}
                   className="w-full h-auto"
-                  priority
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
                 />
 
                 {/* Shine effect overlay */}
