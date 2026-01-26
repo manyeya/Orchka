@@ -260,7 +260,7 @@ export function ProductShowcase() {
               {/* Product Image */}
               <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border border-[var(--border)]">
                 <img
-                  src="/orckha.png"
+                  src="orckha.png"
                   alt="Orchka Workflow Editor Interface"
                   width={2830}
                   height={1674}
