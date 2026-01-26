@@ -6,6 +6,27 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { MagneticButton } from "../ui/magnetic-button";
 
+// Logo components
+function NextjsLogo() {
+  return <img src="/nextjs-logo.png" alt="Next.js" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+}
+
+function ReactFlowLogo() {
+  return <img src="/reactflow-logo.jpeg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+}
+
+function PrismaLogo() {
+  return <img src="/prisma-logo.svg" alt="Prisma" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+}
+
+function BullMQLogo() {
+  return <img src="/bullmq-logo.png" alt="BullMQ" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+}
+
+function TRPCLogo() {
+  return <img src="/trpc-logo.svg" alt="tRPC" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+}
+
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -215,27 +236,32 @@ export function Hero() {
           </MagneticButton>
         </div>
 
-        {/* Tech stack badges */}
-        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-16 md:mb-0">
-          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
-            Next.js 15
-          </span>
-          <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
-            React Flow
-          </span>
-          <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
-            BullMQ
-          </span>
-          <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
-            Prisma
-          </span>
-          <span className="tech-badge text-[var(--primary)]">•</span>
-          <span className="tech-badge interactive px-3 py-1.5 md:px-4 md:py-2 border border-[var(--border)] text-[10px] md:text-xs font-mono uppercase tracking-wider text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-default">
-            tRPC
-          </span>
+        {/* Tech stack logo marquee */}
+        <div className="tech-badge w-full max-w-3xl mb-16 md:mb-0">
+          <div
+            className="overflow-hidden"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)',
+              maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)'
+            }}
+          >
+            {/* Scrolling marquee */}
+            <div className="flex items-center gap-8 md:gap-16 animate-marquee hover:pause py-4">
+              {/* First set */}
+              <NextjsLogo />
+              <ReactFlowLogo />
+              <PrismaLogo />
+              <BullMQLogo />
+              <TRPCLogo />
+
+              {/* Duplicate for seamless loop */}
+              <NextjsLogo />
+              <ReactFlowLogo />
+              <PrismaLogo />
+              <BullMQLogo />
+              <TRPCLogo />
+            </div>
+          </div>
         </div>
       </div>
 
