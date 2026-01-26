@@ -120,3 +120,21 @@ html.lenis {
 .animate-gradient {
     animation: gradient 4s ease infinite;
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: oklch(from var(--primary) l c h / 0.5);
+}

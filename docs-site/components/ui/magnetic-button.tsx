@@ -69,7 +69,7 @@ export function MagneticButton({
 
   const variantStyles = {
     primary: "bg-[var(--primary)] text-black border-2 border-[var(--primary)] hover:scale-105",
-    secondary: "bg-[var(--background)] text-[var(--foreground)] border-2 border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    secondary: "bg-transparent text-[var(--foreground)] px-6 py-3 border-l-2 border-[var(--border)] hover:border-l-[var(--primary)] hover:pl-8",
     outline: "bg-transparent text-[var(--foreground)] border-2 border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black",
   };
 

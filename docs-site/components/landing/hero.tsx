@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Terminal, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -12,7 +12,7 @@ function NextjsLogo() {
 }
 
 function ReactFlowLogo() {
-  return <img src="reactflow-logo.svg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="reactflow-logo.jpeg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function PrismaLogo() {
@@ -171,13 +171,13 @@ export function Hero() {
         {/* Animated badge */}
         <div
           ref={badgeRef}
-          className="inline-flex items-center gap-3 px-5 py-2.5 border border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-md mb-8"
+          className="inline-flex items-center gap-3 px-5 py-2.5 border border-[var(--border)] bg-[var(--muted)]/50 backdrop-blur-md mb-8"
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--primary)] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--primary)]"></span>
           </span>
-          <span className="text-xs font-mono text-[var(--foreground)] uppercase tracking-[0.2em] font-medium">
+          <span className="text-xs font-mono text-[var(--muted-foreground)] uppercase tracking-[0.2em] font-medium">
             Orchka v0.1.0 — Open Source
           </span>
         </div>
@@ -222,16 +222,6 @@ export function Hero() {
           <MagneticButton href="/docs" variant="primary" className="cta-button interactive text-black!">
             Get Started
             <ArrowRight className="w-4 h-4" />
-          </MagneticButton>
-          <MagneticButton
-            href="https://github.com/manyeya/Orchka"
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="secondary"
-            className="cta-button interactive"
-          >
-            <Terminal className="w-4 h-4" />
-            View Source
           </MagneticButton>
         </div>
 
