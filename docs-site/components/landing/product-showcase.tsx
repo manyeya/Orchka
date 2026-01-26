@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MousePointer2, Activity, GitBranch } from "lucide-react";
 
 export function ProductShowcase() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -13,6 +14,7 @@ export function ProductShowcase() {
   const titleRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const imageInnerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -36,7 +38,7 @@ export function ProductShowcase() {
       }
     );
 
-    // Title animation - split text reveal
+    // Title animation
     const titleChars = titleRef.current?.querySelectorAll(".char") || [];
     gsap.fromTo(
       titleChars,
@@ -67,7 +69,7 @@ export function ProductShowcase() {
       },
     });
 
-    // Glow follow effect - follows mouse within container
+    // Glow follow effect
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current || !glowRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -148,31 +150,11 @@ export function ProductShowcase() {
         stagger: 0.15,
         ease: "power3.out",
         scrollTrigger: {
-          trigger: ".feature-card",
+          trigger: ".feature-cards-container",
           start: "top 85%",
         },
       }
     );
-
-    // Floating animation for orbs
-    gsap.to(".product-orb-1", {
-      y: -30,
-      x: 20,
-      duration: 8,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-
-    gsap.to(".product-orb-2", {
-      y: 25,
-      x: -15,
-      duration: 10,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      delay: 1,
-    });
 
     return () => {
       section.removeEventListener("mousemove", handleMouseMove as EventListener);
@@ -186,6 +168,38 @@ export function ProductShowcase() {
 
   const title = "The Interface";
 
+  const features = [
+    {
+      icon: MousePointer2,
+      title: "Drag & Drop",
+      desc: "Intuitive visual workflow builder",
+    },
+    {
+      icon: Activity,
+      title: "Real-time",
+      desc: "Live execution monitoring",
+    },
+    {
+      icon: GitBranch,
+      title: "Connections",
+      desc: "Powerful node linking system",
+    },
+  ];
+
+  // Handle mouse move on cards for border gradient effect
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+    const card = cardRefs.current[index];
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Update CSS variables for gradient position
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
   return (
     <section
       ref={sectionRef}
@@ -193,12 +207,6 @@ export function ProductShowcase() {
     >
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--background)] via-[var(--accent)] to-[var(--background)]" />
-
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="product-orb-1 absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[var(--primary)] rounded-full blur-[200px] opacity-15" />
-        <div className="product-orb-2 absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[var(--secondary)] rounded-full blur-[250px] opacity-10" />
-      </div>
 
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[100px_100px] opacity-[0.02] pointer-events-none" />
@@ -277,40 +285,53 @@ export function ProductShowcase() {
           </div>
         </div>
 
-        {/* Feature highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 md:mt-24">
-          {[
-            {
-              icon: "◉",
-              title: "Drag & Drop",
-              desc: "Intuitive visual workflow builder",
-            },
-            {
-              icon: "⚡",
-              title: "Real-time",
-              desc: "Live execution monitoring",
-            },
-            {
-              icon: "↔",
-              title: "Connections",
-              desc: "Powerful node linking system",
-            },
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="feature-card text-center p-6 border border-[var(--border)] bg-[var(--background)]/50 backdrop-blur-sm hover:border-[var(--primary)] transition-colors duration-300 cursor-default"
-            >
-              <span className="text-3xl mb-4 block text-[var(--primary)]">
-                {feature.icon}
-              </span>
-              <h3 className="font-mono text-sm uppercase tracking-wider mb-2 text-[var(--foreground)]">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {feature.desc}
-              </p>
-            </div>
-          ))}
+        {/* Feature highlights with animated border */}
+        <div className="feature-cards-container relative mt-24 md:mt-32">
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6">
+            {features.map((feature, i) => (
+              <div
+                key={i}
+                ref={(el) => { cardRefs.current[i] = el; }}
+                className="feature-card relative group"
+                onMouseMove={(e) => handleCardMouseMove(e, i)}
+              >
+                <div className="relative bg-[var(--background)] p-8 text-center">
+                  {/* Animated gradient border */}
+                  <div
+                    className="absolute -inset-px rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `radial-gradient(circle 150px at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--primary), transparent 100%)`,
+                      mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                      maskComposite: 'exclude',
+                      WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                      WebkitMaskComposite: 'xor',
+                      padding: '1px',
+                    }}
+                  />
+
+                  {/* Base border */}
+                  <div className="absolute -inset-px border border-[var(--border)] rounded-sm pointer-events-none" />
+
+                  {/* Icon */}
+                  <div className="relative mb-5 inline-flex">
+                    <div className="p-3 transition-all duration-300 bg-[var(--muted)] group-hover:bg-[var(--primary)]/10">
+                      <feature.icon className="w-6 h-6 text-[var(--foreground)]" />
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="relative">
+                    <h3 className="font-mono text-sm uppercase tracking-wider mb-3 text-[var(--foreground)]">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                      {feature.desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

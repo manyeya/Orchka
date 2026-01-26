@@ -8,23 +8,23 @@ import { MagneticButton } from "../ui/magnetic-button";
 
 // Logo components
 function NextjsLogo() {
-  return <img src="/nextjs-logo.png" alt="Next.js" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="nextjs-logo.png" alt="Next.js" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function ReactFlowLogo() {
-  return <img src="/reactflow-logo.jpeg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="reactflow-logo.jpeg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function PrismaLogo() {
-  return <img src="/prisma-logo.svg" alt="Prisma" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="prisma-logo.svg" alt="Prisma" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function BullMQLogo() {
-  return <img src="/bullmq-logo.png" alt="BullMQ" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="bullmq-logo.png" alt="BullMQ" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function TRPCLogo() {
-  return <img src="/trpc-logo.svg" alt="tRPC" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="trpc-logo.svg" alt="tRPC" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 export function Hero() {
