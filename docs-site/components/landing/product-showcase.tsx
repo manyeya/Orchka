@@ -295,7 +295,16 @@ export function ProductShowcase() {
                 className="feature-card relative group"
                 onMouseMove={(e) => handleCardMouseMove(e, i)}
               >
-                <div className="relative bg-[var(--background)] p-8 text-center">
+                <div className="relative bg-[var(--background)] p-8 text-center overflow-hidden">
+                  {/* Subtle grid texture */}
+                  <div className="absolute inset-0 opacity-[0.2] pointer-events-none" style={{
+                    backgroundImage: `
+                      linear-gradient(to right, var(--border) 1px, transparent 1px),
+                      linear-gradient(to bottom, var(--border) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '8px 8px',
+                  }} />
+
                   {/* Animated gradient border */}
                   <div
                     className="absolute -inset-px rounded-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"
