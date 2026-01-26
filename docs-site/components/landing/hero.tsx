@@ -8,23 +8,23 @@ import { MagneticButton } from "../ui/magnetic-button";
 
 // Logo components
 function NextjsLogo() {
-  return <img src="nextjs-logo.png" alt="Next.js" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="/nextjs-logo.png" alt="Next.js" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function ReactFlowLogo() {
-  return <img src="reactflow-logo.jpeg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="/reactflow-logo.svg" alt="React Flow" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function PrismaLogo() {
-  return <img src="prisma-logo.svg" alt="Prisma" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="/prisma-logo.svg" alt="Prisma" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function BullMQLogo() {
-  return <img src="bullmq-logo.png" alt="BullMQ" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="/bullmq-logo.png" alt="BullMQ" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 function TRPCLogo() {
-  return <img src="trpc-logo.svg" alt="tRPC" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
+  return <img src="/trpc-logo.svg" alt="tRPC" className="h-8 w-24 object-contain grayscale opacity-40 flex-shrink-0" />;
 }
 
 export function Hero() {
@@ -37,82 +37,81 @@ export function Hero() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    const tl = gsap.timeline({
-      defaults: { ease: "power4.out" },
+    // Set initial states first to prevent jumps
+    gsap.set(badgeRef.current, { y: -30, opacity: 0 });
+
+    const titleChars = titleRef.current?.querySelectorAll(".char") || [];
+    gsap.set(titleChars, { y: 100, opacity: 0, rotateX: -90 });
+
+    gsap.set(subtitleRef.current, { y: 40, opacity: 0 });
+    gsap.set(descriptionRef.current, { y: 30, opacity: 0 });
+
+    const buttons = ctaRef.current?.querySelectorAll("a") || [];
+    gsap.set(buttons, { y: 20, opacity: 0, scale: 0.95 });
+
+    gsap.set(".tech-badge", { scale: 0.8, opacity: 0 });
+
+    gsap.set(scrollRef.current, { y: -10, opacity: 0 });
+
+    // Create synced timeline with proper sequencing
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    // Badge
+    tl.to(badgeRef.current, { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" });
+
+    // Title - character by character reveal
+    tl.to(titleChars, {
+      y: 0,
+      opacity: 1,
+      rotateX: 0,
+      duration: 0.8,
+      stagger: 0.03,
+    }, "-=0.4"); // Slight overlap for smoother feel
+
+    // Subtitle
+    tl.to(subtitleRef.current, { y: 0, opacity: 1, duration: 0.7 }, "-=0.3");
+
+    // Description
+    tl.to(descriptionRef.current, { y: 0, opacity: 1, duration: 0.7 }, "-=0.4");
+
+    // CTA buttons - more fluid easing with scale
+    tl.to(buttons, {
+      y: 0,
+      opacity: 1,
+      scale: 1,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: "power3.out",
+    }, "-=0.3");
+
+    // Tech badges
+    tl.to(".tech-badge", {
+      scale: 1,
+      opacity: 1,
+      duration: 0.5,
+      stagger: 0.05,
+    }, "-=0.2");
+
+    // Scroll indicator - separate from timeline, starts after everything
+    gsap.to(scrollRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 0.5,
+      ease: "power2.out",
+      delay: 0.5,
+      onComplete: () => {
+        // Start bounce animation after fade in
+        gsap.to(scrollRef.current, {
+          y: 10,
+          duration: 0.75,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
     });
 
-    // Badge - quick fade in from top
-    tl.fromTo(
-      badgeRef.current,
-      { y: -30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" },
-      0
-    );
-
-    // Title - character by character reveal with stagger
-    const titleChars = titleRef.current?.querySelectorAll(".char") || [];
-    tl.fromTo(
-      titleChars,
-      { y: 100, opacity: 0, rotateX: -90 },
-      {
-        y: 0,
-        opacity: 1,
-        rotateX: 0,
-        duration: 0.8,
-        stagger: 0.03,
-        ease: "power3.out",
-      },
-      0.3
-    );
-
-    // Subtitle - smooth slide up with slight delay
-    tl.fromTo(
-      subtitleRef.current,
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
-      0.7
-    );
-
-    // Description - fade in with slide
-    tl.fromTo(
-      descriptionRef.current,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
-      0.85
-    );
-
-    // CTA buttons - stagger entrance
-    const buttons = ctaRef.current?.querySelectorAll("a") || [];
-    tl.fromTo(
-      buttons,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "back.out(1.7)" },
-      1
-    );
-
-    // Tech badges - subtle fade in
-    tl.fromTo(
-      ".tech-badge",
-      { scale: 0.8, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.5, stagger: 0.05, ease: "power2.out" },
-      1.2
-    );
-
-    // Scroll indicator - continuous bounce after delay
-    gsap.fromTo(
-      scrollRef.current,
-      { y: 0 },
-      {
-        y: 10,
-        duration: 0.75,
-        repeat: -1,
-        yoyo: true,
-        ease: "power1.inOut",
-        delay: 1.8,
-      }
-    );
-
-    // Floating orbs - subtle continuous motion
+    // Floating orbs - independent continuous animations
     gsap.to(".floating-orb-1", {
       y: -20,
       x: 15,
