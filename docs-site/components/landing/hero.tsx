@@ -37,21 +37,9 @@ export function Hero() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
-    // Set initial states first to prevent jumps
-    gsap.set(badgeRef.current, { y: -30, opacity: 0 });
-
     const titleChars = titleRef.current?.querySelectorAll(".char") || [];
-    gsap.set(titleChars, { y: 100, opacity: 0, rotateX: -90 });
-
-    gsap.set(subtitleRef.current, { y: 40, opacity: 0 });
-    gsap.set(descriptionRef.current, { y: 30, opacity: 0 });
-
     const buttons = ctaRef.current?.querySelectorAll("a") || [];
-    gsap.set(buttons, { y: 20, opacity: 0, scale: 0.95 });
-
-    gsap.set(".tech-badge", { scale: 0.8, opacity: 0 });
-
-    gsap.set(scrollRef.current, { y: -10, opacity: 0 });
+    const techBadge = containerRef.current?.querySelector(".tech-badge");
 
     // Create synced timeline with proper sequencing
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -85,16 +73,15 @@ export function Hero() {
     }, "-=0.3");
 
     // Tech badges
-    tl.to(".tech-badge", {
-      scale: 1,
-      opacity: 1,
-      duration: 0.5,
-      stagger: 0.05,
-    }, "-=0.2");
+    if (techBadge) {
+      tl.to(techBadge, {
+        opacity: 1,
+        duration: 0.5,
+      }, "-=0.2");
+    }
 
     // Scroll indicator - separate from timeline, starts after everything
     gsap.to(scrollRef.current, {
-      y: 0,
       opacity: 1,
       duration: 0.5,
       ease: "power2.out",
@@ -172,6 +159,7 @@ export function Hero() {
         <div
           ref={badgeRef}
           className="inline-flex items-center gap-3 px-5 py-2.5 border border-[var(--border)] bg-[var(--muted)]/50 backdrop-blur-md mb-8"
+          style={{ opacity: 0, transform: 'translateY(-30px)' }}
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--primary)] opacity-75"></span>
@@ -191,7 +179,7 @@ export function Hero() {
             <span
               key={i}
               className="char inline-block will-change-transform"
-              style={{ display: "inline-block" }}
+              style={{ display: "inline-block", opacity: 0, transform: 'translateY(100px) rotateX(-90deg)' }}
             >
               {char}
             </span>
@@ -202,6 +190,7 @@ export function Hero() {
         <p
           ref={subtitleRef}
           className="text-lg md:text-2xl lg:text-3xl text-[var(--foreground)] max-w-3xl mb-4 font-light"
+          style={{ opacity: 0, transform: 'translateY(40px)' }}
         >
           Workflow Orchestration
           <span className="text-[var(--primary)] mx-3">•</span>
@@ -211,6 +200,7 @@ export function Hero() {
         <p
           ref={descriptionRef}
           className="text-[var(--muted-foreground)] text-base md:text-lg max-w-2xl mb-12 leading-relaxed"
+          style={{ opacity: 0, transform: 'translateY(30px)' }}
         >
           Build intelligent automations with visual workflows, AI agents, and durable execution.
           <br className="hidden md:block" />
@@ -219,14 +209,14 @@ export function Hero() {
 
         {/* CTA Buttons */}
         <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 mb-20">
-          <MagneticButton href="/docs" variant="primary" className="cta-button interactive text-black!">
+          <MagneticButton href="/docs" variant="primary" className="cta-button interactive text-black!" style={{ opacity: 0, transform: 'translateY(20px) scale(0.95)' }}>
             Get Started
             <ArrowRight className="w-4 h-4" />
           </MagneticButton>
         </div>
 
         {/* Tech stack logo marquee */}
-        <div className="tech-badge w-full max-w-3xl mb-16 md:mb-0">
+        <div className="tech-badge w-full max-w-3xl mb-16 md:mb-0" style={{ opacity: 0 }}>
           <div
             className="overflow-hidden"
             style={{
@@ -255,7 +245,7 @@ export function Hero() {
       </div>
 
       {/* Scroll indicator */}
-      <div ref={scrollRef} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+      <div ref={scrollRef} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" style={{ opacity: 0 }}>
         <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--muted-foreground)]">
           Scroll
         </span>

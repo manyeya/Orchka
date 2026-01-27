@@ -13,6 +13,7 @@ interface MagneticButtonProps {
   target?: string;
   rel?: string;
   variant?: "primary" | "secondary" | "outline";
+  style?: React.CSSProperties;
 }
 
 export function MagneticButton({
@@ -23,6 +24,7 @@ export function MagneticButton({
   target,
   rel,
   variant = "primary",
+  style,
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   const contentRef = useRef<HTMLSpanElement>(null);
@@ -84,14 +86,14 @@ export function MagneticButton({
 
   if (href) {
     return (
-      <Link ref={ref as any} href={href} onClick={onClick} target={target} rel={rel} className={combinedClassName}>
+      <Link ref={ref as any} href={href} onClick={onClick} target={target} rel={rel} className={combinedClassName} style={style}>
         {inner}
       </Link>
     );
   }
 
   return (
-    <button ref={ref as any} onClick={onClick} className={combinedClassName}>
+    <button ref={ref as any} onClick={onClick} className={combinedClassName} style={style}>
       {inner}
     </button>
   );
