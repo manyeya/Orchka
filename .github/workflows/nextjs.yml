@@ -9,7 +9,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - 'docs-site/**'
+      - 'apps/docs-site/**'
       - '.github/workflows/nextjs.yml'
 
   # Allows you to run this workflow manually from the Actions tab
@@ -50,7 +50,7 @@ jobs:
       
       - name: Build with Next.js
         run: |
-          cd docs-site
+          cd apps/docs-site
           bun run build
         env:
           NEXT_PUBLIC_BASE_PATH: /Orchka
@@ -58,7 +58,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs-site/out
+          path: ./apps/docs-site/out
 
   # Deployment job
   deploy:
