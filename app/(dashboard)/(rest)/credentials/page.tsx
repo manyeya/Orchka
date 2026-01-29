@@ -13,7 +13,7 @@ import {
 import { CredentialsList, CredentialsLoadingView, CredentialsErrorView, CredentialsToolbar } from '@/features/credentials/components/credentials-list'
 import { CredentialForm } from '@/features/credentials/components/credential-form'
 import { useCreateCredential, useUpdateCredential } from '@/features/credentials/hooks/use-credentials'
-import { CredentialType } from '@/lib/credentials/types'
+import { CredentialType } from '@/features/credentials/utils/types'
 import { ErrorBoundary } from 'react-error-boundary'
 
 interface CredentialMetadata {

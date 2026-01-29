@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 
 import Link from 'next/link';
 import { Spinner } from '@/components/ui/spinner';
-import { authClient } from '@/lib/auth/client';
+import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';

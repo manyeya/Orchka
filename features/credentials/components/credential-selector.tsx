@@ -2,7 +2,7 @@
 
 import { useTRPC } from "@/trpc/client"
 import { useQuery } from "@tanstack/react-query"
-import { CredentialType, getCredentialTypeLabel } from "@/lib/credentials/types"
+import { CredentialType, getCredentialTypeLabel } from "@/features/credentials/utils/types"
 import {
     Select,
     SelectContent,
@@ -53,7 +53,7 @@ export const CredentialSelector = ({
     disabled = false,
 }: CredentialSelectorProps) => {
     const trpc = useTRPC()
-    
+
     // Fetch credentials filtered by type - Requirements: 3.5
     const { data: credentials, isLoading, error } = useQuery(
         trpc.credentials.list.queryOptions({ type })
@@ -64,7 +64,7 @@ export const CredentialSelector = ({
             onChange(null)
             return
         }
-        
+
         // Store credential reference with both ID and type - Requirements: 3.2
         onChange({
             credentialId: selectedId,
@@ -140,7 +140,7 @@ export function getCredentialConfigFromNodeData(
 ): NodeCredentialConfig | null {
     const credentialId = nodeData.credentialId
     const credentialType = nodeData.credentialType
-    
+
     if (
         typeof credentialId === "string" &&
         typeof credentialType === "string" &&
@@ -151,7 +151,7 @@ export function getCredentialConfigFromNodeData(
             credentialType: credentialType as CredentialType,
         }
     }
-    
+
     return null
 }
 
@@ -168,7 +168,7 @@ export function setCredentialConfigInNodeData(
         const { credentialId, credentialType, ...rest } = nodeData
         return rest
     }
-    
+
     return {
         ...nodeData,
         credentialId: config.credentialId,

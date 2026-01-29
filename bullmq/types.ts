@@ -1,5 +1,5 @@
 import type { ExpressionContext } from "@/features/editor/utils/expression-engine/index";
-import type { DecryptedCredential } from "@/lib/credentials/execution";
+import type { DecryptedCredential } from "@/features/credentials/utils/execution";
 
 // ============================================================================
 // Core Types

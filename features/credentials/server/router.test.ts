@@ -5,7 +5,7 @@ import {
   ApiKeyCredential,
   BasicAuthCredential,
   BearerTokenCredential,
-} from "@/lib/credentials/types";
+} from "@/features/credentials/utils/types";
 
 // Mock prisma before importing the router
 const mockCredentials = new Map<string, any>();

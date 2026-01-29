@@ -32,7 +32,7 @@ import {
   ALL_MODELS,
 } from "./types";
 import { CredentialSelector } from "@/features/credentials/components/credential-selector";
-import { CredentialType } from "@/lib/credentials/types";
+import { CredentialType } from "@/features/credentials/utils/types";
 
 export type AIAgentSettingsFormValues = z.infer<typeof aiAgentSettingsSchema>;
 
@@ -286,11 +286,10 @@ export function AIAgentSettingsForm({
 
               <div className="space-y-3">
                 <div
-                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
-                    enabledTools.includes("http")
-                      ? "border-primary bg-primary/5"
-                      : ""
-                  }`}
+                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${enabledTools.includes("http")
+                    ? "border-primary bg-primary/5"
+                    : ""
+                    }`}
                   onClick={() => toggleTool("http")}
                 >
                   <div className="space-y-0.5">
@@ -308,11 +307,10 @@ export function AIAgentSettingsForm({
                 </div>
 
                 <div
-                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
-                    enabledTools.includes("code")
-                      ? "border-primary bg-primary/5"
-                      : ""
-                  }`}
+                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${enabledTools.includes("code")
+                    ? "border-primary bg-primary/5"
+                    : ""
+                    }`}
                   onClick={() => toggleTool("code")}
                 >
                   <div className="space-y-0.5">
@@ -330,11 +328,10 @@ export function AIAgentSettingsForm({
                 </div>
 
                 <div
-                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${
-                    enabledTools.includes("calculator")
-                      ? "border-primary bg-primary/5"
-                      : ""
-                  }`}
+                  className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-colors ${enabledTools.includes("calculator")
+                    ? "border-primary bg-primary/5"
+                    : ""
+                    }`}
                   onClick={() => toggleTool("calculator")}
                 >
                   <div className="space-y-0.5">

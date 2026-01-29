@@ -1,5 +1,5 @@
-import { RegisterForm } from '@/features/auth/register-form'
-import { requireNoAuth } from '@/lib/auth/utils'
+import { RegisterForm } from '@/features/auth/components/register-form'
+import { requireNoAuth } from '@/features/auth/utils'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

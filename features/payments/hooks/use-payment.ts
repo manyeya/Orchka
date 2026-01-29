@@ -1,4 +1,4 @@
-import { authClient } from "@/lib/auth/client"
+import { authClient } from "@/features/auth/client"
 import { useQuery } from "@tanstack/react-query"
 
 const usePayments = () => {

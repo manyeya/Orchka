@@ -9,7 +9,7 @@ import {
 } from "@/features/editor/utils/resolve-expressions";
 import { publishWorkflowEvent } from "./publisher";
 import type { BranchDecision } from "./types";
-import { getCredentialForExecution, CredentialNotFoundError } from "@/lib/credentials/execution";
+import { getCredentialForExecution, CredentialNotFoundError } from "@/features/credentials/utils/execution";
 import { ExecutionStatus } from "@/lib/generated/prisma/client";
 import { nodeQueue } from "./setup";
 import Redis from "ioredis";

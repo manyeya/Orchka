@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Trash2, Key } from "lucide-react"
 import { useState } from "react"
-import { CredentialType, getCredentialTypeLabel } from "@/lib/credentials/types"
+import { CredentialType, getCredentialTypeLabel } from "@/features/credentials/utils/types"
 import { CredentialSelector } from "@/features/credentials/components/credential-selector"
 
 const httpMethodSchema = z.enum(["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"])
@@ -70,7 +70,7 @@ const httpSettingsSchema = z.object({
     authPassword: z.string().optional(),
     apiKeyHeader: z.string().optional(),
     apiKeyValue: z.string().optional(),
-    
+
     // Credential-based authentication
     // Requirements: 3.2 - Store credential reference in node config
     credentialId: z.string().optional(),
@@ -470,12 +470,12 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Credential Type</FormLabel>
-                                                <Select 
+                                                <Select
                                                     onValueChange={(value) => {
                                                         field.onChange(value as CredentialType)
                                                         // Clear credential selection when type changes
                                                         form.setValue("credentialId", undefined)
-                                                    }} 
+                                                    }}
                                                     value={field.value}
                                                 >
                                                     <FormControl>
@@ -502,7 +502,7 @@ export function HttpSettingsForm({ defaultValues, onSubmit, onCancel }: HttpSett
                                             </FormItem>
                                         )}
                                     />
-                                    
+
                                     {form.watch("credentialType") && (
                                         <FormField
                                             control={form.control}

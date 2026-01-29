@@ -20,7 +20,7 @@ import {
   isGoogleAICredential,
   getRequiredFields,
   getCredentialTypeLabel,
-} from "./types";
+} from "../types";
 
 describe("Credential Types Property Tests", () => {
   /**

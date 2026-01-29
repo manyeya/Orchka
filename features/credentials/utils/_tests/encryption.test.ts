@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import * as fc from "fast-check";
-import { encrypt, decrypt, validateMasterKey } from "./encryption";
+import { encrypt, decrypt, validateMasterKey } from "../encryption";
 
 // Set up test encryption key before tests run
 beforeAll(() => {
@@ -111,11 +111,11 @@ describe("Encryption Service Property Tests", () => {
         fc.integer({ min: 0 }),
         (plaintext, tamperIndex) => {
           const encrypted = encrypt(plaintext);
-          
+
           // Tamper with the encrypted data
           const encryptedBytes = Buffer.from(encrypted.encryptedData, "base64");
           if (encryptedBytes.length === 0) return true; // Skip empty ciphertext
-          
+
           const idx = tamperIndex % encryptedBytes.length;
           encryptedBytes[idx] = (encryptedBytes[idx] + 1) % 256;
           const tamperedData = encryptedBytes.toString("base64");

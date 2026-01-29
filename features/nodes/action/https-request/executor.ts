@@ -9,8 +9,8 @@ import {
     isApiKeyCredential,
     isBasicAuthCredential,
     isBearerTokenCredential
-} from "@/lib/credentials/types";
-import type { DecryptedCredential } from "@/lib/credentials/execution";
+} from "@/features/credentials/utils/types";
+import type { DecryptedCredential } from "@/features/credentials/utils/execution";
 
 interface HttpResponse {
     status: number;

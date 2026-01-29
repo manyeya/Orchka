@@ -3,7 +3,7 @@
 import { useTRPC } from "@/trpc/client"
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { CredentialType } from "@/lib/credentials/types"
+import { CredentialType } from "@/features/credentials/utils/types"
 import { useCredentialsParams } from "./use-credentials-params"
 
 // Get all credentials for the current user with pagination

@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { authClient } from "@/lib/auth/client"
+import { authClient } from "@/features/auth/client"
 
 interface UpgradeModalProps {
   open: boolean
@@ -31,7 +31,7 @@ export const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
           <AlertDialogCancel>Maybe Later</AlertDialogCancel>
           <AlertDialogAction onClick={async () => {
             await authClient.checkout({
-                slug:"Orchka-Pro"
+              slug: "Orchka-Pro"
             })
             onOpenChange(false)
           }}>

@@ -13,7 +13,7 @@ import { Field, FieldError } from '@/components/ui/field';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { Spinner } from '@/components/ui/spinner';
-import { authClient } from '@/lib/auth/client';
+import { authClient } from '@/features/auth/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { CheckIcon, EyeIcon, EyeOffIcon, HelpCircle } from 'lucide-react';
@@ -120,15 +120,15 @@ export function RegisterForm() {
             email: values.email,
             password: values.password,
             name: values.name,
-            callbackURL: "/",   
+            callbackURL: "/",
         }, {
-                onSuccess: () => {
-                      router.push("/workflows");
-                },
-                onError: (ctx) => {
-                    toast.error(ctx.error.message);
-                },  
-            });
+            onSuccess: () => {
+                router.push("/workflows");
+            },
+            onError: (ctx) => {
+                toast.error(ctx.error.message);
+            },
+        });
     }
 
     const isPending = form.formState.isSubmitting;
@@ -268,11 +268,10 @@ export function RegisterForm() {
                                                     />
                                                     <div className="absolute right-0 top-0 flex h-full items-center">
                                                         <CheckIcon
-                                                            className={`mr-2 h-4 w-4 ${
-                                                                allRequirementsMet
+                                                            className={`mr-2 h-4 w-4 ${allRequirementsMet
                                                                     ? "text-green-500"
                                                                     : "text-muted-foreground"
-                                                            }`}
+                                                                }`}
                                                         />
                                                         <Button
                                                             type="button"
@@ -338,28 +337,28 @@ export function RegisterForm() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Confirm Password</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Input
-                                                        {...field}
-                                                        type={showConfirmPassword ? "text" : "password"}
-                                                        placeholder="Confirm your password"
-                                                        autoComplete="new-password"
-                                                        disabled={isPending}
-                                                        className="pr-10"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                                                    >
-                                                        {showConfirmPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                                                    </Button>
-                                                </div>
-                                            </FormControl>
+                                                <FormControl>
+                                                    <div className="relative">
+                                                        <Input
+                                                            {...field}
+                                                            type={showConfirmPassword ? "text" : "password"}
+                                                            placeholder="Confirm your password"
+                                                            autoComplete="new-password"
+                                                            disabled={isPending}
+                                                            className="pr-10"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                                        >
+                                                            {showConfirmPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                                                        </Button>
+                                                    </div>
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

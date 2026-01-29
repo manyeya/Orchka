@@ -9,8 +9,8 @@ import {
   isOpenAICredential,
   isAnthropicCredential,
   isGoogleAICredential,
-} from "@/lib/credentials/types";
-import type { DecryptedCredential } from "@/lib/credentials/execution";
+} from "@/features/credentials/utils/types";
+import type { DecryptedCredential } from "@/features/credentials/utils/execution";
 
 // Use a flexible type that works with both v2 and v3 models
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

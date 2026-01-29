@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import {
   CredentialType,
-} from "@/lib/credentials/types";
+} from "@/features/credentials/utils/types";
 import {
   NodeCredentialConfig,
   getCredentialConfigFromNodeData,
@@ -47,12 +47,12 @@ describe("Credential Selector Property Tests", () => {
           validCredentialConfigArb,
           (nodeData, config) => {
             const result = setCredentialConfigInNodeData(nodeData, config);
-            
+
             // The result SHALL contain the credentialId
             expect(result.credentialId).toBe(config.credentialId);
             // The result SHALL contain the credentialType
             expect(result.credentialType).toBe(config.credentialType);
-            
+
             return true;
           }
         ),
@@ -68,15 +68,15 @@ describe("Credential Selector Property Tests", () => {
           (nodeData, config) => {
             // Set the credential config
             const nodeDataWithCredential = setCredentialConfigInNodeData(nodeData, config);
-            
+
             // Retrieve the credential config
             const retrievedConfig = getCredentialConfigFromNodeData(nodeDataWithCredential);
-            
+
             // The retrieved config SHALL match the original
             expect(retrievedConfig).not.toBeNull();
             expect(retrievedConfig?.credentialId).toBe(config.credentialId);
             expect(retrievedConfig?.credentialType).toBe(config.credentialType);
-            
+
             return true;
           }
         ),
@@ -92,7 +92,7 @@ describe("Credential Selector Property Tests", () => {
           (nodeData, config) => {
             const nodeDataWithCredential = setCredentialConfigInNodeData(nodeData, config);
             const retrievedConfig = getCredentialConfigFromNodeData(nodeDataWithCredential);
-            
+
             // Round-trip SHALL preserve the credential config
             return (
               retrievedConfig !== null &&
@@ -113,18 +113,18 @@ describe("Credential Selector Property Tests", () => {
           (nodeData, config) => {
             // First set a credential config
             const nodeDataWithCredential = setCredentialConfigInNodeData(nodeData, config);
-            
+
             // Then remove it by setting null
             const nodeDataWithoutCredential = setCredentialConfigInNodeData(nodeDataWithCredential, null);
-            
+
             // The result SHALL NOT contain credentialId or credentialType
             expect(nodeDataWithoutCredential.credentialId).toBeUndefined();
             expect(nodeDataWithoutCredential.credentialType).toBeUndefined();
-            
+
             // getCredentialConfigFromNodeData SHALL return null
             const retrievedConfig = getCredentialConfigFromNodeData(nodeDataWithoutCredential);
             expect(retrievedConfig).toBeNull();
-            
+
             return true;
           }
         ),
@@ -139,14 +139,14 @@ describe("Credential Selector Property Tests", () => {
           validCredentialConfigArb,
           (nodeData, config) => {
             const result = setCredentialConfigInNodeData(nodeData, config);
-            
+
             // All original keys (except credential fields) SHALL be preserved
             for (const key of Object.keys(nodeData)) {
               if (key !== "credentialId" && key !== "credentialType") {
                 expect(result[key]).toEqual(nodeData[key]);
               }
             }
-            
+
             return true;
           }
         ),
@@ -176,7 +176,7 @@ describe("Credential Selector Property Tests", () => {
               credentialId,
               credentialType: expectedType,
             };
-            
+
             // The stored type SHALL match the expected type
             return config.credentialType === expectedType;
           }
@@ -196,10 +196,10 @@ describe("Credential Selector Property Tests", () => {
               credentialId,
               credentialType: expectedType,
             };
-            
+
             const nodeDataWithCredential = setCredentialConfigInNodeData(nodeData, config);
             const retrievedConfig = getCredentialConfigFromNodeData(nodeDataWithCredential);
-            
+
             // The retrieved type SHALL match the expected type
             return (
               retrievedConfig !== null &&
@@ -221,9 +221,9 @@ describe("Credential Selector Property Tests", () => {
               credentialId,
               credentialType: invalidType,
             };
-            
+
             const config = getCredentialConfigFromNodeData(nodeData);
-            
+
             // Invalid type SHALL result in null config
             return config === null;
           }
@@ -241,9 +241,9 @@ describe("Credential Selector Property Tests", () => {
               credentialType,
               // credentialId is missing
             };
-            
+
             const config = getCredentialConfigFromNodeData(nodeData as Record<string, unknown>);
-            
+
             // Missing credentialId SHALL result in null config
             return config === null;
           }
@@ -261,9 +261,9 @@ describe("Credential Selector Property Tests", () => {
               credentialId,
               // credentialType is missing
             };
-            
+
             const config = getCredentialConfigFromNodeData(nodeData as Record<string, unknown>);
-            
+
             // Missing credentialType SHALL result in null config
             return config === null;
           }

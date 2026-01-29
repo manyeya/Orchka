@@ -10,8 +10,8 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import * as z from "zod";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { CredentialType, isOpenAICredential, isAnthropicCredential, isGoogleAICredential } from "@/lib/credentials/types";
-import type { DecryptedCredential } from "@/lib/credentials/execution";
+import { CredentialType, isOpenAICredential, isAnthropicCredential, isGoogleAICredential } from "@/features/credentials/utils/types";
+import type { DecryptedCredential } from "@/features/credentials/utils/execution";
 
 /**
  * Credential configuration for AI models
@@ -195,7 +195,7 @@ function createModel(modelString: string, credentialConfig: AICredentialConfig |
     });
   }
 
- 
+
 
   // Default to OpenAI
   return new ChatOpenAI({

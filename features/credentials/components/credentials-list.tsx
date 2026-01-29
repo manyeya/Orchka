@@ -24,7 +24,7 @@ import {
     EmptyTitle,
 } from "@/components/ui/empty"
 import { EntityList, EntityPagination } from "@/components/entity-component"
-import { getCredentialTypeLabel, CredentialType } from "@/lib/credentials/types"
+import { getCredentialTypeLabel, CredentialType } from "@/features/credentials/utils/types"
 
 interface CredentialMetadata {
     id: string

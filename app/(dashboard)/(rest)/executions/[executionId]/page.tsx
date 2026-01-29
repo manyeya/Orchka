@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { requireAuth } from '@/lib/auth/utils'
+import { requireAuth } from '@/features/auth/utils'
 import { prefetchExecution } from '@/features/executions/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -7,9 +7,9 @@ import { ExecutionDetailView, ExecutionLoadingView, ExecutionErrorView } from '@
 import type { Metadata } from 'next'
 
 interface ExecutionPageProps {
-    params: Promise<{
-        executionId: string
-    }>
+  params: Promise<{
+    executionId: string
+  }>
 }
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ async function ExecutionPage({ params }: ExecutionPageProps) {
   await requireAuth()
   const { executionId } = await params
   await prefetchExecution(executionId)
-  
+
   return (
     <HydrateClient>
       <ErrorBoundary fallback={<ExecutionErrorView />}>
@@ -31,6 +31,6 @@ async function ExecutionPage({ params }: ExecutionPageProps) {
       </ErrorBoundary>
     </HydrateClient>
   )
-}   
+}
 
 export default ExecutionPage

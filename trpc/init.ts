@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/features/auth';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { cache } from 'react';
 import { headers } from 'next/headers';
@@ -52,11 +52,11 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
     });
 });
 
-export const premiumProcedure = protectedProcedure.use(async ({ctx, next}) => {
+export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     const customer = await polarClient.customers.getStateExternal({
         externalId: ctx.auth.user.id,
     })
-    
+
     if (!customer.activeSubscriptions || customer.activeSubscriptions.length === 0) {
         throw new TRPCError({
             code: 'FORBIDDEN',

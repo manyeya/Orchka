@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { CredentialType } from "@/lib/credentials/types";
+import { CredentialType } from "@/features/credentials/utils/types";
 
 export const customToolSchema = z.object({
   name: z.string().min(1, "Tool name is required"),
@@ -35,7 +35,7 @@ export const aiAgentSettingsSchema = z.object({
   // Input configuration
   prompt: z.string().catch(""), // Direct prompt text
   inputVariable: z.string().catch(""), // Variable from context (optional)
-  
+
   // Output configuration
   outputFormat: z.enum(["text", "json"]).catch("text"),
   outputSchema: z.string().optional(), // JSON schema for structured output

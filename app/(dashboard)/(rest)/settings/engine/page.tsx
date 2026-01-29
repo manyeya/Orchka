@@ -4,7 +4,7 @@ import { BullMQContainer, BullMQErrorView, BullMQLoadingView } from '@/features/
 import { prefetchBullMQStats } from '@/features/admin/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
-import { requireAuth } from '@/lib/auth/utils'
+import { requireAuth } from '@/features/auth/utils'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

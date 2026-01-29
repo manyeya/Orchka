@@ -31,7 +31,7 @@ import {
     openaiCredentialSchema,
     anthropicCredentialSchema,
     googleAICredentialSchema,
-} from "@/lib/credentials/types"
+} from "@/features/credentials/utils/types"
 import { Loader2Icon, Eye, EyeOff, FlaskConical, CheckCircle2, XCircle } from "lucide-react"
 import { useState } from "react"
 import { useTestCredential } from "../hooks/use-credentials"
@@ -78,10 +78,10 @@ export const CredentialForm = ({
     const handleTest = async () => {
         const data = form.getValues("data")
         const type = form.getValues("type")
-        
+
         // Reset previous test result
         setTestResult(null)
-        
+
         try {
             const result = await testCredential.mutateAsync({ type, data })
             setTestResult(result)
@@ -162,11 +162,10 @@ export const CredentialForm = ({
 
                 {/* Test Result Display */}
                 {testResult && (
-                    <div className={`flex items-center gap-2 p-3 rounded-md text-sm ${
-                        testResult.success 
-                            ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" 
-                            : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
-                    }`}>
+                    <div className={`flex items-center gap-2 p-3 rounded-md text-sm ${testResult.success
+                        ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                        : "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
+                        }`}>
                         {testResult.success ? (
                             <>
                                 <CheckCircle2 className="h-4 w-4" />
@@ -183,9 +182,9 @@ export const CredentialForm = ({
 
                 <div className="flex gap-2">
                     {supportsTest && (
-                        <Button 
-                            type="button" 
-                            variant="outline" 
+                        <Button
+                            type="button"
+                            variant="outline"
                             onClick={handleTest}
                             disabled={testCredential.isPending}
                         >

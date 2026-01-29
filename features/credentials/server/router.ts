@@ -1,17 +1,17 @@
 import { PAGINATION } from "@/config/constants";
 import prisma from "@/lib/db";
-import { encrypt, decrypt } from "@/lib/credentials/encryption";
+import { encrypt, decrypt } from "@/features/credentials/utils/encryption";
 import {
   CredentialType,
   validateCredentialData,
   isValidCredentialType,
-} from "@/lib/credentials/types";
+} from "@/features/credentials/utils/types";
 import {
   logCredentialCreate,
   logCredentialUpdate,
   logCredentialDelete,
   logCredentialAccess,
-} from "@/lib/credentials/audit-log";
+} from "@/features/credentials/utils/audit-log";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -271,7 +271,7 @@ async function clearCredentialReferencesFromNodes(
     const data = node.data as Record<string, unknown>;
     // Remove credentialId and credentialType from the data
     const { credentialId: _, credentialType: __, ...cleanedData } = data;
-    
+
     await prisma.node.update({
       where: { id: node.id },
       data: { data: cleanedData as object },

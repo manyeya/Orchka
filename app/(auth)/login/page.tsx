@@ -1,5 +1,5 @@
-import { LoginForm } from '@/features/auth/login-form'
-import { requireNoAuth } from '@/lib/auth/utils'
+import { LoginForm } from '@/features/auth/components/login-form'
+import { requireNoAuth } from '@/features/auth/utils'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
