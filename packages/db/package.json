@@ -1,0 +1,27 @@
+{
+    "name": "@orchka/db",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": "./src/index.ts",
+        "./enums": "./prisma/generated/enums.ts",
+        "./client": "./prisma/generated/client.ts"
+    },
+    "scripts": {
+        "prisma": "prisma",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:studio": "prisma studio",
+        "prisma:push": "prisma db push"
+    },
+    "dependencies": {
+        "@prisma/client": "catalog:"
+    },
+    "devDependencies": {
+        "prisma": "catalog:",
+        "typescript": "catalog:",
+        "dotenv": "catalog:"
+    }
+}

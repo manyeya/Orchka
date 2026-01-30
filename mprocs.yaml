@@ -1,6 +1,5 @@
 procs:
   bullmq:
-    cmd: ["bun", "run", "bullmq"]
-  next:
-    cmd: ["bun", "run", "dev"]
-    
+    cmd: ["bun", "run", "--filter", "@orchka/workflow-engine", "start"]
+  web:
+    cmd: ["bun", "run", "--filter", "@orchka/web", "dev"]

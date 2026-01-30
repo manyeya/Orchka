@@ -1,0 +1,7 @@
+[install]
+# Enable workspace support
+peer = true
+
+[install.cache]
+# Cache dependencies for faster installs
+dir = "~/.bun/install/cache"

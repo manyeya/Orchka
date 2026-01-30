@@ -1,0 +1,322 @@
+import { PAGINATION } from "@/config/constants";
+import prisma from "@orchka/db";
+import { NodeType } from "@/features/nodes/types";
+import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
+import { Edge, Node } from "@xyflow/react";
+import { generateSlug } from "random-word-slugs";
+import z from "zod";
+import { workflowQueue } from "@orchka/workflow-engine/setup";
+import { upsertWorkflowScheduler, removeWorkflowScheduler, getWorkflowScheduler } from "@orchka/workflow-engine/schedulers";
+
+export const workflowsRouter = createTRPCRouter({
+    getScheduleStatus: protectedProcedure
+        .input(z.object({ id: z.string() }))
+        .query(async ({ ctx, input }) => {
+            // Verify user owns this workflow
+            await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            // Check if there's an active scheduler for this workflow
+            const scheduler = await getWorkflowScheduler(input.id);
+
+            return {
+                isScheduled: !!scheduler,
+                schedulerId: scheduler?.id || null,
+                pattern: scheduler?.pattern || null,
+            };
+        }),
+    executeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+        const workflow = await prisma.workflow.findUniqueOrThrow({
+            where: {
+                id: input.id,
+                userId: ctx.auth.user.id,
+            }
+        });
+
+        // Create execution record
+        const execution = await prisma.execution.create({
+            data: {
+                workflowId: input.id,
+                userId: ctx.auth.user.id,
+            }
+        });
+
+        // Queue workflow execution via BullMQ
+        await workflowQueue.add('execute-workflow', {
+            workflowId: input.id,
+            executionId: execution.id,
+            userId: ctx.auth.user.id,
+        });
+
+        return workflow;
+    }),
+
+    scheduleWorkflow: protectedProcedure
+        .input(z.object({
+            id: z.string(),
+            cronPattern: z.string(),
+            timezone: z.string().optional().default("UTC"),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const workflow = await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            // Create scheduler ID based on workflow
+            const schedulerId = `workflow-${input.id}`;
+
+            // Register the cron schedule with BullMQ
+            await upsertWorkflowScheduler(schedulerId, {
+                workflowId: input.id,
+                cronPattern: input.cronPattern,
+            });
+
+            return {
+                ...workflow,
+                scheduled: true,
+                schedulerId,
+                cronPattern: input.cronPattern,
+                timezone: input.timezone,
+            };
+        }),
+
+    unscheduleWorkflow: protectedProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const workflow = await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                }
+            });
+
+            const schedulerId = `workflow-${input.id}`;
+
+            // Remove the scheduler
+            await removeWorkflowScheduler(schedulerId);
+
+            return { ...workflow, scheduled: false };
+        }),
+    createWorkflow: premiumProcedure.mutation(({ ctx }) => {
+        return prisma.workflow.create({
+            data: {
+                name: generateSlug(3),
+                userId: ctx.auth.user.id,
+                nodes: {
+                    create: {
+                        name: NodeType.INITIAL,
+                        type: NodeType.INITIAL,
+                        position: {
+                            x: 0,
+                            y: 0,
+                        },
+                    }
+                }
+            }
+        });
+    }),
+    removeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
+        return prisma.workflow.delete({
+            where: {
+                id: input.id,
+                userId: ctx.auth.user.id,
+            }
+        })
+    }),
+    updateWorkflow: protectedProcedure
+        .input(z.object({
+            id: z.string(),
+            nodes: z.array(z.object({
+                id: z.string(),
+                type: z.string().nullish(),
+                position: z.object({
+                    x: z.number(),
+                    y: z.number(),
+                }),
+                data: z.record(z.string(), z.any()),
+            })),
+            edges: z.array(z.object({
+                source: z.string(),
+                target: z.string(),
+                sourceHandle: z.string(),
+                targetHandle: z.string(),
+            }))
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { id, nodes, edges } = input;
+            const workflow = await prisma.workflow.findUniqueOrThrow({
+                where: {
+                    id,
+                    userId: ctx.auth.user.id,
+                },
+                include: {
+                    nodes: true,
+                    connections: true,
+                }
+            })
+
+            return prisma.$transaction(async (tx) => {
+                await tx.node.deleteMany({
+                    where: {
+                        workflowId: id,
+                    }
+                });
+
+                await tx.connection.deleteMany({
+                    where: {
+                        workflowId: id,
+                    }
+                });
+
+                await tx.node.createMany({
+                    data: nodes.map(node => ({
+                        id: node.id,
+                        name: (node.data?.name as string) || node.type || "unknown",
+                        type: node.type as NodeType,
+                        position: node.position,
+                        data: node.data || {},
+                        workflowId: id,
+                    }))
+                })
+
+                //connections 
+                await tx.connection.createMany({
+                    data: edges.map(edge => ({
+                        fromNodeId: edge.source,
+                        toNodeId: edge.target,
+                        fromOutput: edge.sourceHandle || "main",
+                        toInput: edge.targetHandle || "main",
+                        workflowId: id,
+                    }))
+                })
+
+                //update workflow updatedAt
+                await tx.workflow.update({
+                    where: {
+                        id,
+                        userId: ctx.auth.user.id,
+                    },
+                    data: {
+                        updatedAt: new Date(),
+                    }
+                })
+
+                return workflow
+            })
+
+        }),
+
+    updateWorkflowName: protectedProcedure
+        .input(z.object({ id: z.string(), name: z.string().min(1) }))
+        .mutation(({ ctx, input }) => {
+            return prisma.workflow.update({
+                where: {
+                    id: input.id,
+                    userId: ctx.auth.user.id,
+                },
+                data: {
+                    name: input.name,
+                }
+            })
+        }),
+    getOneWorkflow: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+        const workflow = await prisma.workflow.findUniqueOrThrow({
+            where: {
+                id: input.id,
+                userId: ctx.auth.user.id,
+            }, include: {
+                nodes: true,
+                connections: true,
+            }
+        })
+
+        const nodes: Node[] = workflow.nodes.map(node => {
+            const nodeData = node.data as Record<string, unknown>;
+            return {
+                id: node.id,
+                type: node.type,
+                position: node.position as { x: number; y: number },
+                style: (nodeData.style as React.CSSProperties) || undefined,
+                parentId: (nodeData.parentId as string) || undefined,
+                extent: (nodeData.extent as "parent") || undefined,
+                data: {
+                    ...nodeData,
+                    name: node.name,
+                },
+            };
+        })
+
+        const edges: Edge[] = workflow.connections.map(connection => ({
+            id: connection.id,
+            source: connection.fromNodeId,
+            target: connection.toNodeId,
+            sourceHandle: connection.fromOutput,
+            targetHandle: connection.toInput,
+        }))
+
+        return {
+            id: workflow.id,
+            name: workflow.name,
+            nodes,
+            edges,
+        }
+    }),
+    getWorkflows: protectedProcedure
+        .input(z.object({
+            page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
+            pageSize: z.number()
+                .min(PAGINATION.MIN_PAGE_SIZE)
+                .max(PAGINATION.MAX_PAGE_SIZE)
+                .default(PAGINATION.DEFAULT_PAGE_SIZE),
+            search: z.string().default(""),
+        }))
+        .query(async ({ ctx, input }) => {
+            const { page, pageSize, search } = input;
+            const [items, count] = await Promise.all([
+                prisma.workflow.findMany({
+                    skip: (page - 1) * pageSize,
+                    take: pageSize,
+                    where: {
+                        userId: ctx.auth.user.id,
+                        name: {
+                            contains: search,
+                            mode: "insensitive",
+                        },
+                    },
+                    orderBy: {
+                        updatedAt: "desc",
+                    }
+                }),
+                prisma.workflow.count({
+                    where: {
+                        userId: ctx.auth.user.id,
+                        name: {
+                            contains: search,
+                            mode: "insensitive",
+                        }
+                    },
+                })
+            ])
+
+            const totalPages = Math.ceil(count / pageSize);
+            const hasNext = page < totalPages;
+            const hasPrevious = page > 1;
+
+            return {
+                items,
+                page,
+                pageSize,
+                count,
+                totalPages,
+                hasNext,
+                hasPrevious,
+            }
+        })
+})

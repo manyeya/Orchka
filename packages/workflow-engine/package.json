@@ -1,0 +1,49 @@
+{
+    "name": "@orchka/workflow-engine",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": "./src/index.ts",
+        "./setup": "./src/setup.ts",
+        "./schedulers": "./src/schedulers.ts",
+        "./workers": "./src/workers.ts",
+        "./orchestrator": "./src/orchestrator.ts",
+        "./events": "./src/events.ts",
+        "./publisher": "./src/publisher.ts",
+        "./types": "./src/types.ts"
+    },
+    "scripts": {
+        "start": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun src/index.ts",
+        "dev": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun --watch src/index.ts"
+    },
+    "dependencies": {
+        "@orchka/db": "workspace:*",
+        "@orchka/credentials-core": "workspace:*",
+        "@orchka/expression-engine": "workspace:*",
+        "bullmq": "catalog:",
+        "ioredis": "catalog:",
+        "pino": "catalog:",
+        "@ai-sdk/anthropic": "catalog:",
+        "@ai-sdk/google": "catalog:",
+        "@ai-sdk/openai": "catalog:",
+        "@langchain/anthropic": "catalog:",
+        "@langchain/core": "catalog:",
+        "@langchain/google-genai": "catalog:",
+        "@langchain/groq": "catalog:",
+        "@langchain/openai": "catalog:",
+        "ai": "catalog:",
+        "langchain": "catalog:",
+        "jsonata": "catalog:",
+        "ky": "catalog:",
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "typescript": "catalog:",
+        "tsx": "catalog:",
+        "@types/node": "catalog:",
+        "dotenv": "catalog:",
+        "pino-pretty": "catalog:"
+    }
+}
