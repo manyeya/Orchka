@@ -1,5 +1,5 @@
 import { NonRetriableError } from "@/lib/errors/workflow-errors";
-import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
+
 import { HttpSettingsFormValues } from "./http-settings-form";
 import ky, { Options as KyOptions, HTTPError } from 'ky';
 import { publishNodeStatus } from "../../utils/realtime";
@@ -11,6 +11,7 @@ import {
     isBearerTokenCredential
 } from "@/features/credentials/utils/types";
 import type { DecryptedCredential } from "@/features/credentials/utils/execution";
+import { NodeExecutor, WorkflowContext } from "../../utils/execution/types";
 
 interface HttpResponse {
     status: number;

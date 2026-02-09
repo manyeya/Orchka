@@ -16,4 +16,4 @@ export type {
     ControlNodeResult,
     NodeStatusPayload,
     NodeDataPayload,
-} from "@/bullmq/types";
+} from "@orchka/workflow-engine/types";

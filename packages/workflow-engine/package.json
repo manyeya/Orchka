@@ -22,6 +22,7 @@
         "@orchka/db": "workspace:*",
         "@orchka/credentials-core": "workspace:*",
         "@orchka/expression-engine": "workspace:*",
+        "@orchka/node-registry": "workspace:*",
         "bullmq": "catalog:",
         "ioredis": "catalog:",
         "pino": "catalog:",

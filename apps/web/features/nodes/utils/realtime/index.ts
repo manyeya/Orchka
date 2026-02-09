@@ -4,7 +4,7 @@
  * Simplified for BullMQ/SSE implementation.
  */
 
-export type { NodeStatusPayload, NodeDataPayload, PublishFn } from "@/bullmq/types";
+export type { NodeStatusPayload, NodeDataPayload, PublishFn } from "@orchka/workflow-engine/types";
 
 // Dummy exports for backward compatibility during migration
 // These should be removed from components eventually

@@ -2,7 +2,7 @@ import type {
     PublishFn
 
     , NodeStatusPayload, NodeDataPayload
-} from "@/bullmq/types";
+} from "@orchka/workflow-engine/types";
 
 /**
  * Helper function to publish node status updates.
