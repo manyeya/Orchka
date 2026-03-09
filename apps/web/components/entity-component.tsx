@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button"
+import { Button } from "@orchka/ui/button"
 import { AlertTriangle, AlertTriangleIcon, ArrowUpRight, DotSquareIcon, FileExclamationPointIcon, FolderCode, Loader2Icon, MoreVerticalIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react"
 import Link from "next/link"
-import { Input } from "./ui/input"
+import { Input } from "@orchka/ui/input"
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@orchka/ui/tooltip"
 import {
     Pagination,
     PaginationContent,
@@ -14,14 +14,14 @@ import {
     PaginationLink,
     PaginationNext,
     PaginationPrevious,
-} from "@/components/ui/pagination"
-import { Spinner } from "./ui/spinner"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./ui/empty"
-import { cn } from "@/lib/utils"
+} from "@orchka/ui/pagination"
+import { Spinner } from "@orchka/ui/spinner"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@orchka/ui/empty"
+import { cn } from "@orchka/ui/utils"
 
-import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemHeader, ItemMedia, ItemTitle } from "./ui/item"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemHeader, ItemMedia, ItemTitle } from "@orchka/ui/item"
+import { Avatar, AvatarFallback, AvatarImage } from "@orchka/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@orchka/ui/dropdown-menu"
 
 
 type EntityHeaderProps = {

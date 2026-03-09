@@ -8,22 +8,22 @@ import { useUpgradeModal } from "@/features/payments/hooks/use-upgrade-modal"
 import { useWorkflowsParams } from "../hooks/use-workflows-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
 import { useRouter } from "next/navigation"
-import { Workflow } from "@/lib/generated/prisma/client"
+import type { Workflow } from "@orchka/db/client"
 import { formatDistanceToNow } from "date-fns"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@orchka/ui/card"
+import { Button } from "@orchka/ui/button"
+import { Input } from "@orchka/ui/input"
+import { Separator } from "@orchka/ui/separator"
+import { Badge } from "@orchka/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@orchka/ui/dropdown-menu"
 import Link from "next/link"
-import { Switch } from "@/components/ui/switch"
+import { Switch } from "@orchka/ui/switch"
 
 export const WorkflowsList = () => {
     const workflows = useSuspenseWorkflows()

@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@orchka/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DashboardBreadcrumb } from "@/components/dashboard-breadcrumb"
 import { CommandProvider } from "@/components/command-provider"

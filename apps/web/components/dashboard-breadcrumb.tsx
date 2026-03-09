@@ -8,7 +8,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@orchka/ui/breadcrumb"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 

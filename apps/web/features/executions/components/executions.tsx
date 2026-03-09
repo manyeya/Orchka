@@ -8,23 +8,23 @@ import { useExecutionsParams } from "../hooks/use-executions-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
 import { useSuspenseExecutions } from "../hooks/use-executions"
 import { formatDistanceToNow } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@orchka/ui/button"
+import { Input } from "@orchka/ui/input"
+import { Separator } from "@orchka/ui/separator"
+import { Badge } from "@orchka/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+} from "@orchka/ui/dropdown-menu"
+import { Card, CardContent, CardHeader, CardTitle } from "@orchka/ui/card"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@orchka/ui/tooltip"
 
 const StatsCard = ({ title, value, subtext }: { title: string, value: string, subtext: string }) => (
   <Card className="rounded-lg bg-card/50 border-border/50 shadow-sm backdrop-blur-sm w-full">

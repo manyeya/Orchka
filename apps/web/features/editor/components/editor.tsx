@@ -1,8 +1,8 @@
 'use client';
 
 import { ErrorView, LoadingView } from '@/components/entity-component';
-import { NODE_COMPONENTS, NodeType } from '@/config/node-components';
-import { isTriggerNode } from '@/features/nodes/types';
+import { NodeType, isTriggerNode } from '@orchka/nodes/core';
+import { NODE_COMPONENTS } from '@orchka/nodes/editor';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
 import { ReactFlow, Background, Panel, ConnectionLineType } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -13,6 +13,7 @@ import { AddNodeButton } from './add-node-button';
 import { ExecuteWorkflowButton } from './execute-workflow-butto';
 import { resolveCollisions } from '../utils/resolve-collisions';
 import { GroupButton } from './group-button';
+import { NodeEditorBridgeProvider } from './node-editor-bridge-provider';
 import { RealtimeManager } from './realtime-manager';
 
 export const EditorLoadingView = () => {
@@ -56,6 +57,7 @@ function Editor({ workflowId }: { workflowId: string }) {
     return (
         <div style={{ width: '100%', height: '100%' }}>
             <RealtimeManager />
+            <NodeEditorBridgeProvider>
             <ReactFlow nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange}
@@ -223,6 +225,7 @@ function Editor({ workflowId }: { workflowId: string }) {
                     </Panel>
                 )}
             </ReactFlow>
+            </NodeEditorBridgeProvider>
         </div>
     )
 }

@@ -13,8 +13,8 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
+    "utils": "@orchka/ui/utils",
+    "ui": "@orchka/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

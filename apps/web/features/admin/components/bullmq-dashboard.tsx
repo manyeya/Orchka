@@ -8,14 +8,14 @@ import {
     CardDescription,
     CardHeader,
     CardTitle
-} from "@/components/ui/card";
+} from "@orchka/ui/card";
 import {
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
     type ChartConfig,
-} from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
+} from "@orchka/ui/chart";
+import { Badge } from "@orchka/ui/badge";
 import {
     Activity,
     CheckCircle2,

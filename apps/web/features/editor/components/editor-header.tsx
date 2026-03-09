@@ -15,18 +15,18 @@ import {
     Check
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@orchka/ui/button';
+import { Badge } from '@orchka/ui/badge';
+import { Separator } from '@orchka/ui/separator';
 import {
     TooltipProvider,
-} from '@/components/ui/tooltip';
+} from '@orchka/ui/tooltip';
 
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@orchka/ui/popover';
 import { AppTooltip } from '@/components/entity-component';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {

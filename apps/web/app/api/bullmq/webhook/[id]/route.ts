@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { webhookQueue } from "@orchka/workflow-engine/setup";
 import prisma from "@orchka/db";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
-    const workflowId = params.id;
+    const { id: workflowId } = await params;
 
     const workflow = await prisma.workflow.findUnique({
       where: { id: workflowId },

@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@orchka/ui/button";
 import { PlusIcon } from "lucide-react";
 import { memo, useState } from "react";
 import { NodeSelector } from "./node-selector";

@@ -21,20 +21,20 @@ import {
   Terminal
 } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@orchka/ui/button"
+import { Badge } from "@orchka/ui/badge"
+import { Separator } from "@orchka/ui/separator"
 import { formatDistanceToNow, format, differenceInMilliseconds } from "date-fns"
 import { LoadingView } from "@/components/entity-component"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable"
-import { cn } from "@/lib/utils"
+} from "@orchka/ui/resizable"
+import { cn } from "@orchka/ui/utils"
 import { scaleLinear } from "d3-scale"
 import JsonView from "@uiw/react-json-view"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@orchka/ui/scroll-area"
 
 // --- Types ---
 

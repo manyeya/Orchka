@@ -1,12 +1,12 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@orchka/ui/button";
 import { useExecuteWorkflow, useScheduleWorkflow, useUnscheduleWorkflow, useScheduleStatus } from "@/features/workflows/hooks/use-workflows";
 import { Play, Clock, Pause, Loader2 } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { nodesAtom } from "../store";
 import { useMemo } from "react";
-import { NodeType } from "@/features/nodes/types";
+import { NodeType } from "@orchka/nodes/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
 

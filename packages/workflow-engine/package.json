@@ -15,6 +15,7 @@
         "./types": "./src/types.ts"
     },
     "scripts": {
+        "build": "tsc --noEmit",
         "start": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun src/index.ts",
         "dev": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun --watch src/index.ts"
     },
@@ -22,7 +23,7 @@
         "@orchka/db": "workspace:*",
         "@orchka/credentials-core": "workspace:*",
         "@orchka/expression-engine": "workspace:*",
-        "@orchka/node-registry": "workspace:*",
+        "@orchka/nodes": "workspace:*",
         "bullmq": "catalog:",
         "ioredis": "catalog:",
         "pino": "catalog:",

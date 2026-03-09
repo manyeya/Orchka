@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { workflowIdAtom, nodeStatusesAtom, nodeExecutionDataAtom, nodeIterationAtom, type NodeExecutionData, type LoopIterationProgress } from '../store';
-import { WorkflowNodeStatus } from '@/components/workflow-node';
+import type { WorkflowNodeStatus } from '@orchka/nodes/editor';
 
 /**
  * Central component to manage real-time updates via SSE.
@@ -90,4 +90,3 @@ export function RealtimeManager() {
 
     return null; // This component doesn't render anything
 }
-
