@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@orchka/ui/alert-dialog"
 import { authClient } from "@/features/auth/client"
 
 interface UpgradeModalProps {

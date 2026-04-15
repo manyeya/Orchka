@@ -5,16 +5,16 @@ import { useCredentialsParams } from "../hooks/use-credentials-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
 import { Key, MoreVerticalIcon, Trash2, Pencil, Loader2Icon, Search } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Button } from "@orchka/ui/button"
+import { Badge } from "@orchka/ui/badge"
+import { Input } from "@orchka/ui/input"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@orchka/ui/dropdown-menu"
 import {
     Empty,
     EmptyContent,
@@ -22,7 +22,7 @@ import {
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
-} from "@/components/ui/empty"
+} from "@orchka/ui/empty"
 import { EntityList, EntityPagination } from "@/components/entity-component"
 import { getCredentialTypeLabel, CredentialType } from "@/features/credentials/utils/types"
 

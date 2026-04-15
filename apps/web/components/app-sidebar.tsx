@@ -23,7 +23,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@orchka/ui/sidebar"
 
 // This is sample data.
 const data = {

@@ -1,6 +1,5 @@
-import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS } from '@/config/node-required-fields';
+import { DEFAULT_REQUIRED_FIELDS, NODE_REQUIRED_FIELDS, NodeType } from '@orchka/nodes/core';
 import { Node, Edge } from '@xyflow/react';
-import { NodeType } from '@/features/nodes/types';
 
 // ============================================================================
 // Generic Types (compatible with both React Flow and Prisma)

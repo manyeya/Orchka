@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSettingsSidebar } from "@/hooks/use-settings-sidebar"
-import { cn } from "@/lib/utils"
+import { cn } from "@orchka/ui/utils"
 
 export function SettingsSidebar() {
   const pathname = usePathname()

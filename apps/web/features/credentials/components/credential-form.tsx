@@ -3,8 +3,8 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@orchka/ui/button"
+import { Input } from "@orchka/ui/input"
 import {
     Form,
     FormControl,
@@ -13,14 +13,14 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form"
+} from "@orchka/ui/form"
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@orchka/ui/select"
 import {
     CredentialType,
     getCredentialTypeLabel,

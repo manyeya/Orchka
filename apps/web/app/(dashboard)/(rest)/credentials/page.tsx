@@ -2,14 +2,14 @@
 
 import React, { Suspense, useState } from 'react'
 import { Key, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@orchka/ui/button"
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@orchka/ui/dialog"
 import { CredentialsList, CredentialsLoadingView, CredentialsErrorView, CredentialsToolbar } from '@/features/credentials/components/credentials-list'
 import { CredentialForm } from '@/features/credentials/components/credential-form'
 import { useCreateCredential, useUpdateCredential } from '@/features/credentials/hooks/use-credentials'

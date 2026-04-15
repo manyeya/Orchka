@@ -1,5 +1,5 @@
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
-import { Input } from '@/components/ui/input'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from '@orchka/ui/breadcrumb'
+import { Input } from '@orchka/ui/input'
 import { useSuspenseWorkflow, useUpdateWorkflowName } from '@/features/workflows/hooks/use-workflows'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'

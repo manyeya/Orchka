@@ -10,7 +10,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command"
+} from "@orchka/ui/command"
 import {
   Bot,
   BookOpen,

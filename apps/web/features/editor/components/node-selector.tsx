@@ -1,143 +1,18 @@
 'use client'
+
 import { createId } from "@paralleldrive/cuid2"
 import { useReactFlow } from "@xyflow/react"
-import { useCallback, useState, useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { GlobeIcon, MousePointerIcon, GitBranch, GitMerge,GitFork,GitCompare, Repeat, Clock, Bot, Search, StickyNote, Grid2X2, Sparkles, FileJson, Tags, BotMessageSquare } from 'lucide-react'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, } from "@/components/ui/sheet"
-import { NodeType } from "@/features/nodes/types"
+import { Search } from 'lucide-react'
+import { NodeType } from "@orchka/nodes/core"
+import { NODE_PALETTE_SECTIONS, type NodePaletteItem } from "@orchka/nodes/editor"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@orchka/ui/sheet"
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@orchka/ui/item"
+import { Input } from "@orchka/ui/input"
 import Image from "next/image"
-import { Item, ItemContent, ItemMedia, ItemTitle, ItemDescription } from "@/components/ui/item"
+
 import { generateUniqueNodeName, getNodeNames } from "@/features/editor/utils/graph-validation"
-import { Input } from "@/components/ui/input"
-
-interface NodeTypeOption {
-    type: NodeType
-    label: string
-    description?: string
-    icon: React.ComponentType<{ className?: string }> | string
-    tags?: string[]
-}
-
-const TRIGGER_NODES: NodeTypeOption[] = [
-    {
-        type: NodeType.MANUAL_TRIGGER,
-        label: "Manual Trigger",
-        description: "Trigger a workflow manually",
-        icon: MousePointerIcon,
-        tags: ["trigger", "start"]
-    },
-    {
-        type: NodeType.CRON_TRIGGER,
-        label: "Cron Trigger",
-        description: "Schedule workflow execution with cron",
-        icon: Clock,
-        tags: ["trigger", "schedule", "cron", "timer", "recurring"]
-    }
-]
-
-const ACTION_NODES: NodeTypeOption[] = [
-    {
-        type: NodeType.HTTP_REQUEST,
-        label: "HTTP Request",
-        description: "Make an HTTP request",
-        icon: GlobeIcon,
-        tags: ["api", "fetch", "external"]
-    }
-]
-
-const AI_NODES: NodeTypeOption[] = [
-    {
-        type: NodeType.AI_GENERATE,
-        label: "AI Generate",
-        description: "Simple text generation",
-        icon: Sparkles,
-        tags: ["ai", "llm", "text", "generate"]
-    },
-    {
-        type: NodeType.AI_EXTRACT,
-        label: "AI Extract",
-        description: "Structured data extraction",
-        icon: FileJson,
-        tags: ["ai", "llm", "extract", "json", "schema"]
-    },
-    {
-        type: NodeType.AI_CLASSIFY,
-        label: "AI Classify",
-        description: "Classification and categorization",
-        icon: Tags,
-        tags: ["ai", "llm", "classify", "sentiment", "category"]
-    },
-    {
-        type: NodeType.AI_AGENT_EXP,
-        label: "AI Agent (SDK)",
-        description: "Tool-using agent with AI SDK",
-        icon: BotMessageSquare,
-        tags: ["ai", "llm", "agent", "tools", "sdk"]
-    },
-    {
-        type: NodeType.AI_AGENT,
-        label: "AI Agent (Legacy)",
-        description: "LLM-powered agent with LangChain",
-        icon: Bot,
-        tags: ["ai", "llm", "bot", "agent", "langchain"]
-    }
-]
-
-const CONTROL_NODES: NodeTypeOption[] = [
-    {
-        type: NodeType.IF_CONDITION,
-        label: "If",
-        description: "Branch based on a condition",
-        icon: GitBranch,
-        tags: ["logic", "branch"]
-    },
-    {
-        type: NodeType.SWITCH,
-        label: "Switch",
-        description: "Route to multiple paths based on a value",
-        icon: GitFork,
-        tags: ["logic", "route"]
-    },
-    {
-        type: NodeType.MERGE,
-        label: "Merge",
-        description: "Combine data from multiple branches",
-        icon: GitMerge,
-        tags: ["logic", "merge", "combine", "join"]
-    },
-    {
-        type: NodeType.LOOP,
-        label: "Loop",
-        description: "Iterate over an array or count",
-        icon: GitCompare,
-        tags: ["iteration", "foreach"]
-    },
-    {
-        type: NodeType.WAIT,
-        label: "Wait",
-        description: "Pause execution for a duration or until a time",
-        icon: Clock,
-        tags: ["delay", "timer"]
-    }
-]
-
-const TOOL_NODES: NodeTypeOption[] = [
-    {
-        type: NodeType.GROUP,
-        label: "Group",
-        description: "Group nodes together visually",
-        icon: Grid2X2,
-        tags: ["group", "organization", "container"]
-    },
-    {
-        type: NodeType.ANNOTATION,
-        label: "Note",
-        description: "Add comments or instructions",
-        icon: StickyNote,
-        tags: ["note", "comment", "annotation", "text"]
-    }
-]
 
 interface NodeSelectorProps {
     open: boolean
@@ -149,13 +24,13 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
     const { setNodes, getNodes, screenToFlowPosition } = useReactFlow()
     const [searchQuery, setSearchQuery] = useState("")
 
-    const handleNodeSelect = useCallback((selection: NodeTypeOption) => {
+    const handleNodeSelect = useCallback((selection: NodePaletteItem) => {
         if (selection.type === NodeType.MANUAL_TRIGGER) {
             const nodes = getNodes()
             const hasManualTrigger = nodes.some((node) => node.type === selection.type)
             if (hasManualTrigger) {
                 toast.error("Only one manual trigger is allowed")
-                return;
+                return
             }
         }
 
@@ -163,9 +38,11 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
             const hasInitialTrigger = nodes.some((node) => node.type === NodeType.INITIAL)
             const centerX = window.innerWidth / 2
             const centerY = window.innerHeight / 2
-            const flowPosition = screenToFlowPosition({ x: centerX + (Math.random() - 0.5) * 200, y: centerY + (Math.random() - 0.5) * 200 })
+            const flowPosition = screenToFlowPosition({
+                x: centerX + (Math.random() - 0.5) * 200,
+                y: centerY + (Math.random() - 0.5) * 200,
+            })
 
-            // Generate unique name based on existing node names
             const existingNames = getNodeNames(nodes)
             const uniqueName = generateUniqueNodeName(selection.label, existingNames)
 
@@ -174,50 +51,52 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
                 type: selection.type,
                 position: flowPosition,
                 zIndex: selection.type === NodeType.GROUP ? -1 : undefined,
-                style: (selection.type === NodeType.GROUP || selection.type === NodeType.ANNOTATION) ? { width: 200, height: 150 } : undefined,
+                style: (selection.type === NodeType.GROUP || selection.type === NodeType.ANNOTATION)
+                    ? { width: 200, height: 150 }
+                    : undefined,
                 data: {
                     label: selection.label,
-                    name: uniqueName
-                }
+                    name: uniqueName,
+                },
             }
 
             if (hasInitialTrigger) {
                 return [newNode]
             }
 
-            return [
-                ...nodes,
-                newNode
-            ]
-        });
+            return [...nodes, newNode]
+        })
+
         onOpenChange(false)
-        setSearchQuery("") // Reset search on close
+        setSearchQuery("")
+    }, [getNodes, onOpenChange, screenToFlowPosition, setNodes])
 
-    }, [setNodes, getNodes, screenToFlowPosition, onOpenChange])
-
-    const filterNodes = (nodes: NodeTypeOption[]) => {
-        if (!searchQuery) return nodes
+    const filterNodes = useCallback((items: NodePaletteItem[]) => {
+        if (!searchQuery) return items
         const lowerQuery = searchQuery.toLowerCase()
-        return nodes.filter(node =>
+        return items.filter((node) =>
             node.label.toLowerCase().includes(lowerQuery) ||
             node.description?.toLowerCase().includes(lowerQuery) ||
-            node.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+            node.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery)),
         )
-    }
+    }, [searchQuery])
 
-    const filteredTriggerNodes = useMemo(() => filterNodes(TRIGGER_NODES), [searchQuery])
-    const filteredActionNodes = useMemo(() => filterNodes(ACTION_NODES), [searchQuery])
-    const filteredAiNodes = useMemo(() => filterNodes(AI_NODES), [searchQuery])
-    const filteredControlNodes = useMemo(() => filterNodes(CONTROL_NODES), [searchQuery])
-    const filteredToolNodes = useMemo(() => filterNodes(TOOL_NODES), [searchQuery])
+    const filteredSections = useMemo(
+        () =>
+            NODE_PALETTE_SECTIONS.map((section) => ({
+                ...section,
+                items: filterNodes(section.items),
+            })).filter((section) => section.items.length > 0),
+        [filterNodes],
+    )
 
-    const hasResults = filteredTriggerNodes.length > 0 || filteredActionNodes.length > 0 || filteredAiNodes.length > 0 || filteredControlNodes.length > 0 || filteredToolNodes.length > 0
+    const hasResults = filteredSections.length > 0
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange} >
+        <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetTrigger asChild>{children}</SheetTrigger>
-            <SheetContent side="left" className="w-full sm:max-w-md flex flex-col p-0 gap-0">
-                <div className="p-6 pb-2 border-b">
+            <SheetContent side="left" className="w-full gap-0 p-0 sm:max-w-md">
+                <div className="border-b p-6 pb-2">
                     <SheetHeader className="mb-4">
                         <SheetTitle>Add Node</SheetTitle>
                         <SheetDescription>
@@ -238,78 +117,44 @@ export const NodeSelector = ({ open, onOpenChange, children }: NodeSelectorProps
 
                 <div className="flex-1 overflow-y-auto p-6 pt-2">
                     {!hasResults && (
-                        <div className="text-center py-8 text-muted-foreground">
+                        <div className="py-8 text-center text-muted-foreground">
                             No nodes found matching "{searchQuery}"
                         </div>
                     )}
 
-                    {filteredTriggerNodes.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Triggers</h3>
+                    {filteredSections.map((section) => (
+                        <div key={section.id} className="mb-6">
+                            <h3 className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                                {section.label}
+                            </h3>
                             <div className="flex flex-col gap-2">
-                                {filteredTriggerNodes.map((node) => (
-                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
+                                {section.items.map((node) => (
+                                    <NodeItem
+                                        key={node.type}
+                                        node={node}
+                                        onClick={() => handleNodeSelect(node)}
+                                    />
                                 ))}
                             </div>
                         </div>
-                    )}
-
-                    {filteredActionNodes.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Actions</h3>
-                            <div className="flex flex-col gap-2">
-                                {filteredActionNodes.map((node) => (
-                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {filteredAiNodes.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">AI</h3>
-                            <div className="flex flex-col gap-2">
-                                {filteredAiNodes.map((node) => (
-                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {filteredControlNodes.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Flow Control</h3>
-                            <div className="flex flex-col gap-2">
-                                {filteredControlNodes.map((node) => (
-                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {filteredToolNodes.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Tools & Organization</h3>
-                            <div className="flex flex-col gap-2">
-                                {filteredToolNodes.map((node) => (
-                                    <NodeItem key={node.type} node={node} onClick={() => handleNodeSelect(node)} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    ))}
                 </div>
             </SheetContent>
         </Sheet>
     )
 }
 
-const NodeItem = ({ node, onClick }: { node: NodeTypeOption, onClick: () => void }) => {
+const NodeItem = ({ node, onClick }: { node: NodePaletteItem, onClick: () => void }) => {
     const Icon = node.icon
+
     return (
-        <Item className="hover:bg-accent/50 cursor-pointer border rounded-md transition-colors" onClick={onClick}>
+        <Item
+            className="cursor-pointer rounded-md border transition-colors hover:bg-accent/50"
+            onClick={onClick}
+        >
             <ItemMedia className="mt-0.5">
                 {typeof Icon === 'string' ? (
-                    <Image src={Icon} alt={node.label} objectFit="contain" className="size-5" />
+                    <Image src={Icon} alt={node.label} className="size-5 object-contain" />
                 ) : (
                     <Icon className="size-5 text-primary" />
                 )}
@@ -319,7 +164,9 @@ const NodeItem = ({ node, onClick }: { node: NodeTypeOption, onClick: () => void
                     <ItemTitle className="text-sm font-medium">{node.label}</ItemTitle>
                 </div>
                 {node.description && (
-                    <ItemDescription className="text-xs line-clamp-1">{node.description}</ItemDescription>
+                    <ItemDescription className="line-clamp-1 text-xs">
+                        {node.description}
+                    </ItemDescription>
                 )}
             </ItemContent>
         </Item>

@@ -7,7 +7,7 @@ import {
   NodeCredentialConfig,
   getCredentialConfigFromNodeData,
   setCredentialConfigInNodeData,
-} from "./credential-selector";
+} from "@orchka/nodes/editor";
 
 /**
  * Property tests for credential selector functionality

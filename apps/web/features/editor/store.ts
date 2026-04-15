@@ -12,8 +12,8 @@ import {
 import { validateConnection, validateWorkflowGraph, ValidationResult } from './utils/graph-validation';
 import { downloadWorkflow, uploadWorkflow } from './utils/import-export';
 import { toast } from 'sonner';
-import { NodeType } from '@/config/node-components';
-import { WorkflowNodeStatus } from '@/components/workflow-node';
+import { NodeType } from '@orchka/nodes/core';
+import type { WorkflowNodeStatus } from '@orchka/nodes/editor';
 
 interface HistoryState {
   nodes: Node[];

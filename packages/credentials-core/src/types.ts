@@ -13,6 +13,18 @@ export enum CredentialType {
   GOOGLE_AI = "google_ai",
 }
 
+/**
+ * Decrypted credential data returned during execution.
+ * Kept in the types module so runtime packages can type-import it
+ * without pulling server-only DB code into client bundles.
+ */
+export interface DecryptedCredential {
+  id: string;
+  name: string;
+  type: CredentialType;
+  data: Record<string, unknown>;
+}
+
 // ============================================================================
 // Zod Schemas for each credential type
 // ============================================================================

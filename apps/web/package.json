@@ -9,6 +9,9 @@
         "lint": "eslint"
     },
     "dependencies": {
+        "@orchka/credentials-core": "workspace:*",
+        "@orchka/nodes": "workspace:*",
+        "@orchka/ui": "workspace:*",
         "@orchka/db": "workspace:*",
         "@orchka/workflow-engine": "workspace:*",
         "@ai-sdk/anthropic": "catalog:",
@@ -62,6 +65,7 @@
         "@xyflow/react": "catalog:",
         "ai": "catalog:",
         "better-auth": "catalog:",
+        "bullmq": "catalog:",
         "class-variance-authority": "catalog:",
         "client-only": "catalog:",
         "clsx": "catalog:",

@@ -1,6 +1,6 @@
 import { PAGINATION } from "@/config/constants";
 import prisma from "@orchka/db";
-import { NodeType } from "@/features/nodes/types";
+import { NodeType } from "@orchka/nodes/core";
 import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
 import { Edge, Node } from "@xyflow/react";
 import { generateSlug } from "random-word-slugs";

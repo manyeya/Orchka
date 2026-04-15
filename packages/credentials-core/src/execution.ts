@@ -5,18 +5,8 @@
 
 import prisma from "@orchka/db";
 import { decrypt } from "./encryption";
-import { CredentialType } from "./types";
+import { CredentialType, type DecryptedCredential } from "./types";
 import { logCredentialAccess } from "./audit-log";
-
-/**
- * Decrypted credential data returned during execution
- */
-export interface DecryptedCredential {
-  id: string;
-  name: string;
-  type: CredentialType;
-  data: Record<string, unknown>;
-}
 
 /**
  * Error thrown when a credential is not found

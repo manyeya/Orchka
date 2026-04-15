@@ -1,7 +1,7 @@
 import { useReactFlow, ReactFlowState, useStore } from '@xyflow/react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@orchka/ui/button';
 import { Group } from 'lucide-react';
-import { NodeType } from '@/config/node-components';
+import { NodeType } from '@orchka/nodes/core';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 

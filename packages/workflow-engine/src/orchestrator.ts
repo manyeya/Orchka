@@ -2,9 +2,14 @@ import { Job, UnrecoverableError } from "bullmq";
 
 import prisma from "@orchka/db";
 import { ExecutionStatus } from "@orchka/db/enums";
+import { NodeType } from "@orchka/nodes/core";
+import {
+  CONTROL_NODE_TYPES,
+  VISUAL_NODE_TYPES,
+  getExecutor,
+} from "@orchka/nodes/runtime";
 
 import { topologicalSortNodes } from "./utils";
-import { NodeType, getExecutor } from "@orchka/node-registry";
 import {
   resolveNodeExpressions,
   buildExpressionContext
@@ -13,26 +18,15 @@ import {
 import { publishWorkflowEvent } from "./publisher";
 import type { BranchDecision } from "./types";
 
-import { getCredentialForExecution, CredentialNotFoundError } from "@orchka/credentials-core";
+import {
+  getCredentialForExecution,
+  CredentialNotFoundError,
+} from "@orchka/credentials-core/execution";
 
 import { nodeQueue } from "./setup";
 import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-
-const CONTROL_NODE_TYPES: NodeType[] = [
-  NodeType.IF_CONDITION,
-  NodeType.SWITCH,
-  NodeType.LOOP,
-  NodeType.WAIT,
-];
-
-// Visual-only nodes that should be skipped during execution
-// These are frontend tools and don't have execution logic
-const VISUAL_ONLY_NODE_TYPES: NodeType[] = [
-  NodeType.ANNOTATION,
-  NodeType.GROUP,
-];
 
 // ============================================================================
 // Helper Functions
@@ -49,11 +43,11 @@ function filterInternalFields(context: Record<string, unknown>): Record<string, 
 }
 
 function isControlNode(nodeType: NodeType): boolean {
-  return CONTROL_NODE_TYPES.includes(nodeType);
+  return CONTROL_NODE_TYPES.has(nodeType);
 }
 
 function isVisualOnlyNode(nodeType: NodeType): boolean {
-  return VISUAL_ONLY_NODE_TYPES.includes(nodeType);
+  return VISUAL_NODE_TYPES.has(nodeType);
 }
 
 interface ConnectionWithBranch {
