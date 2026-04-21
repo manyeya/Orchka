@@ -23,7 +23,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "/Users/manyeya/Documents/Code/Open-source/flowbase/packages/db/prisma/generated",
+      "value": "/Users/manyeya/Documents/Code/Orchka/packages/db/prisma/generated",
       "fromEnvVar": null
     },
     "config": {
@@ -37,7 +37,7 @@ const config: runtime.GetPrismaClientConfig = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/manyeya/Documents/Code/Open-source/flowbase/packages/db/prisma/schema.prisma",
+    "sourceFilePath": "/Users/manyeya/Documents/Code/Orchka/packages/db/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativePath": "..",
@@ -47,7 +47,6 @@ const config: runtime.GetPrismaClientConfig = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
