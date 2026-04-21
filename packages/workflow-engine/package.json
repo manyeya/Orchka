@@ -16,8 +16,8 @@
     },
     "scripts": {
         "build": "tsc --noEmit",
-        "start": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun src/index.ts",
-        "dev": "export $(grep -v '^#' ../../apps/web/.env | xargs) && bun --watch src/index.ts"
+        "start": "export $(grep -v '^#' ../../apps/web/.env.local | xargs) && bun src/index.ts",
+        "dev": "export $(grep -v '^#' ../../apps/web/.env.local | xargs) && bun --watch src/index.ts"
     },
     "dependencies": {
         "@orchka/db": "workspace:*",
