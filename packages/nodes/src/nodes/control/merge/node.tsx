@@ -81,29 +81,45 @@ export const MergeNode = memo((props: NodeProps<MergeNodeType>) => {
     return getConnectedSources(props.id, incomingEdges, allNodes);
   }, [props.id, incomingEdges, allNodes]);
 
-  // Smart auto-update: fill in connected node names without removing manual sources
+  // Smart auto-update: fill in connected node names and add handles for new inputs.
   useEffect(() => {
     if (connectedSources.length === 0) return;
 
     const currentSources = nodeData.sources || [];
-    // Create a new array by merging current sources with connected ones
-    // For each position, if we have a connected source and the current source is generic/empty, update it
-    const updatedSources = currentSources.map((source, index) => {
+    const maxSources = Math.max(currentSources.length, connectedSources.length, 2);
+
+    const updatedSources = Array.from({ length: maxSources }, (_, index) => {
+      const currentSource = currentSources[index];
       const connectedForPosition = connectedSources[index];
-      // If we have a connected node for this position and the current label is generic, use the connected name
-      if (connectedForPosition && (source.label.startsWith("Source ") || source.label.startsWith("Input "))) {
+
+      if (!currentSource) {
+        return connectedForPosition || { id: `source-${index + 1}`, label: `Source ${index + 1}` };
+      }
+
+      if (
+        connectedForPosition &&
+        (
+          !currentSource.label ||
+          currentSource.label.startsWith("Source ") ||
+          currentSource.label.startsWith("Input ")
+        )
+      ) {
         return {
-          ...source,
+          ...currentSource,
+          id: connectedForPosition.id,
           label: connectedForPosition.label,
         };
       }
-      return source;
+
+      return currentSource;
     });
 
-    // Check if we actually need to update
-    const hasChanges = updatedSources.some((source, index) =>
-      source.label !== currentSources[index]?.label
-    );
+    const hasChanges =
+      updatedSources.length !== currentSources.length ||
+      updatedSources.some((source, index) =>
+        source.id !== currentSources[index]?.id ||
+        source.label !== currentSources[index]?.label
+      );
 
     if (hasChanges) {
       updateNode({

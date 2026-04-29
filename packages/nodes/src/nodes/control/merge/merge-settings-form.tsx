@@ -39,22 +39,23 @@ const mergeSettingsSchema = z.object({
   expression: z.string().optional(),
 });
 
-// Refine schema based on mode
-const mergeSettingsSchemaRefined = mergeSettingsSchema.refine(
-  (data) => {
-    if (data.mode === "mergeByKey") {
-      return data.keyField !== undefined && data.keyField !== "";
-    }
-    if (data.mode === "custom") {
-      return data.expression !== undefined && data.expression !== "";
-    }
-    return true;
-  },
-  {
-    message: "This field is required",
-    path: ["keyField", "expression"],
+const mergeSettingsSchemaRefined = mergeSettingsSchema.superRefine((data, ctx) => {
+  if (data.mode === "mergeByKey" && !data.keyField) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Key field is required",
+      path: ["keyField"],
+    });
   }
-);
+
+  if (data.mode === "custom" && !data.expression) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Expression is required",
+      path: ["expression"],
+    });
+  }
+});
 
 export type MergeSettingsFormValues = z.infer<typeof mergeSettingsSchemaRefined>;
 
@@ -84,7 +85,7 @@ export function MergeSettingsForm({
 }: MergeSettingsFormProps) {
   // Ensure defaultValues has at least 2 sources
   const normalizedDefaultValues = {
-    name: defaultValues?.name || "",
+    name: defaultValues?.name || "Merge",
     mode: defaultValues?.mode || "append",
     sources: defaultValues?.sources && defaultValues.sources.length >= 2
       ? defaultValues.sources
@@ -115,7 +116,6 @@ export function MergeSettingsForm({
   const mode = form.watch("mode");
 
   const handleSubmit = (values: MergeSettingsFormValues) => {
-    console.log("MergeSettingsForm submitting:", values);
     onSubmit(values);
   };
 

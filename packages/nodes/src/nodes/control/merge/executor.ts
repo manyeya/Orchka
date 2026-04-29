@@ -46,36 +46,23 @@ export const mergeNodeExecutor: NodeExecutor<MergeNodeData> = async ({
     };
   }
 
-  // Convert sources array to indexed format for JSONata expressions
-  // $input1, $input2, $input3, etc.
-  const inputBindings: Record<string, unknown> = {};
   const sourceValues = Object.values(sourcesData);
-  for (let i = 0; i < sourceValues.length; i++) {
-    inputBindings[`$input${i + 1}`] = sourceValues[i];
-  }
 
   let result: unknown;
-  const numInputs = sourceValues.length;
 
   try {
     switch (data.mode) {
       case "append": {
-        // Use JSONata $append to concatenate arrays
-        const expr = `$append(${Array.from({ length: numInputs }, (_, i) => `$input${i + 1}`).join(", ")})`;
-        logger.info({ nodeId, expr, inputBindings }, "Merge Node: Append expression");
-        result = await evaluateJsonata(expr, inputBindings);
+        result = appendInputs(sourceValues);
         break;
       }
 
       case "mergeByKey": {
         if (!data.keyField) {
           logger.warn("Merge Node: mergeByKey mode requires keyField, defaulting to append");
-          result = await evaluateJsonata("$append($input1, $input2)", inputBindings);
+          result = appendInputs(sourceValues);
         } else {
-          // Use JSONata to merge by key - group by key field and merge matching records
-          const expr = buildMergeByKeyExpression(data.keyField, numInputs);
-          logger.info({ nodeId, keyField: data.keyField, expr }, "Merge Node: Merge by key expression");
-          result = await evaluateJsonata(expr, inputBindings);
+          result = mergeArraysByKey(sourceValues, data.keyField, data.includeAllFields ?? true);
         }
         break;
       }
@@ -88,7 +75,7 @@ export const mergeNodeExecutor: NodeExecutor<MergeNodeData> = async ({
 
       case "keepLast": {
         // Return last non-empty input
-        for (let i = numInputs - 1; i >= 0; i--) {
+        for (let i = sourceValues.length - 1; i >= 0; i--) {
           const v = sourceValues[i];
           if (v !== null && v !== undefined && v !== "") {
             result = v;
@@ -100,27 +87,24 @@ export const mergeNodeExecutor: NodeExecutor<MergeNodeData> = async ({
       }
 
       case "combine": {
-        // Use JSONata $merge to merge objects
-        const expr = `$merge([${Array.from({ length: numInputs }, (_, i) => `$input${i + 1}`).join(", ")}])`;
-        logger.info({ nodeId, expr }, "Merge Node: Combine expression");
-        result = await evaluateJsonata(expr, inputBindings);
+        result = combineObjects(sourceValues);
         break;
       }
 
       case "custom": {
         if (!data.expression) {
           logger.warn("Merge Node: custom mode requires expression, defaulting to append");
-          result = await evaluateJsonata("$append($input1, $input2)", inputBindings);
+          result = appendInputs(sourceValues);
         } else {
           logger.info({ nodeId, expression: data.expression }, "Merge Node: Custom expression");
-          result = await evaluateJsonata(data.expression, inputBindings);
+          result = await evaluateJsonata(data.expression, buildJsonataBindings(sourceValues, sourcesData));
         }
         break;
       }
 
       default: {
         logger.warn({ mode: data.mode }, "Merge Node: Unknown mode, defaulting to append");
-        result = await evaluateJsonata("$append($input1, $input2)", inputBindings);
+        result = appendInputs(sourceValues);
         break;
       }
     }
@@ -154,31 +138,74 @@ async function evaluateJsonata(
   }
 }
 
-/**
- * Build a JSONata expression for merge-by-key operation
- * Creates a lookup from first array and merges matching records from other arrays
- */
-function buildMergeByKeyExpression(keyField: string, numInputs: number): string {
-  if (numInputs === 2) {
-    // For 2 inputs: use $lookup to find matching records
-    return `
-      $input1.({
-        "$": $,
-        "matched": $input2.${keyField} = ${keyField}
-      }).($$.matched).($.$)
-    `.trim();
+function appendInputs(values: unknown[]): unknown[] {
+  return values.flatMap((value) => Array.isArray(value) ? value : [value]);
+}
+
+function combineObjects(values: unknown[]): Record<string, unknown> {
+  return values.reduce<Record<string, unknown>>((acc, value, index) => {
+    if (isPlainObject(value)) {
+      return { ...acc, ...value };
+    }
+
+    acc[`input${index + 1}`] = value;
+    return acc;
+  }, {});
+}
+
+function mergeArraysByKey(values: unknown[], keyField: string, includeAllFields: boolean): unknown[] {
+  const rows = values.flatMap((value) => Array.isArray(value) ? value : [value]);
+  const byKey = new Map<unknown, Record<string, unknown>>();
+  const unmatched: unknown[] = [];
+
+  for (const row of rows) {
+    if (!isPlainObject(row)) {
+      unmatched.push(row);
+      continue;
+    }
+
+    const key = getByPath(row, keyField);
+    if (key === undefined || key === null || key === "") {
+      unmatched.push(row);
+      continue;
+    }
+
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...row });
+      continue;
+    }
+
+    byKey.set(key, includeAllFields ? { ...existing, ...row } : { ...existing, ...pickDefined(row) });
   }
 
-  // For 3+ inputs: iterative merge
-  return `
-    $result := $input1.({
-      "key": ${keyField},
-      "$": $
-    });
-    $each($input2, function($v) {
-      $key := $v.${keyField};
-      $lookup := $result.key = $key;
-      $merge([$lookup, $v])
-    });
-  `.trim();
+  return [...byKey.values(), ...unmatched];
+}
+
+function buildJsonataBindings(sourceValues: unknown[], sourcesData: Record<string, unknown>): Record<string, unknown> {
+  const bindings: Record<string, unknown> = {
+    inputs: sourceValues,
+    sources: sourcesData,
+  };
+
+  sourceValues.forEach((value, index) => {
+    bindings[`input${index + 1}`] = value;
+  });
+
+  return bindings;
+}
+
+function getByPath(value: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce<unknown>((current, part) => {
+    if (!isPlainObject(current)) return undefined;
+    return current[part];
+  }, value);
+}
+
+function pickDefined(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined));
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
