@@ -25,19 +25,18 @@ Category: Triggers
 - On-demand automation tasks
 - Debugging and troubleshooting
 
-### Webhook Trigger
+### Cron Trigger
 
-Starts a workflow when an HTTP request is received.
+Starts a workflow on a cron schedule.
 
 ```yaml
-Type: WEBHOOK_TRIGGER
+Type: CRON_TRIGGER
 Category: Triggers
 ```
 
 **Configuration:**
-- **URL**: The unique webhook endpoint
-- **Method**: HTTP method to accept (GET, POST, etc.)
-- **Headers**: Expected headers for validation
+- **Name**: Node identifier
+- **Cron Pattern**: Schedule expression
 
 ---
 
@@ -79,6 +78,25 @@ Category: Actions
 - **Follow Redirects**: Automatically follow HTTP redirects
 - **Retry on Failure**: Retry failed requests with exponential backoff
 - **Max Retries**: Maximum retry attempts (default: 3)
+
+### Social Media Actions
+
+Publish to popular social platforms with dedicated nodes and credential types.
+
+| Node | Type | Credential |
+|------|------|------------|
+| X Post | `X_POST` | X |
+| LinkedIn Post | `LINKEDIN_POST` | LinkedIn |
+| Facebook Page Post | `FACEBOOK_POST` | Facebook Page |
+| Instagram Post | `INSTAGRAM_POST` | Instagram |
+| Threads Post | `THREADS_POST` | Threads |
+| Discord Message | `DISCORD_MESSAGE` | Discord |
+| Reddit Post | `REDDIT_POST` | Reddit |
+| Bluesky Post | `BLUESKY_POST` | Bluesky |
+| Mastodon Post | `MASTODON_POST` | Mastodon |
+| Pinterest Pin | `PINTEREST_PIN` | Pinterest |
+
+See the [Social Media Nodes](/docs/nodes/social-media) reference for platform-specific fields and notes.
 
 ---
 
@@ -155,23 +173,6 @@ Category: AI
 - Priority Classification (urgent/high/medium/low)
 - Spam Detection (spam/not_spam)
 
-### AI Tool
-
-Defines a tool that can be used by AI Agent nodes.
-
-```yaml
-Type: AI_TOOL
-Category: AI
-```
-
-**Configuration:**
-- **Name**: Tool identifier
-- **Description**: What the tool does (used by AI)
-- **Parameters**: JSON Schema for tool inputs
-- **Implementation**: The action to perform
-
----
-
 ## Control
 
 Control nodes manage the flow of execution.
@@ -181,7 +182,7 @@ Control nodes manage the flow of execution.
 Branches workflow based on an expression.
 
 ```yaml
-Type: CONDITION
+Type: IF_CONDITION
 Category: Control
 ```
 
@@ -301,6 +302,28 @@ Category: Control
 - One handle per case (connects to case-specific logic)
 - Default handle (when no case matches)
 
+### Merge
+
+Converges multiple incoming branches into one output.
+
+```yaml
+Type: MERGE
+Category: Control
+```
+
+**Configuration:**
+
+| Mode | Description |
+|------|-------------|
+| Append | Flatten all inputs into one array |
+| Merge by Key | Join rows using a shared key field |
+| Keep First | Use the first non-empty value |
+| Keep Last | Use the last non-empty value |
+| Combine | Merge object fields |
+| Custom Expression | Use a JSONata expression |
+
+See the [Merge Node](/docs/nodes/merge) reference for examples and custom expression inputs.
+
 ---
 
 ## Next Steps
@@ -317,5 +340,11 @@ Category: Control
   </Card>
   <Card title="AI Classify" href="/docs/nodes/ai-classify">
     Classify content into categories.
+  </Card>
+  <Card title="Social Media Nodes" href="/docs/nodes/social-media">
+    Publish to social platforms.
+  </Card>
+  <Card title="Merge Node" href="/docs/nodes/merge">
+    Combine multiple workflow branches.
   </Card>
 </Cards>

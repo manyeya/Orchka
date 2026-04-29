@@ -1,0 +1,153 @@
+---
+title: Social Media Nodes
+description: Publish posts and messages to popular social platforms
+---
+
+# Social Media Nodes
+
+Orchka includes first-class action nodes for popular social platforms. Each node publishes to one platform and uses a matching credential type from the Credentials page.
+
+## Supported Nodes
+
+| Node | Type | Credential | Publishes |
+|------|------|------------|-----------|
+| X Post | `X_POST` | X | Text posts, replies, quote posts |
+| LinkedIn Post | `LINKEDIN_POST` | LinkedIn | Organic member or organization posts |
+| Facebook Page Post | `FACEBOOK_POST` | Facebook Page | Page feed messages and links |
+| Instagram Post | `INSTAGRAM_POST` | Instagram | Image posts with optional captions |
+| Threads Post | `THREADS_POST` | Threads | Text posts |
+| Discord Message | `DISCORD_MESSAGE` | Discord | Webhook messages |
+| Reddit Post | `REDDIT_POST` | Reddit | Text or link submissions |
+| Bluesky Post | `BLUESKY_POST` | Bluesky | Text posts |
+| Mastodon Post | `MASTODON_POST` | Mastodon | Statuses with visibility and content warning |
+| Pinterest Pin | `PINTEREST_PIN` | Pinterest | Image pins |
+
+## X Post
+
+Publishes through the X API.
+
+| Field | Description |
+|-------|-------------|
+| Name | Output key in the workflow context |
+| Post Text | Text to publish |
+| Credential | X credential |
+| Quote Post ID | Optional post ID to quote |
+| Reply To Post ID | Optional post ID to reply to |
+| Reply Settings | Controls who can reply when supported by X |
+| Made with AI | Sends the AI media label flag when applicable |
+
+## LinkedIn Post
+
+Publishes an organic LinkedIn post.
+
+| Field | Description |
+|-------|-------------|
+| Author URN | `urn:li:person:...` or `urn:li:organization:...` |
+| Post Text | Commentary body |
+| Article URL | Optional article attachment |
+| Visibility | Public or connections |
+| LinkedIn API Version | Version header in `YYYYMM` format |
+
+## Facebook Page Post
+
+Publishes to a Facebook Page feed.
+
+| Field | Description |
+|-------|-------------|
+| Page ID | Target Facebook Page ID |
+| Message | Feed post text |
+| Link | Optional URL attachment |
+
+## Instagram Post
+
+Publishes an image post using Instagram Graph API content publishing.
+
+| Field | Description |
+|-------|-------------|
+| Instagram User ID | Target Instagram professional account ID |
+| Image URL | Publicly reachable image URL |
+| Caption | Optional caption |
+
+Instagram publishing is a two-step flow internally: create a media container, then publish it.
+
+## Threads Post
+
+Publishes a text post to Threads.
+
+| Field | Description |
+|-------|-------------|
+| Text | Post body |
+| Credential | Threads credential |
+
+Threads publishing is also a two-step flow internally: create the post container, then publish it.
+
+## Discord Message
+
+Sends a message through a Discord incoming webhook.
+
+| Field | Description |
+|-------|-------------|
+| Content | Message text |
+| Username | Optional webhook username override |
+| Credential | Discord credential containing the webhook URL |
+
+## Reddit Post
+
+Submits a text or link post to a subreddit.
+
+| Field | Description |
+|-------|-------------|
+| Subreddit | Subreddit name without `/r/` |
+| Title | Submission title |
+| Post Type | Text or link |
+| Text | Body for text submissions |
+| URL | Required for link submissions |
+
+## Bluesky Post
+
+Publishes a text post to Bluesky using the AT Protocol.
+
+| Field | Description |
+|-------|-------------|
+| Text | Post body |
+| Credential | Bluesky credential with handle/DID and app password |
+
+The node creates a short-lived session, then writes an `app.bsky.feed.post` record.
+
+## Mastodon Post
+
+Publishes a status to a Mastodon-compatible instance.
+
+| Field | Description |
+|-------|-------------|
+| Status | Post body |
+| Visibility | Public, unlisted, followers-only, or direct |
+| Content Warning | Optional spoiler/content warning |
+| Credential | Mastodon credential with instance URL and access token |
+
+## Pinterest Pin
+
+Creates a Pinterest pin from an image URL.
+
+| Field | Description |
+|-------|-------------|
+| Board ID | Target Pinterest board |
+| Image URL | Publicly reachable image URL |
+| Title | Optional pin title |
+| Description | Optional pin description |
+| Link | Optional destination URL |
+
+## Notes
+
+- Social platforms often require app review or specific OAuth scopes before publishing works.
+- TikTok and YouTube credential types exist for future integrations, but they do not currently have action nodes because useful publishing for those platforms is video-upload focused.
+- For media nodes, URLs must be reachable by the platform API at execution time.
+
+<Cards>
+  <Card title="Credentials" href="/docs/credentials">
+    Create the matching social credential.
+  </Card>
+  <Card title="Node Types" href="/docs/nodes">
+    Back to all node types.
+  </Card>
+</Cards>

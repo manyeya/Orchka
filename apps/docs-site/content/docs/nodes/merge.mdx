@@ -1,0 +1,107 @@
+---
+title: Merge Node
+description: Combine data from multiple workflow branches
+---
+
+# Merge Node
+
+The Merge node converges multiple incoming branches into one output. It waits until all connected parent nodes have completed, then combines their outputs using the configured mode.
+
+```yaml
+Type: MERGE
+Category: Flow Control
+```
+
+## Inputs
+
+Merge supports multiple input handles. When you connect additional nodes to Merge, the editor auto-fills connected source names and adds handles for the new inputs.
+
+Sources are matched by the upstream node name stored in the workflow context. If you rename an upstream node, update the source label if it is not auto-filled.
+
+## Modes
+
+| Mode | Behavior |
+|------|----------|
+| Append | Flattens all inputs into one array |
+| Merge by Key | Combines array/object rows using a shared key field |
+| Keep First | Returns the first non-empty input |
+| Keep Last | Returns the last non-empty input |
+| Combine | Merges objects; later sources overwrite earlier keys |
+| Custom Expression | Runs a JSONata expression against the merge inputs |
+
+## Append
+
+Append is useful when multiple branches produce lists.
+
+```json
+[
+  { "id": 1, "name": "Ada" },
+  { "id": 2, "name": "Grace" }
+]
+```
+
+If an input is not an array, Merge treats it as a single item.
+
+## Merge by Key
+
+Merge by Key combines records that share the configured key field.
+
+```json
+{
+  "mode": "mergeByKey",
+  "keyField": "id"
+}
+```
+
+The key field can use dot notation, such as `user.id`.
+
+## Combine
+
+Combine is useful for merging object-shaped outputs.
+
+```json
+{
+  "defaults": true,
+  "status": "approved"
+}
+```
+
+If a source is not an object, it is preserved under an `inputN` key.
+
+## Custom Expressions
+
+Custom mode uses JSONata. Merge exposes these values:
+
+| Name | Description |
+|------|-------------|
+| `input1`, `input2`, ... | Each source in order |
+| `inputs` | Array of all source values |
+| `sources` | Object keyed by source label |
+
+Example:
+
+```jsonata
+$append(input1, input2)
+```
+
+## Output
+
+The merged value is stored in the workflow context under the Merge node name:
+
+```json
+{
+  "Merge": [
+    { "id": 1 },
+    { "id": 2 }
+  ]
+}
+```
+
+<Cards>
+  <Card title="Expressions" href="/docs/expressions">
+    Learn more about JSONata.
+  </Card>
+  <Card title="Node Types" href="/docs/nodes">
+    Back to all node types.
+  </Card>
+</Cards>

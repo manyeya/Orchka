@@ -3,6 +3,8 @@
     "pages": [
         "ai-agent",
         "ai-generate",
-        "ai-classify"
+        "ai-classify",
+        "social-media",
+        "merge"
     ]
 }
