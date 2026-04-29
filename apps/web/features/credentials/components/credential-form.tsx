@@ -24,13 +24,6 @@ import {
 import {
     CredentialType,
     getCredentialTypeLabel,
-    apiKeyCredentialSchema,
-    basicAuthCredentialSchema,
-    bearerTokenCredentialSchema,
-    oauth2CredentialSchema,
-    openaiCredentialSchema,
-    anthropicCredentialSchema,
-    googleAICredentialSchema,
 } from "@/features/credentials/utils/types"
 import { Loader2Icon, Eye, EyeOff, FlaskConical, CheckCircle2, XCircle } from "lucide-react"
 import { useState } from "react"
@@ -95,6 +88,18 @@ export const CredentialForm = ({
         CredentialType.OPENAI,
         CredentialType.ANTHROPIC,
         CredentialType.GOOGLE_AI,
+        CredentialType.X,
+        CredentialType.LINKEDIN,
+        CredentialType.FACEBOOK_PAGE,
+        CredentialType.INSTAGRAM,
+        CredentialType.THREADS,
+        CredentialType.TIKTOK,
+        CredentialType.YOUTUBE,
+        CredentialType.PINTEREST,
+        CredentialType.REDDIT,
+        CredentialType.BLUESKY,
+        CredentialType.MASTODON,
+        CredentialType.DISCORD,
     ].includes(selectedType)
 
     return (
@@ -229,6 +234,30 @@ const CredentialTypeFields = ({ type, form }: CredentialTypeFieldsProps) => {
             return <AnthropicFields form={form} />
         case CredentialType.GOOGLE_AI:
             return <GoogleAIFields form={form} />
+        case CredentialType.X:
+            return <SocialAccessTokenFields form={form} label="X Access Token" placeholder="X OAuth user access token..." />
+        case CredentialType.LINKEDIN:
+            return <SocialAccessTokenFields form={form} label="LinkedIn Access Token" placeholder="LinkedIn OAuth access token..." />
+        case CredentialType.FACEBOOK_PAGE:
+            return <FacebookPageFields form={form} />
+        case CredentialType.INSTAGRAM:
+            return <SocialAccessTokenFields form={form} label="Instagram Access Token" placeholder="Instagram Graph API access token..." />
+        case CredentialType.THREADS:
+            return <SocialAccessTokenFields form={form} label="Threads Access Token" placeholder="Threads API access token..." />
+        case CredentialType.TIKTOK:
+            return <SocialAccessTokenFields form={form} label="TikTok Access Token" placeholder="TikTok OAuth access token..." />
+        case CredentialType.YOUTUBE:
+            return <SocialAccessTokenFields form={form} label="YouTube Access Token" placeholder="YouTube OAuth access token..." />
+        case CredentialType.PINTEREST:
+            return <SocialAccessTokenFields form={form} label="Pinterest Access Token" placeholder="Pinterest OAuth access token..." />
+        case CredentialType.REDDIT:
+            return <SocialAccessTokenFields form={form} label="Reddit Access Token" placeholder="Reddit OAuth access token..." />
+        case CredentialType.BLUESKY:
+            return <BlueskyFields form={form} />
+        case CredentialType.MASTODON:
+            return <MastodonFields form={form} />
+        case CredentialType.DISCORD:
+            return <DiscordFields form={form} />
         default:
             return null
     }
@@ -522,6 +551,198 @@ const GoogleAIFields = ({ form }: { form: ReturnType<typeof useForm<CredentialFo
                             value={(field.value as string) ?? ""}
                             onChange={field.onChange}
                             placeholder="AIza..."
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    )
+}
+
+const SocialAccessTokenFields = ({
+    form,
+    label,
+    placeholder,
+}: {
+    form: ReturnType<typeof useForm<CredentialFormValues>>
+    label: string
+    placeholder: string
+}) => {
+    return (
+        <>
+            <FormField
+                control={form.control}
+                name="data.accessToken"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                            <SecretInput
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder={placeholder}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="data.refreshToken"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Refresh Token (Optional)</FormLabel>
+                        <FormControl>
+                            <SecretInput
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="Refresh token..."
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </>
+    )
+}
+
+const FacebookPageFields = ({ form }: { form: ReturnType<typeof useForm<CredentialFormValues>> }) => {
+    return (
+        <FormField
+            control={form.control}
+            name="data.pageAccessToken"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Page Access Token</FormLabel>
+                    <FormControl>
+                        <SecretInput
+                            value={(field.value as string) ?? ""}
+                            onChange={field.onChange}
+                            placeholder="Facebook Page access token..."
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    )
+}
+
+const BlueskyFields = ({ form }: { form: ReturnType<typeof useForm<CredentialFormValues>> }) => {
+    return (
+        <>
+            <FormField
+                control={form.control}
+                name="data.identifier"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Handle or DID</FormLabel>
+                        <FormControl>
+                            <Input
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="example.bsky.social"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="data.password"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>App Password</FormLabel>
+                        <FormControl>
+                            <SecretInput
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="xxxx-xxxx-xxxx-xxxx"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="data.serviceUrl"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Service URL (Optional)</FormLabel>
+                        <FormControl>
+                            <Input
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="https://bsky.social"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </>
+    )
+}
+
+const MastodonFields = ({ form }: { form: ReturnType<typeof useForm<CredentialFormValues>> }) => {
+    return (
+        <>
+            <FormField
+                control={form.control}
+                name="data.instanceUrl"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Instance URL</FormLabel>
+                        <FormControl>
+                            <Input
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="https://mastodon.social"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="data.accessToken"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Access Token</FormLabel>
+                        <FormControl>
+                            <SecretInput
+                                value={(field.value as string) ?? ""}
+                                onChange={field.onChange}
+                                placeholder="Mastodon access token..."
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </>
+    )
+}
+
+const DiscordFields = ({ form }: { form: ReturnType<typeof useForm<CredentialFormValues>> }) => {
+    return (
+        <FormField
+            control={form.control}
+            name="data.webhookUrl"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Webhook URL</FormLabel>
+                    <FormControl>
+                        <SecretInput
+                            value={(field.value as string) ?? ""}
+                            onChange={field.onChange}
+                            placeholder="https://discord.com/api/webhooks/..."
                         />
                     </FormControl>
                     <FormMessage />

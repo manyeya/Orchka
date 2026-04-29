@@ -11,6 +11,8 @@ import {
   openaiCredentialSchema,
   anthropicCredentialSchema,
   googleAICredentialSchema,
+  xCredentialSchema,
+  linkedInCredentialSchema,
   isApiKeyCredential,
   isBasicAuthCredential,
   isBearerTokenCredential,
@@ -18,6 +20,8 @@ import {
   isOpenAICredential,
   isAnthropicCredential,
   isGoogleAICredential,
+  isXCredential,
+  isLinkedInCredential,
   getRequiredFields,
   getCredentialTypeLabel,
 } from "../types";
@@ -68,6 +72,11 @@ describe("Credential Types Property Tests", () => {
   // Arbitrary for generating valid Google AI credentials
   const validGoogleAIArb = fc.record({
     apiKey: fc.string({ minLength: 1 }),
+  });
+
+  const validSocialTokenArb = fc.record({
+    accessToken: fc.string({ minLength: 1 }),
+    refreshToken: fc.option(fc.string({ minLength: 1 }), { nil: undefined }),
   });
 
   it("Property 12: Valid API Key credentials pass validation", () => {
@@ -140,6 +149,26 @@ describe("Credential Types Property Tests", () => {
     );
   });
 
+  it("Property 12: Valid X credentials pass validation", () => {
+    fc.assert(
+      fc.property(validSocialTokenArb, (data) => {
+        const result = validateCredentialData(CredentialType.X, data);
+        return result.success === true;
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it("Property 12: Valid LinkedIn credentials pass validation", () => {
+    fc.assert(
+      fc.property(validSocialTokenArb, (data) => {
+        const result = validateCredentialData(CredentialType.LINKEDIN, data);
+        return result.success === true;
+      }),
+      { numRuns: 100 }
+    );
+  });
+
   it("Property 12: Missing required fields cause validation failure", () => {
     // Generate objects missing required fields for each type
     const credentialTypes = Object.values(CredentialType);
@@ -204,6 +233,18 @@ describe("Credential Types Unit Tests", () => {
       expect(isValidCredentialType("openai")).toBe(true);
       expect(isValidCredentialType("anthropic")).toBe(true);
       expect(isValidCredentialType("google_ai")).toBe(true);
+      expect(isValidCredentialType("x")).toBe(true);
+      expect(isValidCredentialType("linkedin")).toBe(true);
+      expect(isValidCredentialType("facebook_page")).toBe(true);
+      expect(isValidCredentialType("instagram")).toBe(true);
+      expect(isValidCredentialType("threads")).toBe(true);
+      expect(isValidCredentialType("tiktok")).toBe(true);
+      expect(isValidCredentialType("youtube")).toBe(true);
+      expect(isValidCredentialType("pinterest")).toBe(true);
+      expect(isValidCredentialType("reddit")).toBe(true);
+      expect(isValidCredentialType("bluesky")).toBe(true);
+      expect(isValidCredentialType("mastodon")).toBe(true);
+      expect(isValidCredentialType("discord")).toBe(true);
     });
 
     it("should return false for invalid credential types", () => {
@@ -269,6 +310,18 @@ describe("Credential Types Unit Tests", () => {
       expect(isGoogleAICredential({ apiKey: "AIza-test" })).toBe(true);
       expect(isGoogleAICredential({ apiKey: "" })).toBe(false);
     });
+
+    it("isXCredential should correctly identify X credentials", () => {
+      expect(isXCredential({ accessToken: "x-token" })).toBe(true);
+      expect(isXCredential({ accessToken: "" })).toBe(false);
+      expect(isXCredential({ token: "test" })).toBe(false);
+    });
+
+    it("isLinkedInCredential should correctly identify LinkedIn credentials", () => {
+      expect(isLinkedInCredential({ accessToken: "linkedin-token" })).toBe(true);
+      expect(isLinkedInCredential({ accessToken: "" })).toBe(false);
+      expect(isLinkedInCredential({ token: "test" })).toBe(false);
+    });
   });
 
   describe("getCredentialTypeLabel", () => {
@@ -284,6 +337,18 @@ describe("Credential Types Unit Tests", () => {
       expect(getCredentialTypeLabel(CredentialType.OPENAI)).toBe("OpenAI");
       expect(getCredentialTypeLabel(CredentialType.ANTHROPIC)).toBe("Anthropic");
       expect(getCredentialTypeLabel(CredentialType.GOOGLE_AI)).toBe("Google AI");
+      expect(getCredentialTypeLabel(CredentialType.X)).toBe("X");
+      expect(getCredentialTypeLabel(CredentialType.LINKEDIN)).toBe("LinkedIn");
+      expect(getCredentialTypeLabel(CredentialType.FACEBOOK_PAGE)).toBe("Facebook Page");
+      expect(getCredentialTypeLabel(CredentialType.INSTAGRAM)).toBe("Instagram");
+      expect(getCredentialTypeLabel(CredentialType.THREADS)).toBe("Threads");
+      expect(getCredentialTypeLabel(CredentialType.TIKTOK)).toBe("TikTok");
+      expect(getCredentialTypeLabel(CredentialType.YOUTUBE)).toBe("YouTube");
+      expect(getCredentialTypeLabel(CredentialType.PINTEREST)).toBe("Pinterest");
+      expect(getCredentialTypeLabel(CredentialType.REDDIT)).toBe("Reddit");
+      expect(getCredentialTypeLabel(CredentialType.BLUESKY)).toBe("Bluesky");
+      expect(getCredentialTypeLabel(CredentialType.MASTODON)).toBe("Mastodon");
+      expect(getCredentialTypeLabel(CredentialType.DISCORD)).toBe("Discord");
     });
   });
 
@@ -302,6 +367,18 @@ describe("Credential Types Unit Tests", () => {
       expect(getRequiredFields(CredentialType.OPENAI)).toEqual(["apiKey"]);
       expect(getRequiredFields(CredentialType.ANTHROPIC)).toEqual(["apiKey"]);
       expect(getRequiredFields(CredentialType.GOOGLE_AI)).toEqual(["apiKey"]);
+      expect(getRequiredFields(CredentialType.X)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.LINKEDIN)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.FACEBOOK_PAGE)).toEqual(["pageAccessToken"]);
+      expect(getRequiredFields(CredentialType.INSTAGRAM)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.THREADS)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.TIKTOK)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.YOUTUBE)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.PINTEREST)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.REDDIT)).toEqual(["accessToken"]);
+      expect(getRequiredFields(CredentialType.BLUESKY)).toEqual(["identifier", "password"]);
+      expect(getRequiredFields(CredentialType.MASTODON)).toEqual(["instanceUrl", "accessToken"]);
+      expect(getRequiredFields(CredentialType.DISCORD)).toEqual(["webhookUrl"]);
     });
   });
 

@@ -224,6 +224,35 @@ function credentialDataForType(type: CredentialType): fc.Arbitrary<Record<string
       return basicAuthDataArb as fc.Arbitrary<Record<string, unknown>>;
     case CredentialType.BEARER_TOKEN:
       return bearerTokenDataArb as fc.Arbitrary<Record<string, unknown>>;
+    case CredentialType.X:
+    case CredentialType.LINKEDIN:
+    case CredentialType.INSTAGRAM:
+    case CredentialType.THREADS:
+    case CredentialType.TIKTOK:
+    case CredentialType.YOUTUBE:
+    case CredentialType.PINTEREST:
+    case CredentialType.REDDIT:
+      return fc.record({
+        accessToken: fc.string({ minLength: 1 }),
+      }) as fc.Arbitrary<Record<string, unknown>>;
+    case CredentialType.FACEBOOK_PAGE:
+      return fc.record({
+        pageAccessToken: fc.string({ minLength: 1 }),
+      }) as fc.Arbitrary<Record<string, unknown>>;
+    case CredentialType.BLUESKY:
+      return fc.record({
+        identifier: fc.string({ minLength: 1 }),
+        password: fc.string({ minLength: 1 }),
+      }) as fc.Arbitrary<Record<string, unknown>>;
+    case CredentialType.MASTODON:
+      return fc.record({
+        instanceUrl: fc.constant("https://mastodon.social"),
+        accessToken: fc.string({ minLength: 1 }),
+      }) as fc.Arbitrary<Record<string, unknown>>;
+    case CredentialType.DISCORD:
+      return fc.record({
+        webhookUrl: fc.constant("https://discord.com/api/webhooks/1/token"),
+      }) as fc.Arbitrary<Record<string, unknown>>;
     case CredentialType.OAUTH2:
       return fc.record({
         clientId: fc.string({ minLength: 1 }),

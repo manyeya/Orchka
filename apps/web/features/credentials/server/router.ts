@@ -96,6 +96,18 @@ async function testCredential(
       case CredentialType.BASIC_AUTH:
       case CredentialType.BEARER_TOKEN:
       case CredentialType.OAUTH2:
+      case CredentialType.X:
+      case CredentialType.LINKEDIN:
+      case CredentialType.FACEBOOK_PAGE:
+      case CredentialType.INSTAGRAM:
+      case CredentialType.THREADS:
+      case CredentialType.TIKTOK:
+      case CredentialType.YOUTUBE:
+      case CredentialType.PINTEREST:
+      case CredentialType.REDDIT:
+      case CredentialType.BLUESKY:
+      case CredentialType.MASTODON:
+      case CredentialType.DISCORD:
         // Generic credentials cannot be tested without a target URL
         return {
           success: true,

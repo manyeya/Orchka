@@ -11,6 +11,18 @@ export enum CredentialType {
   OPENAI = "openai",
   ANTHROPIC = "anthropic",
   GOOGLE_AI = "google_ai",
+  X = "x",
+  LINKEDIN = "linkedin",
+  FACEBOOK_PAGE = "facebook_page",
+  INSTAGRAM = "instagram",
+  THREADS = "threads",
+  TIKTOK = "tiktok",
+  YOUTUBE = "youtube",
+  PINTEREST = "pinterest",
+  REDDIT = "reddit",
+  BLUESKY = "bluesky",
+  MASTODON = "mastodon",
+  DISCORD = "discord",
 }
 
 // ============================================================================
@@ -83,6 +95,53 @@ export const googleAICredentialSchema = z.object({
 });
 export type GoogleAICredential = z.infer<typeof googleAICredentialSchema>;
 
+/**
+ * X credential schema - requires an OAuth user access token.
+ */
+export const xCredentialSchema = z.object({
+  accessToken: z.string().min(1, "Access token is required"),
+  refreshToken: z.string().optional(),
+});
+export type XCredential = z.infer<typeof xCredentialSchema>;
+
+/**
+ * LinkedIn credential schema - requires an OAuth access token.
+ */
+export const linkedInCredentialSchema = z.object({
+  accessToken: z.string().min(1, "Access token is required"),
+  refreshToken: z.string().optional(),
+});
+export type LinkedInCredential = z.infer<typeof linkedInCredentialSchema>;
+
+export const facebookPageCredentialSchema = z.object({
+  pageAccessToken: z.string().min(1, "Page access token is required"),
+});
+export type FacebookPageCredential = z.infer<typeof facebookPageCredentialSchema>;
+
+export const socialAccessTokenCredentialSchema = z.object({
+  accessToken: z.string().min(1, "Access token is required"),
+  refreshToken: z.string().optional(),
+});
+export type SocialAccessTokenCredential = z.infer<typeof socialAccessTokenCredentialSchema>;
+
+export const blueskyCredentialSchema = z.object({
+  identifier: z.string().min(1, "Handle or DID is required"),
+  password: z.string().min(1, "App password is required"),
+  serviceUrl: z.string().url("Service URL must be a valid URL").optional(),
+});
+export type BlueskyCredential = z.infer<typeof blueskyCredentialSchema>;
+
+export const mastodonCredentialSchema = z.object({
+  instanceUrl: z.string().url("Instance URL must be a valid URL"),
+  accessToken: z.string().min(1, "Access token is required"),
+});
+export type MastodonCredential = z.infer<typeof mastodonCredentialSchema>;
+
+export const discordCredentialSchema = z.object({
+  webhookUrl: z.string().url("Webhook URL must be a valid URL"),
+});
+export type DiscordCredential = z.infer<typeof discordCredentialSchema>;
+
 // ============================================================================
 // Schema mapping by credential type
 // ============================================================================
@@ -98,6 +157,18 @@ export const credentialSchemaMap: Record<CredentialType, z.ZodSchema> = {
   [CredentialType.OPENAI]: openaiCredentialSchema,
   [CredentialType.ANTHROPIC]: anthropicCredentialSchema,
   [CredentialType.GOOGLE_AI]: googleAICredentialSchema,
+  [CredentialType.X]: xCredentialSchema,
+  [CredentialType.LINKEDIN]: linkedInCredentialSchema,
+  [CredentialType.FACEBOOK_PAGE]: facebookPageCredentialSchema,
+  [CredentialType.INSTAGRAM]: socialAccessTokenCredentialSchema,
+  [CredentialType.THREADS]: socialAccessTokenCredentialSchema,
+  [CredentialType.TIKTOK]: socialAccessTokenCredentialSchema,
+  [CredentialType.YOUTUBE]: socialAccessTokenCredentialSchema,
+  [CredentialType.PINTEREST]: socialAccessTokenCredentialSchema,
+  [CredentialType.REDDIT]: socialAccessTokenCredentialSchema,
+  [CredentialType.BLUESKY]: blueskyCredentialSchema,
+  [CredentialType.MASTODON]: mastodonCredentialSchema,
+  [CredentialType.DISCORD]: discordCredentialSchema,
 };
 
 // ============================================================================
@@ -111,7 +182,14 @@ export type CredentialData =
   | OAuth2Credential
   | OpenAICredential
   | AnthropicCredential
-  | GoogleAICredential;
+  | GoogleAICredential
+  | XCredential
+  | LinkedInCredential
+  | FacebookPageCredential
+  | SocialAccessTokenCredential
+  | BlueskyCredential
+  | MastodonCredential
+  | DiscordCredential;
 
 // ============================================================================
 // Type Guards
@@ -151,6 +229,34 @@ export function isGoogleAICredential(
   data: unknown
 ): data is GoogleAICredential {
   return googleAICredentialSchema.safeParse(data).success;
+}
+
+export function isXCredential(data: unknown): data is XCredential {
+  return xCredentialSchema.safeParse(data).success;
+}
+
+export function isLinkedInCredential(data: unknown): data is LinkedInCredential {
+  return linkedInCredentialSchema.safeParse(data).success;
+}
+
+export function isFacebookPageCredential(data: unknown): data is FacebookPageCredential {
+  return facebookPageCredentialSchema.safeParse(data).success;
+}
+
+export function isSocialAccessTokenCredential(data: unknown): data is SocialAccessTokenCredential {
+  return socialAccessTokenCredentialSchema.safeParse(data).success;
+}
+
+export function isBlueskyCredential(data: unknown): data is BlueskyCredential {
+  return blueskyCredentialSchema.safeParse(data).success;
+}
+
+export function isMastodonCredential(data: unknown): data is MastodonCredential {
+  return mastodonCredentialSchema.safeParse(data).success;
+}
+
+export function isDiscordCredential(data: unknown): data is DiscordCredential {
+  return discordCredentialSchema.safeParse(data).success;
 }
 
 // ============================================================================
@@ -228,6 +334,18 @@ export function getCredentialTypeLabel(type: CredentialType): string {
     [CredentialType.OPENAI]: "OpenAI",
     [CredentialType.ANTHROPIC]: "Anthropic",
     [CredentialType.GOOGLE_AI]: "Google AI",
+    [CredentialType.X]: "X",
+    [CredentialType.LINKEDIN]: "LinkedIn",
+    [CredentialType.FACEBOOK_PAGE]: "Facebook Page",
+    [CredentialType.INSTAGRAM]: "Instagram",
+    [CredentialType.THREADS]: "Threads",
+    [CredentialType.TIKTOK]: "TikTok",
+    [CredentialType.YOUTUBE]: "YouTube",
+    [CredentialType.PINTEREST]: "Pinterest",
+    [CredentialType.REDDIT]: "Reddit",
+    [CredentialType.BLUESKY]: "Bluesky",
+    [CredentialType.MASTODON]: "Mastodon",
+    [CredentialType.DISCORD]: "Discord",
   };
   return labels[type];
 }
@@ -244,6 +362,18 @@ export function getRequiredFields(type: CredentialType): string[] {
     [CredentialType.OPENAI]: ["apiKey"],
     [CredentialType.ANTHROPIC]: ["apiKey"],
     [CredentialType.GOOGLE_AI]: ["apiKey"],
+    [CredentialType.X]: ["accessToken"],
+    [CredentialType.LINKEDIN]: ["accessToken"],
+    [CredentialType.FACEBOOK_PAGE]: ["pageAccessToken"],
+    [CredentialType.INSTAGRAM]: ["accessToken"],
+    [CredentialType.THREADS]: ["accessToken"],
+    [CredentialType.TIKTOK]: ["accessToken"],
+    [CredentialType.YOUTUBE]: ["accessToken"],
+    [CredentialType.PINTEREST]: ["accessToken"],
+    [CredentialType.REDDIT]: ["accessToken"],
+    [CredentialType.BLUESKY]: ["identifier", "password"],
+    [CredentialType.MASTODON]: ["instanceUrl", "accessToken"],
+    [CredentialType.DISCORD]: ["webhookUrl"],
   };
   return requiredFields[type];
 }
