@@ -45,7 +45,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          cd docs-site
+          cd apps/docs-site
           bun install
       
       - name: Build with Next.js
