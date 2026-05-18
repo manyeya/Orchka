@@ -17,7 +17,10 @@ const prisma = globalForPrisma.prisma || new PrismaClient({
 });
 
 if (process.env.NODE_ENV !== "production") {
-    if (prisma && !(prisma as unknown as { executionStep: unknown }).executionStep) {
+    // Detect a stale cached client (newest model missing) and rebuild so dev
+    // hot reloads pick up new Prisma models without a process restart.
+    const newestModel = "executionStat" as const;
+    if (prisma && !(prisma as unknown as Record<string, unknown>)[newestModel]) {
         globalForPrisma.prisma = new PrismaClient({
             datasources: {
                 db: {
