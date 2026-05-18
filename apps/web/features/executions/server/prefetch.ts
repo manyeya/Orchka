@@ -11,10 +11,10 @@ export const prefetchExecution = (id: string) => {
   prefetch(trpc.executions.getById.queryOptions({ id }));
 }
 
-export const prefetchExecutionsStats = (windowDays = 7) => {
+export const prefetchExecutionsStats = (windowDays = 30) => {
   return prefetch(trpc.executions.stats.queryOptions({ windowDays }));
 }
 
-export const prefetchExecutionsSeries = (windowDays = 7) => {
+export const prefetchExecutionsSeries = (windowDays = 30) => {
   return prefetch(trpc.executions.series.queryOptions({ windowDays }));
 }

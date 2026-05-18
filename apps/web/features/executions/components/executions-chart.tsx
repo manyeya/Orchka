@@ -43,7 +43,21 @@ function formatFullDate(iso: string): string {
 }
 
 export function ExecutionsChart() {
-  const { data } = useSuspenseExecutionsSeries(7)
+  const { data } = useSuspenseExecutionsSeries(30)
+  const hasActivity = data.points.some((p) => p.succeeded > 0 || p.failed > 0)
+
+  if (!hasActivity) {
+    return (
+      <div className="flex h-[180px] w-full flex-col items-center justify-center gap-1 text-center">
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+          no activity
+        </span>
+        <span className="text-xs text-muted-foreground/80">
+          No executions in the last {data.windowDays} days. Run a workflow to see this chart populate.
+        </span>
+      </div>
+    )
+  }
 
   return (
     <ChartContainer

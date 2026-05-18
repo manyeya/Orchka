@@ -1,8 +1,9 @@
 "use client"
 
 import { Suspense } from "react"
-import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon, BarChart3 } from "lucide-react"
+import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon, BarChart3, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { ErrorBoundary } from "react-error-boundary"
 
 import { ExecutionsChart, ExecutionsChartSkeleton } from "./executions-chart"
 
@@ -52,8 +53,8 @@ const formatDuration = (ms: number | null): string => {
 }
 
 const ExecutionsStats = () => {
-  const { data: stats } = useSuspenseExecutionsStats(7)
-  const windowLabel = `Last ${stats.windowDays} days`
+  const { data: stats } = useSuspenseExecutionsStats(30)
+  const windowLabel = stats.windowDays === 1 ? "Last 24h" : `Last ${stats.windowDays} days`
   const successRate =
     stats.successRate == null ? "—" : `${Math.round(stats.successRate * 100)}%`
 
@@ -107,6 +108,22 @@ const ChartLegendDot = ({ color, label }: { color: string; label: string }) => (
   </span>
 )
 
+const OverviewErrorFallback = ({ error }: { error: unknown }) => {
+  const message =
+    error instanceof Error && error.message
+      ? error.message
+      : "The stats query rejected. If you just added the rollup table, restart the dev server (Ctrl-C then bun run dev:all) so the Prisma client picks up the new model."
+  return (
+    <div className="flex items-start gap-3 border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+      <div className="space-y-1">
+        <p className="font-medium text-destructive">Overview failed to load</p>
+        <p className="text-xs text-muted-foreground">{message}</p>
+      </div>
+    </div>
+  )
+}
+
 const ExecutionsOverview = () => {
   return (
     <section className="overflow-hidden rounded-md border border-border/60 bg-card/40">
@@ -118,14 +135,16 @@ const ExecutionsOverview = () => {
           </span>
         </div>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          last 7 days
+          last 30 days
         </span>
       </div>
 
       <div className="space-y-5 p-4 md:p-5">
-        <Suspense fallback={<ExecutionsStatsSkeleton />}>
-          <ExecutionsStats />
-        </Suspense>
+        <ErrorBoundary FallbackComponent={OverviewErrorFallback}>
+          <Suspense fallback={<ExecutionsStatsSkeleton />}>
+            <ExecutionsStats />
+          </Suspense>
+        </ErrorBoundary>
 
         <div className="space-y-3 rounded-md border border-border/60 bg-background/60 p-4">
           <div className="flex items-center justify-between">
@@ -137,9 +156,11 @@ const ExecutionsOverview = () => {
               <ChartLegendDot color="var(--destructive)" label="failed" />
             </div>
           </div>
-          <Suspense fallback={<ExecutionsChartSkeleton />}>
-            <ExecutionsChart />
-          </Suspense>
+          <ErrorBoundary FallbackComponent={OverviewErrorFallback}>
+            <Suspense fallback={<ExecutionsChartSkeleton />}>
+              <ExecutionsChart />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
     </section>

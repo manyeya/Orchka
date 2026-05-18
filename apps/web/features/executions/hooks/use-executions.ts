@@ -18,12 +18,12 @@ export const useExecutionsByWorkflow = (workflowId: string) => {
   return useQueryClient().fetchQuery(trpc.executions.getByWorkflowId.queryOptions({ workflowId }))
 }
 
-export const useSuspenseExecutionsStats = (windowDays = 7) => {
+export const useSuspenseExecutionsStats = (windowDays = 30) => {
   const trpc = useTRPC()
   return useSuspenseQuery(trpc.executions.stats.queryOptions({ windowDays }))
 }
 
-export const useSuspenseExecutionsSeries = (windowDays = 7) => {
+export const useSuspenseExecutionsSeries = (windowDays = 30) => {
   const trpc = useTRPC()
   return useSuspenseQuery(trpc.executions.series.queryOptions({ windowDays }))
 }

@@ -30,8 +30,8 @@ async function ExecutionsPage({ searchParams }: ExecutionsPageProps) {
   const params = await executionsParamsLoader(searchParams)
   await Promise.all([
     prefetchExecutions(params),
-    prefetchExecutionsStats(7),
-    prefetchExecutionsSeries(7),
+    prefetchExecutionsStats(30),
+    prefetchExecutionsSeries(30),
   ])
   return (
     <ExecutionsContainer>
