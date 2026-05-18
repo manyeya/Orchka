@@ -400,6 +400,7 @@ export const ModelName = {
   Credential: 'Credential',
   CredentialLog: 'CredentialLog',
   Execution: 'Execution',
+  ExecutionStat: 'ExecutionStat',
   ExecutionStep: 'ExecutionStep'
 } as const
 
@@ -416,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "workflow" | "node" | "connection" | "credential" | "credentialLog" | "execution" | "executionStep"
+    modelProps: "user" | "session" | "account" | "verification" | "workflow" | "node" | "connection" | "credential" | "credentialLog" | "execution" | "executionStat" | "executionStep"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1160,6 +1161,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ExecutionStat: {
+      payload: Prisma.$ExecutionStatPayload<ExtArgs>
+      fields: Prisma.ExecutionStatFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ExecutionStatFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ExecutionStatFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        findFirst: {
+          args: Prisma.ExecutionStatFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ExecutionStatFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        findMany: {
+          args: Prisma.ExecutionStatFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>[]
+        }
+        create: {
+          args: Prisma.ExecutionStatCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        createMany: {
+          args: Prisma.ExecutionStatCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ExecutionStatCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>[]
+        }
+        delete: {
+          args: Prisma.ExecutionStatDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        update: {
+          args: Prisma.ExecutionStatUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        deleteMany: {
+          args: Prisma.ExecutionStatDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ExecutionStatUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ExecutionStatUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>[]
+        }
+        upsert: {
+          args: Prisma.ExecutionStatUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ExecutionStatPayload>
+        }
+        aggregate: {
+          args: Prisma.ExecutionStatAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateExecutionStat>
+        }
+        groupBy: {
+          args: Prisma.ExecutionStatGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExecutionStatGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ExecutionStatCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ExecutionStatCountAggregateOutputType> | number
+        }
+      }
+    }
     ExecutionStep: {
       payload: Prisma.$ExecutionStepPayload<ExtArgs>
       fields: Prisma.ExecutionStepFieldRefs
@@ -1412,6 +1487,22 @@ export const ExecutionScalarFieldEnum = {
 export type ExecutionScalarFieldEnum = (typeof ExecutionScalarFieldEnum)[keyof typeof ExecutionScalarFieldEnum]
 
 
+export const ExecutionStatScalarFieldEnum = {
+  id: 'id',
+  date: 'date',
+  userId: 'userId',
+  workflowId: 'workflowId',
+  total: 'total',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  cancelled: 'cancelled',
+  durationMs: 'durationMs',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ExecutionStatScalarFieldEnum = (typeof ExecutionStatScalarFieldEnum)[keyof typeof ExecutionStatScalarFieldEnum]
+
+
 export const ExecutionStepScalarFieldEnum = {
   id: 'id',
   executionId: 'executionId',
@@ -1559,6 +1650,34 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -1656,6 +1775,7 @@ export type GlobalOmitConfig = {
   credential?: Prisma.CredentialOmit
   credentialLog?: Prisma.CredentialLogOmit
   execution?: Prisma.ExecutionOmit
+  executionStat?: Prisma.ExecutionStatOmit
   executionStep?: Prisma.ExecutionStepOmit
 }
 

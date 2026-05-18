@@ -95,6 +95,11 @@ export type CredentialLog = Prisma.CredentialLogModel
  */
 export type Execution = Prisma.ExecutionModel
 /**
+ * Model ExecutionStat
+ * 
+ */
+export type ExecutionStat = Prisma.ExecutionStatModel
+/**
  * Model ExecutionStep
  * 
  */

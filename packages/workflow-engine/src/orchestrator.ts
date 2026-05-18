@@ -28,6 +28,81 @@ import Redis from "ioredis";
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
+/**
+ * Finalize an execution: update its terminal status and increment the daily
+ * ExecutionStat rollup so dashboard cards can read pre-aggregated counts
+ * instead of scanning the live execution table.
+ */
+async function finalizeExecution(
+  executionId: string,
+  data: {
+    status: typeof ExecutionStatus[keyof typeof ExecutionStatus];
+    result?: unknown;
+    error?: string;
+  }
+): Promise<void> {
+  const completedAt = new Date();
+
+  const execution = await prisma.execution.update({
+    where: { id: executionId },
+    data: {
+      status: data.status,
+      completedAt,
+      ...(data.result !== undefined && { result: data.result as any }),
+      ...(data.error !== undefined && { error: data.error }),
+    },
+    select: {
+      userId: true,
+      workflowId: true,
+      startedAt: true,
+    },
+  });
+
+  // Day bucket in UTC. Postgres DATE column ignores time.
+  const day = new Date(Date.UTC(
+    execution.startedAt.getUTCFullYear(),
+    execution.startedAt.getUTCMonth(),
+    execution.startedAt.getUTCDate(),
+  ));
+  const durationMs = BigInt(Math.max(0, completedAt.getTime() - execution.startedAt.getTime()));
+
+  const isSuccess = data.status === ExecutionStatus.COMPLETED;
+  const isFailure = data.status === ExecutionStatus.FAILED;
+  const isCancelled = data.status === ExecutionStatus.CANCELLED;
+
+  try {
+    await prisma.executionStat.upsert({
+      where: {
+        userId_workflowId_date: {
+          userId: execution.userId,
+          workflowId: execution.workflowId,
+          date: day,
+        },
+      },
+      create: {
+        userId: execution.userId,
+        workflowId: execution.workflowId,
+        date: day,
+        total: 1,
+        succeeded: isSuccess ? 1 : 0,
+        failed: isFailure ? 1 : 0,
+        cancelled: isCancelled ? 1 : 0,
+        durationMs: isSuccess ? durationMs : BigInt(0),
+      },
+      update: {
+        total: { increment: 1 },
+        succeeded: { increment: isSuccess ? 1 : 0 },
+        failed: { increment: isFailure ? 1 : 0 },
+        cancelled: { increment: isCancelled ? 1 : 0 },
+        ...(isSuccess && { durationMs: { increment: durationMs } }),
+      },
+    });
+  } catch (e) {
+    // Rollup failure should not break the user-facing execution.
+    console.error(`[ExecutionStat] Failed to increment rollup for ${executionId}:`, e);
+  }
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -413,13 +488,9 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
   }
 
   if (sortedNodes.length === 0) {
-    await prisma.execution.update({
-      where: { id: executionId },
-      data: {
-        status: ExecutionStatus.COMPLETED,
-        completedAt: new Date(),
-        result: {},
-      }
+    await finalizeExecution(executionId, {
+      status: ExecutionStatus.COMPLETED,
+      result: {},
     });
     return { success: true, result: {} };
   }
@@ -782,13 +853,9 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     // RELIABILITY: Persist steps from Redis to DB on failure
     await persistExecutionSteps(executionId, workflowId);
 
-    await prisma.execution.update({
-      where: { id: executionId },
-      data: {
-        status: ExecutionStatus.FAILED,
-        completedAt: new Date(),
-        error: errorMessage,
-      }
+    await finalizeExecution(executionId, {
+      status: ExecutionStatus.FAILED,
+      error: errorMessage,
     });
 
     console.error(`[Node] Failed ${nodeName}: ${errorMessage}`);
@@ -918,13 +985,9 @@ async function chainToNextNode(
     // RELIABILITY: Persist steps from Redis to DB on completion
     await persistExecutionSteps(executionId, workflowId);
 
-    await prisma.execution.update({
-      where: { id: executionId },
-      data: {
-        status: ExecutionStatus.COMPLETED,
-        completedAt: new Date(),
-        result: cleanResult as any,
-      }
+    await finalizeExecution(executionId, {
+      status: ExecutionStatus.COMPLETED,
+      result: cleanResult,
     });
 
     console.log(`[Workflow] Completed execution ${executionId}`);

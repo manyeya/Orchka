@@ -59,6 +59,7 @@ export const ModelName = {
   Credential: 'Credential',
   CredentialLog: 'CredentialLog',
   Execution: 'Execution',
+  ExecutionStat: 'ExecutionStat',
   ExecutionStep: 'ExecutionStep'
 } as const
 
@@ -215,6 +216,22 @@ export const ExecutionScalarFieldEnum = {
 } as const
 
 export type ExecutionScalarFieldEnum = (typeof ExecutionScalarFieldEnum)[keyof typeof ExecutionScalarFieldEnum]
+
+
+export const ExecutionStatScalarFieldEnum = {
+  id: 'id',
+  date: 'date',
+  userId: 'userId',
+  workflowId: 'workflowId',
+  total: 'total',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  cancelled: 'cancelled',
+  durationMs: 'durationMs',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ExecutionStatScalarFieldEnum = (typeof ExecutionStatScalarFieldEnum)[keyof typeof ExecutionStatScalarFieldEnum]
 
 
 export const ExecutionStepScalarFieldEnum = {

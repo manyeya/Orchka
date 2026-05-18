@@ -275,55 +275,53 @@ export const executionsRouter = createTRPCRouter({
     .input(statsSchema)
     .query(async ({ ctx, input }) => {
       const userId = ctx.auth.user.id;
-      const since = new Date(Date.now() - input.windowDays * 24 * 60 * 60 * 1000);
+      const today = new Date();
+      const sinceDay = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate() - (input.windowDays - 1),
+      ));
 
-      const [total, windowAgg] = await Promise.all([
-        prisma.execution.count({ where: { userId } }),
-        prisma.execution.groupBy({
-          by: ["status"],
-          where: { userId, startedAt: { gte: since } },
-          _count: { _all: true },
+      // All-time total comes from the rollup; running executions don't appear
+      // there yet, so add them in for accuracy.
+      const [allTimeAgg, windowAgg, runningCount] = await Promise.all([
+        prisma.executionStat.aggregate({
+          where: { userId },
+          _sum: { total: true },
+        }),
+        prisma.executionStat.aggregate({
+          where: { userId, date: { gte: sinceDay } },
+          _sum: {
+            total: true,
+            succeeded: true,
+            failed: true,
+            cancelled: true,
+            durationMs: true,
+          },
+        }),
+        prisma.execution.count({
+          where: { userId, status: ExecutionStatus.RUNNING },
         }),
       ]);
 
-      const counts = Object.fromEntries(
-        windowAgg.map((row) => [row.status, row._count._all]),
-      ) as Partial<Record<ExecutionStatus, number>>;
+      const rolledTotal = allTimeAgg._sum.total ?? 0;
+      const succeeded = windowAgg._sum.succeeded ?? 0;
+      const failed = windowAgg._sum.failed ?? 0;
+      const cancelled = windowAgg._sum.cancelled ?? 0;
+      const windowTotal = windowAgg._sum.total ?? 0;
+      const durationMsSum = Number(windowAgg._sum.durationMs ?? BigInt(0));
 
-      const succeeded = counts.COMPLETED ?? 0;
-      const failed = counts.FAILED ?? 0;
-      const running = counts.RUNNING ?? 0;
-      const cancelled = counts.CANCELLED ?? 0;
-      const windowTotal = succeeded + failed + running + cancelled;
       const finished = succeeded + failed;
       const successRate = finished > 0 ? succeeded / finished : null;
-
-      const completed = await prisma.execution.findMany({
-        where: {
-          userId,
-          status: ExecutionStatus.COMPLETED,
-          startedAt: { gte: since },
-          completedAt: { not: null },
-        },
-        select: { startedAt: true, completedAt: true },
-      });
-
-      let avgDurationMs: number | null = null;
-      if (completed.length > 0) {
-        const sum = completed.reduce(
-          (acc, e) => acc + (e.completedAt!.getTime() - e.startedAt.getTime()),
-          0,
-        );
-        avgDurationMs = Math.round(sum / completed.length);
-      }
+      const avgDurationMs = succeeded > 0 ? Math.round(durationMsSum / succeeded) : null;
 
       return {
         windowDays: input.windowDays,
-        total,
+        total: rolledTotal + runningCount,
         windowTotal,
         succeeded,
         failed,
-        running,
+        running: runningCount,
         cancelled,
         successRate,
         avgDurationMs,
