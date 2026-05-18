@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@orchka/ui/button"
 import { AlertTriangle, AlertTriangleIcon, ArrowUpRight, DotSquareIcon, FileExclamationPointIcon, FolderCode, Loader2Icon, MoreVerticalIcon, PlusIcon, SearchIcon, TrashIcon } from "lucide-react"
 import Link from "next/link"
@@ -10,11 +12,18 @@ import {
 import {
     Pagination,
     PaginationContent,
+    PaginationEllipsis,
     PaginationItem,
     PaginationLink,
     PaginationNext,
     PaginationPrevious,
 } from "@orchka/ui/pagination"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@orchka/ui/popover"
+import { useState } from "react"
 import { Spinner } from "@orchka/ui/spinner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@orchka/ui/empty"
 import { cn } from "@orchka/ui/utils"
@@ -138,44 +147,246 @@ type EntityPaginationProps = {
     totalPages: number
     onPageChange: (page: number) => void
     disabled?: boolean
+    /** Optional: total item count, enables an "X–Y of N" summary. */
+    count?: number
+    /** Optional: page size, used with `count` to compute the summary range. */
+    pageSize?: number
+    /** Pages shown on each side of the current page. Defaults to 1. */
+    siblingCount?: number
+}
+
+/**
+ * Build the page list with ellipsis markers. Returns an array of either a
+ * page number or the literal "ellipsis" sentinel. Sized O(siblingCount), not
+ * O(totalPages), so this is safe for thousands of pages.
+ */
+function buildPageWindow(
+    current: number,
+    total: number,
+    siblingCount: number,
+): Array<number | "ellipsis"> {
+    const boundary = 1
+    // Slot count for the "no ellipsis needed" short-circuit.
+    const totalNumbers = siblingCount * 2 + 3 + boundary * 2
+
+    if (totalNumbers >= total) {
+        return Array.from({ length: total }, (_, i) => i + 1)
+    }
+
+    const leftSibling = Math.max(current - siblingCount, 1)
+    const rightSibling = Math.min(current + siblingCount, total)
+
+    const showLeftEllipsis = leftSibling > boundary + 2
+    const showRightEllipsis = rightSibling < total - boundary - 1
+
+    const result: Array<number | "ellipsis"> = []
+
+    if (!showLeftEllipsis && showRightEllipsis) {
+        const leftItemCount = 3 + 2 * siblingCount
+        for (let i = 1; i <= leftItemCount; i++) result.push(i)
+        result.push("ellipsis")
+        result.push(total)
+    } else if (showLeftEllipsis && !showRightEllipsis) {
+        const rightItemCount = 3 + 2 * siblingCount
+        result.push(1)
+        result.push("ellipsis")
+        for (let i = total - rightItemCount + 1; i <= total; i++) result.push(i)
+    } else {
+        result.push(1)
+        result.push("ellipsis")
+        for (let i = leftSibling; i <= rightSibling; i++) result.push(i)
+        result.push("ellipsis")
+        result.push(total)
+    }
+
+    return result
+}
+
+function JumpToPagePopover({
+    page,
+    totalPages,
+    disabled,
+    onPageChange,
+}: Pick<EntityPaginationProps, "page" | "totalPages" | "disabled" | "onPageChange">) {
+    const [open, setOpen] = useState(false)
+    const [value, setValue] = useState("")
+
+    const commit = () => {
+        const parsed = parseInt(value, 10)
+        if (!Number.isFinite(parsed)) return
+        const clamped = Math.min(Math.max(parsed, 1), totalPages)
+        if (clamped !== page) onPageChange(clamped)
+        setOpen(false)
+        setValue("")
+    }
+
+    return (
+        <Popover
+            open={open}
+            onOpenChange={(next) => {
+                if (disabled) return
+                setOpen(next)
+                if (!next) setValue("")
+            }}
+        >
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    disabled={disabled}
+                    aria-label="Jump to page"
+                    className="flex size-9 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <PaginationEllipsis className="size-9" />
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                align="center"
+                sideOffset={6}
+                className="w-auto p-2"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                        go to
+                    </span>
+                    <Input
+                        type="number"
+                        min={1}
+                        max={totalPages}
+                        autoFocus
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault()
+                                commit()
+                            } else if (e.key === "Escape") {
+                                setOpen(false)
+                                setValue("")
+                            }
+                        }}
+                        placeholder={`1–${totalPages}`}
+                        className="h-8 w-24 font-mono text-xs tabular-nums"
+                    />
+                    <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 font-mono text-[10px] uppercase tracking-[0.18em]"
+                        onClick={commit}
+                    >
+                        go
+                    </Button>
+                </div>
+                <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    page {page} of {totalPages.toLocaleString()}
+                </p>
+            </PopoverContent>
+        </Popover>
+    )
 }
 
 export const EntityPagination = ({
     page,
     totalPages,
     onPageChange,
-    disabled
+    disabled,
+    count,
+    pageSize,
+    siblingCount = 1,
 }: EntityPaginationProps) => {
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    if (totalPages <= 1) return null
+
+    const safePage = Math.min(Math.max(page, 1), totalPages)
+    const isFirst = safePage === 1
+    const isLast = safePage === totalPages
+    const window = buildPageWindow(safePage, totalPages, siblingCount)
+
+    const summary =
+        count != null && pageSize != null
+            ? (() => {
+                const start = (safePage - 1) * pageSize + 1
+                const end = Math.min(safePage * pageSize, count)
+                return `${start.toLocaleString()}–${end.toLocaleString()} of ${count.toLocaleString()}`
+            })()
+            : `Page ${safePage.toLocaleString()} of ${totalPages.toLocaleString()}`
+
+    const navClass = cn(
+        "flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between",
+        disabled && "pointer-events-none opacity-60",
+    )
 
     return (
-        <Pagination>
-            <PaginationContent>
-                <PaginationItem>
-                    <PaginationPrevious
-                        onClick={() => onPageChange(page - 1)}
-                        className={disabled || page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                </PaginationItem>
-                {pages.map((pageNum) => (
-                    <PaginationItem key={pageNum}>
-                        <PaginationLink
-                            onClick={() => onPageChange(pageNum)}
-                            isActive={pageNum === page}
-                            className={disabled ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                        >
-                            {pageNum}
-                        </PaginationLink>
+        <nav aria-label="Pagination" className={navClass}>
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground tabular-nums">
+                {summary}
+            </span>
+
+            <Pagination className="mx-0 w-auto">
+                <PaginationContent>
+                    <PaginationItem>
+                        <PaginationPrevious
+                            onClick={() => !isFirst && onPageChange(safePage - 1)}
+                            aria-disabled={isFirst}
+                            tabIndex={isFirst ? -1 : 0}
+                            className={cn(
+                                "h-9 font-mono text-xs uppercase tracking-[0.16em]",
+                                isFirst
+                                    ? "pointer-events-none opacity-40"
+                                    : "cursor-pointer",
+                            )}
+                        />
                     </PaginationItem>
-                ))}
-                <PaginationItem>
-                    <PaginationNext
-                        onClick={() => onPageChange(page + 1)}
-                        className={disabled || page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                </PaginationItem>
-            </PaginationContent>
-        </Pagination>
+
+                    {/* Compact label for narrow viewports — replaces the page chips. */}
+                    <PaginationItem className="sm:hidden">
+                        <span className="flex h-9 items-center px-3 font-mono text-xs tabular-nums text-muted-foreground">
+                            {safePage} / {totalPages}
+                        </span>
+                    </PaginationItem>
+
+                    {window.map((entry, i) =>
+                        entry === "ellipsis" ? (
+                            <PaginationItem key={`gap-${i}`} className="hidden sm:flex">
+                                <JumpToPagePopover
+                                    page={safePage}
+                                    totalPages={totalPages}
+                                    disabled={disabled}
+                                    onPageChange={onPageChange}
+                                />
+                            </PaginationItem>
+                        ) : (
+                            <PaginationItem key={entry} className="hidden sm:flex">
+                                <PaginationLink
+                                    onClick={() => entry !== safePage && onPageChange(entry)}
+                                    isActive={entry === safePage}
+                                    aria-current={entry === safePage ? "page" : undefined}
+                                    className={cn(
+                                        "h-9 min-w-9 cursor-pointer font-mono text-xs tabular-nums",
+                                        entry === safePage &&
+                                        "border-primary/40 bg-primary/10 text-primary",
+                                    )}
+                                >
+                                    {entry}
+                                </PaginationLink>
+                            </PaginationItem>
+                        ),
+                    )}
+
+                    <PaginationItem>
+                        <PaginationNext
+                            onClick={() => !isLast && onPageChange(safePage + 1)}
+                            aria-disabled={isLast}
+                            tabIndex={isLast ? -1 : 0}
+                            className={cn(
+                                "h-9 font-mono text-xs uppercase tracking-[0.16em]",
+                                isLast
+                                    ? "pointer-events-none opacity-40"
+                                    : "cursor-pointer",
+                            )}
+                        />
+                    </PaginationItem>
+                </PaginationContent>
+            </Pagination>
+        </nav>
     )
 }
 
