@@ -1,8 +1,10 @@
 "use client"
 
 import { Suspense } from "react"
-import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon } from "lucide-react"
+import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon, BarChart3 } from "lucide-react"
 import Link from "next/link"
+
+import { ExecutionsChart, ExecutionsChartSkeleton } from "./executions-chart"
 
 import { EntityList, EntityPagination, LoadingView, ErrorView } from "@/components/entity-component"
 import { useExecutionsParams } from "../hooks/use-executions-params"
@@ -98,6 +100,52 @@ const ExecutionsStatsSkeleton = () => (
   </div>
 )
 
+const ChartLegendDot = ({ color, label }: { color: string; label: string }) => (
+  <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+    <span className="size-2" style={{ backgroundColor: color }} aria-hidden />
+    {label}
+  </span>
+)
+
+const ExecutionsOverview = () => {
+  return (
+    <section className="overflow-hidden rounded-md border border-border/60 bg-card/40">
+      <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="size-3.5 text-muted-foreground" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+            overview
+          </span>
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          last 7 days
+        </span>
+      </div>
+
+      <div className="space-y-5 p-4 md:p-5">
+        <Suspense fallback={<ExecutionsStatsSkeleton />}>
+          <ExecutionsStats />
+        </Suspense>
+
+        <div className="space-y-3 rounded-md border border-border/60 bg-background/60 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Daily activity
+            </h3>
+            <div className="flex items-center gap-4">
+              <ChartLegendDot color="var(--primary)" label="succeeded" />
+              <ChartLegendDot color="var(--destructive)" label="failed" />
+            </div>
+          </div>
+          <Suspense fallback={<ExecutionsChartSkeleton />}>
+            <ExecutionsChart />
+          </Suspense>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const ExecutionsHeader = () => {
   return (
     <div className="flex flex-col gap-6 mb-8">
@@ -107,9 +155,7 @@ const ExecutionsHeader = () => {
           <p className="text-muted-foreground">Monitor and manage your workflow executions</p>
         </div>
       </div>
-      <Suspense fallback={<ExecutionsStatsSkeleton />}>
-        <ExecutionsStats />
-      </Suspense>
+      <ExecutionsOverview />
     </div>
   )
 }

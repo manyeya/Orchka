@@ -22,3 +22,8 @@ export const useSuspenseExecutionsStats = (windowDays = 7) => {
   const trpc = useTRPC()
   return useSuspenseQuery(trpc.executions.stats.queryOptions({ windowDays }))
 }
+
+export const useSuspenseExecutionsSeries = (windowDays = 7) => {
+  const trpc = useTRPC()
+  return useSuspenseQuery(trpc.executions.series.queryOptions({ windowDays }))
+}

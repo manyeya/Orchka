@@ -162,6 +162,18 @@ const statsSchema = z.object({
   windowDays: z.number().int().min(1).max(90).default(7),
 });
 
+const seriesSchema = z.object({
+  windowDays: z.number().int().min(1).max(90).default(7),
+});
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  ));
+}
+
 export const executionsRouter = createTRPCRouter({
   list: protectedProcedure
     .input(listExecutionsSchema)
@@ -326,6 +338,53 @@ export const executionsRouter = createTRPCRouter({
         successRate,
         avgDurationMs,
       };
+    }),
+
+  series: protectedProcedure
+    .input(seriesSchema)
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.auth.user.id;
+      const today = startOfUtcDay(new Date());
+      const sinceDay = new Date(today);
+      sinceDay.setUTCDate(today.getUTCDate() - (input.windowDays - 1));
+
+      const rows = await prisma.executionStat.groupBy({
+        by: ["date"],
+        where: { userId, date: { gte: sinceDay } },
+        _sum: { succeeded: true, failed: true, cancelled: true, total: true },
+        orderBy: { date: "asc" },
+      });
+
+      const byKey = new Map(
+        rows.map((row) => [
+          row.date.toISOString().slice(0, 10),
+          {
+            succeeded: row._sum.succeeded ?? 0,
+            failed: row._sum.failed ?? 0,
+            cancelled: row._sum.cancelled ?? 0,
+            total: row._sum.total ?? 0,
+          },
+        ]),
+      );
+
+      // Zero-fill any day in the window without rollup rows so the chart's
+      // x-axis is contiguous instead of skipping idle days.
+      const points: Array<{
+        date: string;
+        succeeded: number;
+        failed: number;
+        cancelled: number;
+        total: number;
+      }> = [];
+      for (let i = 0; i < input.windowDays; i++) {
+        const day = new Date(sinceDay);
+        day.setUTCDate(sinceDay.getUTCDate() + i);
+        const key = day.toISOString().slice(0, 10);
+        const bucket = byKey.get(key) ?? { succeeded: 0, failed: 0, cancelled: 0, total: 0 };
+        points.push({ date: key, ...bucket });
+      }
+
+      return { windowDays: input.windowDays, points };
     }),
 
   getByWorkflowId: protectedProcedure

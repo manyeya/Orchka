@@ -14,3 +14,7 @@ export const prefetchExecution = (id: string) => {
 export const prefetchExecutionsStats = (windowDays = 7) => {
   return prefetch(trpc.executions.stats.queryOptions({ windowDays }));
 }
+
+export const prefetchExecutionsSeries = (windowDays = 7) => {
+  return prefetch(trpc.executions.series.queryOptions({ windowDays }));
+}
