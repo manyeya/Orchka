@@ -159,6 +159,67 @@ Desired:    1 → (2, 3 in parallel) → 4
 
 ---
 
+#### 8. Time-Series Storage Rewrite 🟡 Medium Priority
+
+**Problem:** `execution` is a row-per-run OLTP table but every analytical query
+(stats cards, charts, by-window filters) treats it as time-series. At low
+volume Postgres copes; past a few million rows we hit predictable cliffs:
+
+- Aggregation cost grows linearly with table size even with the new indexes,
+  because window queries still touch every row in the window.
+- `result Json?` lives in the hot row — large payloads bloat the table that
+  the rollup increment, the list query, and the stats backfill all scan.
+- Step events in Redis use `LRANGE` over a list capped at 100, silently
+  truncating long workflows before `persistExecutionSteps` can persist them.
+- There's no retention policy: rows live forever, indexes grow without bound.
+
+**Current state (already landed):**
+- Composite indexes on `execution(userId, startedAt)` and
+  `execution(userId, status, startedAt)`.
+- `ExecutionStat` daily rollup, incremented from the orchestrator on
+  finalization, backfilled from history. Stats cards read from the rollup.
+
+**Next milestones, in order:**
+
+1. **Move large payloads off the hot row.** New `execution_payload(executionId,
+   result, error)` side table populated from the orchestrator on finalization;
+   drop `result Json?` from `execution`. List query stops paying for blob
+   width; stats backfill speeds up.
+
+2. **Switch Redis step events to Streams.** Replace
+   `LPUSH workflow:{wf}:execution:{ex}:history` + `LRANGE 0..100` with
+   `XADD ... MAXLEN ~ N`. Streams give server-assigned IDs, server timestamps,
+   bounded length without truncation surprises, and consumer groups for
+   future replay/migration work. `persistExecutionSteps` becomes an
+   `XRANGE` walk; ordering is guaranteed.
+
+3. **Retention + partitioning.** Native Postgres declarative partitioning on
+   `execution` by month, with a nightly `DROP PARTITION` job for partitions
+   older than the workspace's retention policy. `ExecutionStat` retains
+   forever (cheap, already rolled up). Add `retentionDays` to a workspace
+   settings table; default 90 for free / 365 for paid.
+
+4. **(If still needed) TimescaleDB hypertable.** Only after #3 if a single
+   workspace is generating >10M executions/month and the partition pruner
+   is no longer enough. Convert `execution` to a hypertable partitioned by
+   `startedAt`, define a continuous aggregate that materializes the same
+   shape as `ExecutionStat` (and retire the manual rollup). Adds a Postgres
+   extension dependency; defer unless we hit the wall.
+
+**Cross-references:**
+- Builds on the rollup landed alongside this entry.
+- Subsumes item #6 (Metrics Dashboard) once the side table + streams land.
+
+**Estimated effort:**
+- Payload side table: 4 hours (schema + orchestrator + list query).
+- Redis Streams migration: 6 hours (publisher + persistExecutionSteps +
+  feature flag for cutover).
+- Retention/partitioning: 8 hours (migration with `ATTACH PARTITION` of
+  existing data, cron job, settings UI).
+- Timescale: 1–2 days, only if triggered.
+
+---
+
 ## Prioritized Implementation Order
 
 1. **Redis AOF** - Do this first, essential for data safety
@@ -166,8 +227,9 @@ Desired:    1 → (2, 3 in parallel) → 4
 3. **Periodic Checkpoints** - Only if running long workflows
 4. **Parallel Execution** - Performance improvement
 5. **Caching** - Performance improvement
-6. **Metrics Dashboard** - Nice to have
-7. **Webhook Logs** - Nice to have
+6. **Time-Series Storage Rewrite** - Required before hitting ~10M executions
+7. **Metrics Dashboard** - Nice to have (subsumed by #8)
+8. **Webhook Logs** - Nice to have
 
 ---
 
