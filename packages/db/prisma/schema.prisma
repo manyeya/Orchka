@@ -162,6 +162,8 @@ model Execution {
   @@index([workflowId])
   @@index([userId])
   @@index([status])
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([userId, status, startedAt(sort: Desc)])
   @@map("execution")
 }
 

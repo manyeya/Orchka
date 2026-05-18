@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react'
 import { ExecutionsContainer, ExecutionsErrorView, ExecutionsList, ExecutionsLoadingView } from '@/features/executions/components/executions'
-import { prefetchExecutions } from '@/features/executions/server/prefetch'
+import { prefetchExecutions, prefetchExecutionsStats } from '@/features/executions/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
 import { requireAuth } from '@/features/auth/utils'
@@ -24,7 +24,10 @@ type ExecutionsPageProps = {
 async function ExecutionsPage({ searchParams }: ExecutionsPageProps) {
   await requireAuth()
   const params = await executionsParamsLoader(searchParams)
-  await prefetchExecutions(params)
+  await Promise.all([
+    prefetchExecutions(params),
+    prefetchExecutionsStats(7),
+  ])
   return (
     <ExecutionsContainer>
       <HydrateClient>

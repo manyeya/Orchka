@@ -17,3 +17,8 @@ export const useExecutionsByWorkflow = (workflowId: string) => {
   const trpc = useTRPC()
   return useQueryClient().fetchQuery(trpc.executions.getByWorkflowId.queryOptions({ workflowId }))
 }
+
+export const useSuspenseExecutionsStats = (windowDays = 7) => {
+  const trpc = useTRPC()
+  return useSuspenseQuery(trpc.executions.stats.queryOptions({ windowDays }))
+}

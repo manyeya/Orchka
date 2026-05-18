@@ -158,6 +158,10 @@ const getExecutionSchema = z.object({
   id: z.string(),
 });
 
+const statsSchema = z.object({
+  windowDays: z.number().int().min(1).max(90).default(7),
+});
+
 export const executionsRouter = createTRPCRouter({
   list: protectedProcedure
     .input(listExecutionsSchema)
@@ -266,6 +270,65 @@ export const executionsRouter = createTRPCRouter({
       };
     }),
 
+
+  stats: protectedProcedure
+    .input(statsSchema)
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.auth.user.id;
+      const since = new Date(Date.now() - input.windowDays * 24 * 60 * 60 * 1000);
+
+      const [total, windowAgg] = await Promise.all([
+        prisma.execution.count({ where: { userId } }),
+        prisma.execution.groupBy({
+          by: ["status"],
+          where: { userId, startedAt: { gte: since } },
+          _count: { _all: true },
+        }),
+      ]);
+
+      const counts = Object.fromEntries(
+        windowAgg.map((row) => [row.status, row._count._all]),
+      ) as Partial<Record<ExecutionStatus, number>>;
+
+      const succeeded = counts.COMPLETED ?? 0;
+      const failed = counts.FAILED ?? 0;
+      const running = counts.RUNNING ?? 0;
+      const cancelled = counts.CANCELLED ?? 0;
+      const windowTotal = succeeded + failed + running + cancelled;
+      const finished = succeeded + failed;
+      const successRate = finished > 0 ? succeeded / finished : null;
+
+      const completed = await prisma.execution.findMany({
+        where: {
+          userId,
+          status: ExecutionStatus.COMPLETED,
+          startedAt: { gte: since },
+          completedAt: { not: null },
+        },
+        select: { startedAt: true, completedAt: true },
+      });
+
+      let avgDurationMs: number | null = null;
+      if (completed.length > 0) {
+        const sum = completed.reduce(
+          (acc, e) => acc + (e.completedAt!.getTime() - e.startedAt.getTime()),
+          0,
+        );
+        avgDurationMs = Math.round(sum / completed.length);
+      }
+
+      return {
+        windowDays: input.windowDays,
+        total,
+        windowTotal,
+        succeeded,
+        failed,
+        running,
+        cancelled,
+        successRate,
+        avgDurationMs,
+      };
+    }),
 
   getByWorkflowId: protectedProcedure
     .input(z.object({ workflowId: z.string() }))

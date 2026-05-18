@@ -10,3 +10,7 @@ export const prefetchExecutions = async (params?: Input) => {
 export const prefetchExecution = (id: string) => {
   prefetch(trpc.executions.getById.queryOptions({ id }));
 }
+
+export const prefetchExecutionsStats = (windowDays = 7) => {
+  return prefetch(trpc.executions.stats.queryOptions({ windowDays }));
+}

@@ -1,12 +1,13 @@
 "use client"
 
+import { Suspense } from "react"
 import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon } from "lucide-react"
 import Link from "next/link"
 
 import { EntityList, EntityPagination, LoadingView, ErrorView } from "@/components/entity-component"
 import { useExecutionsParams } from "../hooks/use-executions-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
-import { useSuspenseExecutions } from "../hooks/use-executions"
+import { useSuspenseExecutions, useSuspenseExecutionsStats } from "../hooks/use-executions"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@orchka/ui/button"
 import { Input } from "@orchka/ui/input"
@@ -38,17 +39,64 @@ const StatsCard = ({ title, value, subtext }: { title: string, value: string, su
   </Card>
 )
 
+const formatDuration = (ms: number | null): string => {
+  if (ms == null) return "—"
+  if (ms < 1000) return `${ms}ms`
+  const seconds = ms / 1000
+  if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 1 : 0)}s`
+  const minutes = Math.floor(seconds / 60)
+  const remSec = Math.round(seconds - minutes * 60)
+  return `${minutes}m ${remSec}s`
+}
+
 const ExecutionsStats = () => {
+  const { data: stats } = useSuspenseExecutionsStats(7)
+  const windowLabel = `Last ${stats.windowDays} days`
+  const successRate =
+    stats.successRate == null ? "—" : `${Math.round(stats.successRate * 100)}%`
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-      <StatsCard title="Total Executions" value="0" subtext="All time" />
-      <StatsCard title="Successful" value="0" subtext="Last 7 days" />
-      <StatsCard title="Failed" value="0" subtext="Last 7 days" />
-      <StatsCard title="Success Rate" value="0%" subtext="Last 7 days" />
-      <StatsCard title="Avg. Duration" value="0s" subtext="Last 7 days" />
+      <StatsCard
+        title="Total Executions"
+        value={stats.total.toLocaleString()}
+        subtext="All time"
+      />
+      <StatsCard
+        title="Successful"
+        value={stats.succeeded.toLocaleString()}
+        subtext={windowLabel}
+      />
+      <StatsCard
+        title="Failed"
+        value={stats.failed.toLocaleString()}
+        subtext={windowLabel}
+      />
+      <StatsCard title="Success Rate" value={successRate} subtext={windowLabel} />
+      <StatsCard
+        title="Avg. Duration"
+        value={formatDuration(stats.avgDurationMs)}
+        subtext={windowLabel}
+      />
     </div>
   )
 }
+
+const ExecutionsStatsSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <Card key={i} className="rounded-lg bg-card/50 border-border/50 shadow-sm w-full">
+        <CardHeader className="p-4 pb-2">
+          <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <div className="h-7 w-16 animate-pulse rounded bg-muted" />
+          <div className="mt-2 h-3 w-20 animate-pulse rounded bg-muted/70" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+)
 
 const ExecutionsHeader = () => {
   return (
@@ -59,7 +107,9 @@ const ExecutionsHeader = () => {
           <p className="text-muted-foreground">Monitor and manage your workflow executions</p>
         </div>
       </div>
-      <ExecutionsStats />
+      <Suspense fallback={<ExecutionsStatsSkeleton />}>
+        <ExecutionsStats />
+      </Suspense>
     </div>
   )
 }
