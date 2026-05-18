@@ -1,6 +1,10 @@
 import React, { Suspense } from 'react'
 import { WorkflowsContainer, WorkflowsErrorView, WorkflowsList, WorkflowsLoadingView } from '@/features/workflows/components/workflows'
 import { prefetchWorkflows } from '@/features/workflows/server/prefetch'
+import {
+  prefetchExecutionsSeries,
+  prefetchExecutionsStats,
+} from '@/features/executions/server/prefetch'
 import { HydrateClient } from '@/trpc/server'
 import { ErrorBoundary } from 'react-error-boundary'
 import { requireAuth } from '@/features/auth/utils'
@@ -24,7 +28,11 @@ type WorkflowPageProps = {
 async function WorkflowPage({ searchParams }: WorkflowPageProps) {
   await requireAuth()
   const params = await workflowsParamsLoader(searchParams)
-  await prefetchWorkflows(params)
+  await Promise.all([
+    prefetchWorkflows(params),
+    prefetchExecutionsStats(30),
+    prefetchExecutionsSeries(30),
+  ])
   return (
     <WorkflowsContainer>
       <HydrateClient>

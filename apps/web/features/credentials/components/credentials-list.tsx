@@ -3,7 +3,8 @@
 import { useSuspenseCredentials, useDeleteCredential } from "../hooks/use-credentials"
 import { useCredentialsParams } from "../hooks/use-credentials-params"
 import { useEntitySearch } from "@/hooks/use-entity-search"
-import { Key, MoreVerticalIcon, Trash2, Pencil, Loader2Icon, Search } from "lucide-react"
+import { Key, ListFilter, MoreVerticalIcon, Trash2, Pencil, Loader2Icon, Search } from "lucide-react"
+import { cn } from "@orchka/ui/utils"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@orchka/ui/button"
 import { Badge } from "@orchka/ui/badge"
@@ -12,6 +13,9 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@orchka/ui/dropdown-menu"
@@ -60,6 +64,109 @@ export const CredentialsList = ({ onEdit, onCreate }: CredentialsListProps) => {
     )
 }
 
+const CREDENTIAL_TYPE_GROUPS = [
+    {
+        label: "Generic",
+        items: [
+            CredentialType.API_KEY,
+            CredentialType.BASIC_AUTH,
+            CredentialType.BEARER_TOKEN,
+            CredentialType.OAUTH2,
+        ],
+    },
+    {
+        label: "AI Providers",
+        items: [
+            CredentialType.OPENAI,
+            CredentialType.ANTHROPIC,
+            CredentialType.GOOGLE_AI,
+        ],
+    },
+    {
+        label: "Social",
+        items: [
+            CredentialType.X,
+            CredentialType.LINKEDIN,
+            CredentialType.FACEBOOK_PAGE,
+            CredentialType.INSTAGRAM,
+            CredentialType.THREADS,
+            CredentialType.TIKTOK,
+            CredentialType.YOUTUBE,
+            CredentialType.PINTEREST,
+            CredentialType.REDDIT,
+            CredentialType.BLUESKY,
+            CredentialType.MASTODON,
+            CredentialType.DISCORD,
+        ],
+    },
+] as const
+
+const CredentialsTypeFilter = () => {
+    const [params, setParams] = useCredentialsParams()
+    const current = params.type ?? ""
+    const isFiltered = current !== ""
+    const activeLabel = isFiltered
+        ? getCredentialTypeLabel(current as CredentialType)
+        : "All types"
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                        "h-9 gap-2 bg-background/50 border-input/50 font-mono text-xs uppercase tracking-[0.16em]",
+                        isFiltered && "border-primary/40 bg-primary/10 text-primary",
+                    )}
+                >
+                    <ListFilter className="h-3.5 w-3.5" />
+                    <span className="whitespace-nowrap">{activeLabel}</span>
+                    {isFiltered && (
+                        <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 max-h-[400px] overflow-y-auto">
+                <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    Filter by type
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                    value={current}
+                    onValueChange={(value) => setParams({ ...params, type: value, page: 1 })}
+                >
+                    <DropdownMenuRadioItem value="">All types</DropdownMenuRadioItem>
+                    {CREDENTIAL_TYPE_GROUPS.map((group) => (
+                        <div key={group.label}>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                                {group.label}
+                            </DropdownMenuLabel>
+                            {group.items.map((type) => (
+                                <DropdownMenuRadioItem key={type} value={type}>
+                                    {getCredentialTypeLabel(type)}
+                                </DropdownMenuRadioItem>
+                            ))}
+                        </div>
+                    ))}
+                </DropdownMenuRadioGroup>
+                {isFiltered && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => setParams({ ...params, type: "", page: 1 })}
+                            className="text-xs"
+                        >
+                            Clear filter
+                        </DropdownMenuItem>
+                    </>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
 export const CredentialsToolbar = () => {
     const [params, setParams] = useCredentialsParams()
     const { searchValue, onSearchChange } = useEntitySearch({ params, setParams })
@@ -76,6 +183,9 @@ export const CredentialsToolbar = () => {
                     onChange={(e) => onSearchChange(e.target.value)}
                 />
             </div>
+            <div className="ml-auto">
+                <CredentialsTypeFilter />
+            </div>
         </div>
     )
 }
@@ -87,6 +197,8 @@ const CredentialsPagination = () => {
         <EntityPagination
             page={credentials.data.page}
             totalPages={credentials.data.totalPages}
+            count={credentials.data.count}
+            pageSize={credentials.data.pageSize}
             onPageChange={(page) => setParams({ ...params, page })}
             disabled={credentials.isFetching}
         />

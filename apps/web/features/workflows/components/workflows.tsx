@@ -1,7 +1,28 @@
 "use client"
 
+import { Suspense } from "react"
+import { ErrorBoundary } from "react-error-boundary"
 import { useSuspenseWorkflows, useCreateWorkflow, useRemoveWorkflow } from "../hooks/use-workflows"
-import { FolderCode, MoreVerticalIcon, Search, ListFilter, List as ListIcon, Trash2 } from "lucide-react"
+import {
+    useSuspenseExecutionsStats,
+} from "@/features/executions/hooks/use-executions"
+import {
+    ExecutionsChart,
+    ExecutionsChartSkeleton,
+} from "@/features/executions/components/executions-chart"
+import {
+    AlertTriangle,
+    ArrowDownAZ,
+    ArrowDownUp,
+    ArrowUpAZ,
+    BarChart3,
+    Clock,
+    FolderCode,
+    MoreVerticalIcon,
+    Search,
+    Trash2,
+} from "lucide-react"
+import { cn } from "@orchka/ui/utils"
 
 import { EntityList, EntityPagination, LoadingView, ErrorView } from "@/components/entity-component"
 import { useUpgradeModal } from "@/features/payments/hooks/use-upgrade-modal"
@@ -13,12 +34,14 @@ import { formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardHeader, CardTitle } from "@orchka/ui/card"
 import { Button } from "@orchka/ui/button"
 import { Input } from "@orchka/ui/input"
-import { Separator } from "@orchka/ui/separator"
 import { Badge } from "@orchka/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@orchka/ui/dropdown-menu"
@@ -58,15 +81,126 @@ const StatsCard = ({ title, value, subtext }: { title: string, value: string, su
     </Card>
 )
 
+const formatDurationMs = (ms: number | null): string => {
+    if (ms == null) return "—"
+    if (ms < 1000) return `${ms}ms`
+    const seconds = ms / 1000
+    if (seconds < 60) return `${seconds.toFixed(seconds < 10 ? 1 : 0)}s`
+    const minutes = Math.floor(seconds / 60)
+    const remSec = Math.round(seconds - minutes * 60)
+    return `${minutes}m ${remSec}s`
+}
+
+const WorkflowsStatsSkeleton = () => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="rounded-lg bg-card/50 border-border/50 shadow-sm w-full">
+                <CardHeader className="p-4 pb-2">
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div className="h-7 w-16 animate-pulse rounded bg-muted" />
+                    <div className="mt-2 h-3 w-20 animate-pulse rounded bg-muted/70" />
+                </CardContent>
+            </Card>
+        ))}
+    </div>
+)
+
 const WorkflowsStats = () => {
+    const { data: stats } = useSuspenseExecutionsStats(30)
+    const windowLabel = stats.windowDays === 1 ? "Last 24h" : `Last ${stats.windowDays} days`
+    const finished = stats.succeeded + stats.failed
+    const failureRate = finished > 0 ? `${Math.round((stats.failed / finished) * 100)}%` : "—"
+    const avgRun = formatDurationMs(stats.avgDurationMs)
+    // Rough "time saved" proxy: each successful run × avg run time. Replace
+    // when we have manual-runtime estimates on workflows.
+    const timeSavedMs =
+        stats.avgDurationMs != null ? stats.succeeded * stats.avgDurationMs : null
+    const timeSaved = timeSavedMs == null ? "—" : formatDurationMs(timeSavedMs)
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <StatsCard title="Prod. executions" value="0" subtext="Last 7 days" />
-            <StatsCard title="Failed prod. executions" value="0" subtext="Last 7 days" />
-            <StatsCard title="Failure rate" value="0" subtext="Last 7 days" />
-            <StatsCard title="Time saved" value="0" subtext="Last 7 days" />
-            <StatsCard title="Run time (avg.)" value="0" subtext="Last 7 days" />
+            <StatsCard
+                title="Prod. executions"
+                value={stats.succeeded.toLocaleString()}
+                subtext={windowLabel}
+            />
+            <StatsCard
+                title="Failed prod. executions"
+                value={stats.failed.toLocaleString()}
+                subtext={windowLabel}
+            />
+            <StatsCard title="Failure rate" value={failureRate} subtext={windowLabel} />
+            <StatsCard title="Time saved" value={timeSaved} subtext={windowLabel} />
+            <StatsCard title="Run time (avg.)" value={avgRun} subtext={windowLabel} />
         </div>
+    )
+}
+
+const ChartLegendDot = ({ color, label }: { color: string; label: string }) => (
+    <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="size-2" style={{ backgroundColor: color }} aria-hidden />
+        {label}
+    </span>
+)
+
+const WorkflowsOverviewErrorFallback = ({ error }: { error: unknown }) => {
+    const message =
+        error instanceof Error && error.message
+            ? error.message
+            : "The stats query rejected. If you just added the rollup table, restart the dev server so the Prisma client picks up the new model."
+    return (
+        <div className="flex items-start gap-3 border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <div className="space-y-1">
+                <p className="font-medium text-destructive">Overview failed to load</p>
+                <p className="text-xs text-muted-foreground">{message}</p>
+            </div>
+        </div>
+    )
+}
+
+const WorkflowsOverview = () => {
+    return (
+        <section className="overflow-hidden rounded-md border border-border/60 bg-card/40">
+            <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                    <BarChart3 className="size-3.5 text-muted-foreground" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+                        overview
+                    </span>
+                </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    last 30 days
+                </span>
+            </div>
+
+            <div className="space-y-5 p-4 md:p-5">
+                <ErrorBoundary FallbackComponent={WorkflowsOverviewErrorFallback}>
+                    <Suspense fallback={<WorkflowsStatsSkeleton />}>
+                        <WorkflowsStats />
+                    </Suspense>
+                </ErrorBoundary>
+
+                <div className="space-y-3 rounded-md border border-border/60 bg-background/60 p-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Daily activity
+                        </h3>
+                        <div className="flex items-center gap-4">
+                            <ChartLegendDot color="var(--primary)" label="succeeded" />
+                            <ChartLegendDot color="var(--destructive)" label="failed" />
+                        </div>
+                    </div>
+                    <ErrorBoundary FallbackComponent={WorkflowsOverviewErrorFallback}>
+                        <Suspense fallback={<ExecutionsChartSkeleton />}>
+                            <ExecutionsChart />
+                        </Suspense>
+                    </ErrorBoundary>
+                </div>
+            </div>
+        </section>
     )
 }
 
@@ -93,7 +227,7 @@ const WorkflowsHeader = () => {
                     </Button>
                 </div>
             </div>
-            <WorkflowsStats />
+            <WorkflowsOverview />
         </div>
     )
 }
@@ -117,21 +251,60 @@ const WorkflowsToolbar = () => {
                 />
             </div>
             <div className="ml-auto flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-9 gap-2 bg-background/50 border-input/50">
-                    <ListFilter className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Sort by last updated</span>
-                </Button>
-                <div className="flex items-center gap-1 border border-input/50 rounded-md p-1 bg-background/50">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-sm">
-                        <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                    <Separator orientation="vertical" className="h-4" />
-                    <Button variant="secondary" size="sm" className="h-7 w-7 p-0 rounded-sm shadow-none">
-                        <ListIcon className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+                <WorkflowsSortMenu />
             </div>
         </div>
+    )
+}
+
+const SORT_OPTIONS = [
+    { value: "updated-desc", label: "Recently updated", icon: Clock },
+    { value: "updated-asc", label: "Oldest updated", icon: Clock },
+    { value: "created-desc", label: "Recently created", icon: ArrowDownUp },
+    { value: "created-asc", label: "Oldest first", icon: ArrowDownUp },
+    { value: "name-asc", label: "Name (A → Z)", icon: ArrowDownAZ },
+    { value: "name-desc", label: "Name (Z → A)", icon: ArrowUpAZ },
+] as const
+
+const WorkflowsSortMenu = () => {
+    const [params, setParams] = useWorkflowsParams()
+    const current = params.sort ?? "updated-desc"
+    const active =
+        SORT_OPTIONS.find((opt) => opt.value === current) ?? SORT_OPTIONS[0]
+    const isCustom = current !== "updated-desc"
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                        "h-9 gap-2 bg-background/50 border-input/50 font-mono text-xs uppercase tracking-[0.16em]",
+                        isCustom && "border-primary/40 bg-primary/10 text-primary",
+                    )}
+                >
+                    <active.icon className="h-3.5 w-3.5" />
+                    <span className="whitespace-nowrap">{active.label}</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    Sort by
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                    value={current}
+                    onValueChange={(value) => setParams({ ...params, sort: value, page: 1 })}
+                >
+                    {SORT_OPTIONS.map((opt) => (
+                        <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     )
 }
 
@@ -142,6 +315,8 @@ const WorkflowsPagination = () => {
         <EntityPagination
             page={workflows.data.page}
             totalPages={workflows.data.totalPages}
+            count={workflows.data.count}
+            pageSize={workflows.data.pageSize}
             onPageChange={(page) => setParams({ ...params, page })}
             disabled={workflows.isFetching}
         />

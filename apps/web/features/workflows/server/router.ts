@@ -276,9 +276,27 @@ export const workflowsRouter = createTRPCRouter({
                 .max(PAGINATION.MAX_PAGE_SIZE)
                 .default(PAGINATION.DEFAULT_PAGE_SIZE),
             search: z.string().default(""),
+            sort: z
+                .enum([
+                    "updated-desc",
+                    "updated-asc",
+                    "created-desc",
+                    "created-asc",
+                    "name-asc",
+                    "name-desc",
+                ])
+                .default("updated-desc"),
         }))
         .query(async ({ ctx, input }) => {
-            const { page, pageSize, search } = input;
+            const { page, pageSize, search, sort } = input;
+            const orderBy = ({
+                "updated-desc": { updatedAt: "desc" },
+                "updated-asc": { updatedAt: "asc" },
+                "created-desc": { createdAt: "desc" },
+                "created-asc": { createdAt: "asc" },
+                "name-asc": { name: "asc" },
+                "name-desc": { name: "desc" },
+            } as const)[sort];
             const [items, count] = await Promise.all([
                 prisma.workflow.findMany({
                     skip: (page - 1) * pageSize,
@@ -290,9 +308,7 @@ export const workflowsRouter = createTRPCRouter({
                             mode: "insensitive",
                         },
                     },
-                    orderBy: {
-                        updatedAt: "desc",
-                    }
+                    orderBy,
                 }),
                 prisma.workflow.count({
                     where: {

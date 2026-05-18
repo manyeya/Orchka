@@ -11,4 +11,7 @@ export const workflowParams = {
     search: parseAsString
         .withDefault('')
         .withOptions({ clearOnDefault: true }),
+    sort: parseAsString
+        .withDefault('updated-desc')
+        .withOptions({ clearOnDefault: true }),
 }

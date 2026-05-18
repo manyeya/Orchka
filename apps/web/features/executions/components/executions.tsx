@@ -1,7 +1,8 @@
 "use client"
 
 import { Suspense } from "react"
-import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, List as ListIcon, MoreVerticalIcon, BarChart3, AlertTriangle } from "lucide-react"
+import { Play, CheckCircle2, XCircle, Clock, Search, ListFilter, MoreVerticalIcon, BarChart3, AlertTriangle } from "lucide-react"
+import { cn } from "@orchka/ui/utils"
 import Link from "next/link"
 import { ErrorBoundary } from "react-error-boundary"
 
@@ -14,12 +15,14 @@ import { useSuspenseExecutions, useSuspenseExecutionsStats } from "../hooks/use-
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@orchka/ui/button"
 import { Input } from "@orchka/ui/input"
-import { Separator } from "@orchka/ui/separator"
 import { Badge } from "@orchka/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@orchka/ui/dropdown-menu"
@@ -198,21 +201,72 @@ const ExecutionsToolbar = () => {
         />
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="outline" size="sm" className="h-9 gap-2 bg-background/50 border-input/50">
-          <ListFilter className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Filter by status</span>
-        </Button>
-        <div className="flex items-center gap-1 border border-input/50 rounded-md p-1 bg-background/50">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-sm">
-            <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-          <Separator orientation="vertical" className="h-4" />
-          <Button variant="secondary" size="sm" className="h-7 w-7 p-0 rounded-sm shadow-none">
-            <ListIcon className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <StatusFilterMenu />
       </div>
     </div>
+  )
+}
+
+const STATUS_OPTIONS = [
+  { value: "", label: "All statuses" },
+  { value: "RUNNING", label: "Running" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "FAILED", label: "Failed" },
+  { value: "CANCELLED", label: "Cancelled" },
+] as const
+
+const StatusFilterMenu = () => {
+  const [params, setParams] = useExecutionsParams()
+  const current = params.status ?? ""
+  const active = STATUS_OPTIONS.find((opt) => opt.value === current) ?? STATUS_OPTIONS[0]
+  const isFiltered = current !== ""
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className={cn(
+            "h-9 gap-2 bg-background/50 border-input/50 font-mono text-xs uppercase tracking-[0.16em]",
+            isFiltered && "border-primary/40 bg-primary/10 text-primary",
+          )}
+        >
+          <ListFilter className="h-3.5 w-3.5" />
+          <span className="whitespace-nowrap">{active.label}</span>
+          {isFiltered && (
+            <span className="size-1.5 rounded-full bg-primary" aria-hidden />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+          Filter by status
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup
+          value={current}
+          onValueChange={(value) => setParams({ ...params, status: value, page: 1 })}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <DropdownMenuRadioItem key={opt.value || "all"} value={opt.value}>
+              {opt.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        {isFiltered && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setParams({ ...params, status: "", page: 1 })}
+              className="text-xs"
+            >
+              Clear filter
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -223,6 +277,8 @@ const ExecutionsPagination = () => {
     <EntityPagination
       page={executions.data.page}
       totalPages={executions.data.totalPages}
+      count={executions.data.count}
+      pageSize={executions.data.pageSize}
       onPageChange={(page) => setParams({ ...params, page })}
       disabled={executions.isFetching}
     />
