@@ -1,0 +1,100 @@
+---
+title: Dashboard Overview
+description: Stats cards and daily-activity chart on Workflows and Executions
+---
+
+# Dashboard Overview
+
+The Workflows and Executions pages each include an **Overview** panel
+above the list. It surfaces the key health metrics of your active
+organization at a glance.
+
+## What You See
+
+The overview panel is two stacked sections inside a single bordered card:
+
+1. **Five stat cards** in a row — each shows one number plus the time
+   window it covers
+2. **A daily-activity bar chart** — succeeded vs failed runs per day
+   across the same window, with a tooltip on hover
+
+```
+┌─ overview ──────────────────────── last 30 days ─┐
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ │
+│  │  Total  │ │  Succ.  │ │ Failed  │ │  Rate   │ │
+│  │  1,247  │ │   980   │ │    12   │ │   99%   │ │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ │
+│                                                   │
+│  ▆▆▄▆▇▅█ ▅▇▆▄▆▇▅█ ▅▇▆▄▆▇▅█ ▅▇▆▄▆▇▅█ ▅▇▆▄▆▇▅█    │
+└───────────────────────────────────────────────────┘
+```
+
+### Stat Cards
+
+| Card | Value | Window |
+|---|---|---|
+| **Total Executions** | All-time count of runs in this org | All time |
+| **Successful** | Completed runs | Last 30 days |
+| **Failed** | Failed runs | Last 30 days |
+| **Success Rate** | `succeeded / (succeeded + failed)` | Last 30 days |
+| **Avg. Duration** | Mean wall-clock duration of successful runs | Last 30 days |
+
+The Workflows page uses the same five numbers but labels them differently
+(e.g. "Prod. executions" instead of "Successful") to fit the workflow
+context.
+
+### Daily Activity Chart
+
+A stacked bar chart with one bar per day in the window. Each bar
+splits into:
+
+- **Succeeded** — primary color (warm orange in the default theme)
+- **Failed** — destructive color
+
+Hover any bar to see the exact counts for that day. If the window is
+genuinely empty — no executions of any status — the chart replaces
+itself with a "no activity" empty state so a flat axis doesn't read as
+broken.
+
+## Why It Loads Fast
+
+Behind the cards is an **execution rollup table** (`execution_stat`)
+that pre-aggregates daily counts and duration sums per
+`(organization, workflow, date)`. Two cheap `SUM` aggregates power the
+stat cards instead of `COUNT(*)` and `AVG()` over the live execution
+table.
+
+The rollup is updated transactionally by the orchestrator whenever an
+execution reaches a terminal state (completed, failed, cancelled). New
+deployments backfill the rollup from existing executions so historic
+activity shows up immediately.
+
+## Window
+
+Both the stats and the chart use the same 30-day window so the cards
+and bars always agree. The window is configured in the prefetch and
+hook — see [executions](/docs/executions) for advanced configuration.
+
+## Empty States
+
+- **Brand-new account** — five cards show `0` and `—`, the chart shows
+  "no activity in the last 30 days"
+- **Quiet period** — same empty state; once a workflow runs, the
+  numbers populate on the next page load
+- **All-zero with errors** — if the stats query rejects, a red
+  fallback box surfaces the error message instead of suspending forever
+
+## Org Scoping
+
+Stats are scoped to your **active organization**. Switching organizations
+swaps the cards and chart instantly to the new org's data. Personal data
+won't bleed into a team org and vice versa.
+
+<Cards>
+  <Card title="Execution Monitoring" href="/docs/executions">
+    Per-execution drilldown.
+  </Card>
+  <Card title="Organizations" href="/docs/organizations">
+    How multi-tenant scoping works.
+  </Card>
+</Cards>

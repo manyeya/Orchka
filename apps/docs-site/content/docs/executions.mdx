@@ -5,17 +5,56 @@ description: Track, debug, and analyze your workflow executions
 
 # Execution Monitoring
 
-Orchka provide a powerful set of tools to monitor your workflow executions in real-time and review historical runs.
+Orchka provides a powerful set of tools to monitor your workflow executions in real-time and review historical runs.
+
+## Overview Panel
+
+The Executions page opens with an **Overview** card containing five
+stat tiles (total runs, successful, failed, success rate, average
+duration) and a stacked bar chart of daily succeeded-vs-failed runs
+across the last 30 days. See [Dashboard Overview](/docs/dashboard) for
+the full breakdown.
 
 ## Execution History
 
-The **Executions** page provides a comprehensive list of all workflow runs. You can filter executions by status (Success, Failed, Running) and search for specific runs.
+Below the overview is the **execution list** — every run in your
+active organization, newest first.
 
-Each entry in the execution history shows:
+Each row shows:
 - **Status**: The current state of the execution.
 - **Workflow**: The name of the workflow that was executed.
 - **Started At**: When the execution began.
 - **Duration**: Total time taken for the execution.
+
+### Filtering and Search
+
+The toolbar above the list supports:
+
+- **Search** — filter by workflow name; partial, case-insensitive
+- **Status filter** — dropdown with All / Running / Completed / Failed
+  / Cancelled. Selection writes to the URL as `?status=…`, so filtered
+  views are shareable and survive reloads.
+
+Filtering is **server-side**: the database query applies the filter in
+its `WHERE` clause, not the client. This means a workspace with millions
+of executions filters as fast as one with a hundred.
+
+### Pagination
+
+The list is paginated with a smart, scalable control:
+
+- At most ~9 page chips are rendered regardless of total
+- A summary reads `"23–46 of 1,247"`
+- Below 640px width, chips collapse into `"page / total"`
+- Click any ellipsis (`…`) to open a **"Go to page"** popover —
+  essential when there are hundreds of pages
+
+### Organization Scoping
+
+The list shows only executions belonging to your **active organization**.
+Switching the org in the sidebar narrows the list to that org's
+executions. Personal executions don't appear in team orgs, and vice
+versa. See [Organizations & Teams](/docs/organizations) for details.
 
 ## Execution Detail View
 
@@ -64,3 +103,31 @@ If an execution fails, Orchka's monitoring tools help you identify the root caus
 1. Locate the red failed step in the **Trace Timeline**.
 2. Select the step to view its **Error Payload**.
 3. Fix the configuration in the editor and **Re-execute**.
+
+## Storage Model
+
+Execution data is split between two stores to keep the live execution
+path fast:
+
+- **Steps stream to Redis** as nodes complete. The execution detail
+  page reads from Redis in real time so you see updates instantly.
+- **A summary row in Postgres** is created when the run starts and
+  updated to its terminal state on completion or failure. Step records
+  are persisted to Postgres only when the run finishes (or on first
+  read after the fact, lazily backfilled from Redis).
+- **A daily rollup** (`execution_stat`) is incremented transactionally
+  on every terminal state, powering the overview cards and chart
+  without needing to scan the execution table.
+
+Composite indexes on `(organizationId, startedAt)` and
+`(organizationId, status, startedAt)` make every list and stats query
+constant-time regardless of historic volume.
+
+<Cards>
+  <Card title="Dashboard Overview" href="/docs/dashboard">
+    The cards and chart in detail.
+  </Card>
+  <Card title="Organizations" href="/docs/organizations">
+    How executions are scoped per org.
+  </Card>
+</Cards>

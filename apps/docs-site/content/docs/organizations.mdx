@@ -1,0 +1,144 @@
+---
+title: Organizations & Teams
+description: Multi-tenant workspaces — invite teammates, manage roles, and isolate data per organization
+---
+
+# Organizations & Teams
+
+Orchka is multi-tenant. Workflows, credentials, executions, and stats are
+scoped to an **organization**. Every account belongs to at least one
+organization — the **Personal** workspace we create for you on first
+sign-in — and you can create more for separate teams, clients, or
+environments.
+
+## Concepts
+
+| Concept | Description |
+|---|---|
+| **Organization** | The unit of data isolation. Has a name, a URL slug, and a set of members. |
+| **Member** | A user with access to an organization. Has a role (owner, admin, or member). |
+| **Active organization** | The org you're currently viewing. Stored on your session and updated when you switch. |
+| **Invitation** | A pending member email. Expires after 7 days. |
+
+Switching organizations re-scopes everything: the workflows list,
+executions, credentials, and dashboard stats all narrow to that org's
+data.
+
+## The Organization Switcher
+
+The switcher lives at the top of the sidebar.
+
+- **Click your current org** to open the dropdown
+- **Select another org** to switch — the page refreshes and queries re-scope
+- **"New organization"** opens a dialog with a name and auto-slugified slug
+- A checkmark marks the org you're currently in
+
+```
+┌──────────────────────────┐
+│ ◆ Personal         ▾    │
+└──────────────────────────┘
+  Organizations
+  ✓ Personal
+    Acme
+    Side Project
+  ─────────────
+  + New organization
+```
+
+## Roles
+
+Every member has exactly one role within an organization:
+
+| Role | Can do |
+|---|---|
+| **Owner** | Everything — including renaming the org, removing other admins, and deleting the org. There can be more than one owner. |
+| **Admin** | Invite members, change member roles (admin/member only), remove members, edit org details. Cannot delete the org or demote/remove owners. |
+| **Member** | Use workflows, credentials, and execution data. Cannot manage other members. |
+
+Roles are checked on the server: a member cannot bypass restrictions by
+calling the API directly.
+
+## Managing Your Team
+
+Open **Settings → Team**. You'll see:
+
+### Members
+
+A table of everyone in the active organization, with their role chip.
+Owners and admins see a **⋯** menu on every other member for role changes
+and removal. Removing a member revokes their access to all workflows,
+credentials, and executions in that org — re-invite them later if needed.
+
+### Inviting
+
+Click **Invite** in the page header. Pick:
+- **Email** — where the invite link is sent
+- **Role** — Member (default) or Admin
+
+The recipient gets an invitation that's valid for 7 days. Until they
+accept it, the invite appears in the **Pending Invites** section, where
+admins can revoke it with one click.
+
+### Organization Details (owner-only)
+
+The bottom section lets owners:
+- Rename the organization (the sidebar label updates immediately)
+- Change the URL slug
+- **Delete the organization** — permanently destroys every workflow,
+  credential, execution, and stat rollup scoped to it. A two-step
+  confirmation dialog guards this.
+
+## Creating a New Organization
+
+From any page:
+
+1. Click the org switcher in the sidebar
+2. Select **"New organization"**
+3. Enter a name — the slug auto-generates as you type
+4. **Create**
+
+You're added as the owner and switched to it. The new org starts empty —
+no workflows, no credentials, no executions.
+
+## How Data Is Scoped
+
+Internally every owned row carries an `organizationId` foreign key.
+Every list query, create, update, and delete is filtered by your active
+org via a middleware that reads `session.activeOrganizationId`.
+
+This means:
+
+- **Listing workflows** in Personal shows only Personal's workflows
+- **Creating a credential** in Acme stores it under Acme's org
+- **Switching to Side Project** instantly hides everything from the
+  other orgs without re-fetching anything stale
+
+If your session has no active org set (e.g. you just signed in), the
+middleware falls back to your oldest membership.
+
+## Existing Users: Backfill Behavior
+
+Accounts that existed before organizations launched were each given a
+**Personal** org as part of the rollout. All of your previous workflows,
+credentials, and executions were assigned to that Personal org and your
+session was set to use it as the active org. Nothing was lost — the data
+is exactly where it was, just owned by Personal instead of you directly.
+
+## Limits
+
+- **10 organizations per user** (you can create at most ten orgs as
+  owner; you can be a member of more than ten via invitations)
+- **50 members per organization**
+- **7-day invitation TTL**
+
+These caps are configured in the Better Auth plugin and can be raised
+for self-hosted deployments.
+
+<Cards>
+  <Card title="Execution Monitoring" href="/docs/executions">
+    Per-org execution history and stats.
+  </Card>
+  <Card title="Credentials" href="/docs/credentials">
+    Org-scoped credential storage.
+  </Card>
+</Cards>
