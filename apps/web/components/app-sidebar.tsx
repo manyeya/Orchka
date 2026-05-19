@@ -9,7 +9,6 @@ import {
   Clock,
   LayoutTemplate,
   BarChart3,
-  GalleryVerticalEnd,
   Zap,
 } from "lucide-react"
 
@@ -32,13 +31,6 @@ const data = {
     email: "manyeya@example.com",
     avatar: "/avatars/manyeya.jpg",
   },
-  teams: [
-    {
-      name: "Project Orc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-  ],
   navMain: [
     {
       title: "Workflows",
@@ -84,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

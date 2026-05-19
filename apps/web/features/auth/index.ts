@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { organization } from "better-auth/plugins";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "@orchka/db";
@@ -22,6 +23,14 @@ export const auth = betterAuth({
         },
     },
     plugins: [
+        organization({
+            // Single-level orgs (no sub-teams) for now. Every workflow,
+            // credential, and execution is scoped to organizationId.
+            allowUserToCreateOrganization: true,
+            organizationLimit: 10,
+            membershipLimit: 50,
+            creatorRole: "owner",
+        }),
         polar({
             client: polarClient,
             createCustomerOnSignUp: true,
