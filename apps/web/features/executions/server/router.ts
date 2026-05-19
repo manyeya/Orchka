@@ -1,6 +1,6 @@
 import { PAGINATION } from "@/config/constants";
 import prisma from "@orchka/db";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, orgProcedure } from "@/trpc/init";
 import { ExecutionStatus } from "@orchka/db/enums";
 import { TRPCError } from "@trpc/server";
 import Redis from "ioredis";
@@ -175,13 +175,13 @@ function startOfUtcDay(date: Date): Date {
 }
 
 export const executionsRouter = createTRPCRouter({
-  list: protectedProcedure
+  list: orgProcedure
     .input(listExecutionsSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize, search, workflowId, status } = input;
 
       const whereClause = {
-        userId: ctx.auth.user.id,
+        organizationId: ctx.organizationId,
         ...(workflowId && { workflowId }),
         ...(status && status in ExecutionStatus && { status: status as ExecutionStatus }),
         ...(search && {
@@ -236,7 +236,7 @@ export const executionsRouter = createTRPCRouter({
       };
     }),
 
-  getById: protectedProcedure
+  getById: orgProcedure
     .input(getExecutionSchema)
     .query(async ({ ctx, input }) => {
       const execution = await prisma.execution.findUnique({
@@ -258,7 +258,7 @@ export const executionsRouter = createTRPCRouter({
         });
       }
 
-      if (execution.userId !== ctx.auth.user.id) {
+      if (execution.organizationId !== ctx.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to access this execution",
@@ -283,10 +283,10 @@ export const executionsRouter = createTRPCRouter({
     }),
 
 
-  stats: protectedProcedure
+  stats: orgProcedure
     .input(statsSchema)
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.user.id;
+      const organizationId = ctx.organizationId;
       const today = new Date();
       const sinceDay = new Date(Date.UTC(
         today.getUTCFullYear(),
@@ -298,11 +298,11 @@ export const executionsRouter = createTRPCRouter({
       // there yet, so add them in for accuracy.
       const [allTimeAgg, windowAgg, runningCount] = await Promise.all([
         prisma.executionStat.aggregate({
-          where: { userId },
+          where: { organizationId },
           _sum: { total: true },
         }),
         prisma.executionStat.aggregate({
-          where: { userId, date: { gte: sinceDay } },
+          where: { organizationId, date: { gte: sinceDay } },
           _sum: {
             total: true,
             succeeded: true,
@@ -312,7 +312,7 @@ export const executionsRouter = createTRPCRouter({
           },
         }),
         prisma.execution.count({
-          where: { userId, status: ExecutionStatus.RUNNING },
+          where: { organizationId, status: ExecutionStatus.RUNNING },
         }),
       ]);
 
@@ -340,17 +340,17 @@ export const executionsRouter = createTRPCRouter({
       };
     }),
 
-  series: protectedProcedure
+  series: orgProcedure
     .input(seriesSchema)
     .query(async ({ ctx, input }) => {
-      const userId = ctx.auth.user.id;
+      const organizationId = ctx.organizationId;
       const today = startOfUtcDay(new Date());
       const sinceDay = new Date(today);
       sinceDay.setUTCDate(today.getUTCDate() - (input.windowDays - 1));
 
       const rows = await prisma.executionStat.groupBy({
         by: ["date"],
-        where: { userId, date: { gte: sinceDay } },
+        where: { organizationId, date: { gte: sinceDay } },
         _sum: { succeeded: true, failed: true, cancelled: true, total: true },
         orderBy: { date: "asc" },
       });
@@ -387,13 +387,13 @@ export const executionsRouter = createTRPCRouter({
       return { windowDays: input.windowDays, points };
     }),
 
-  getByWorkflowId: protectedProcedure
+  getByWorkflowId: orgProcedure
     .input(z.object({ workflowId: z.string() }))
     .query(async ({ ctx, input }) => {
       const executions = await prisma.execution.findMany({
         where: {
           workflowId: input.workflowId,
-          userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
         },
         orderBy: { startedAt: "desc" },
         take: 10,

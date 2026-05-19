@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { cache } from 'react';
 import { headers } from 'next/headers';
 import { polarClient } from '@/lib/polar';
+import prisma from '@orchka/db';
 import superjson from 'superjson';
 
 export const createTRPCContext = cache(async () => {
@@ -48,6 +49,42 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
         ctx: {
             ...ctx,
             auth: ctx.auth, // Narrow the type to non-null
+        },
+    });
+});
+
+/**
+ * orgProcedure: protected + resolves the active organization onto ctx.
+ *
+ * Looks at `session.activeOrganizationId` first; falls back to the user's
+ * oldest membership so users that haven't explicitly switched orgs still
+ * get scoped queries.
+ */
+export const orgProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+    let organizationId =
+        (ctx.auth.session as { activeOrganizationId?: string | null } | undefined)
+            ?.activeOrganizationId ?? undefined;
+
+    if (!organizationId) {
+        const fallback = await prisma.member.findFirst({
+            where: { userId: ctx.auth.user.id },
+            orderBy: { createdAt: 'asc' },
+            select: { organizationId: true },
+        });
+
+        if (!fallback) {
+            throw new TRPCError({
+                code: 'PRECONDITION_FAILED',
+                message: 'No organization. Create one to continue.',
+            });
+        }
+        organizationId = fallback.organizationId;
+    }
+
+    return next({
+        ctx: {
+            ...ctx,
+            organizationId,
         },
     });
 });

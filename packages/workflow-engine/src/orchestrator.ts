@@ -54,6 +54,7 @@ async function finalizeExecution(
     select: {
       userId: true,
       workflowId: true,
+      organizationId: true,
       startedAt: true,
     },
   });
@@ -82,6 +83,7 @@ async function finalizeExecution(
       create: {
         userId: execution.userId,
         workflowId: execution.workflowId,
+        organizationId: execution.organizationId,
         date: day,
         total: 1,
         succeeded: isSuccess ? 1 : 0,
@@ -430,7 +432,7 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
   if (!executionId) {
     console.log(`[Workflow] No execution ID provided (scheduled run), creating execution record...`);
 
-    // Fetch workflow to get userId
+    // Fetch workflow to get userId + organizationId for scoped execution row
     const workflow = await prisma.workflow.findUniqueOrThrow({
       where: { id: workflowId },
     });
@@ -440,6 +442,7 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
       data: {
         workflowId,
         userId: workflow.userId,
+        organizationId: workflow.organizationId,
         inngestRunId: jobId,
       }
     });

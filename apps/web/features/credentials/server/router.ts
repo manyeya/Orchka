@@ -12,7 +12,7 @@ import {
   logCredentialDelete,
   logCredentialAccess,
 } from "@/features/credentials/utils/audit-log";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, orgProcedure, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -40,7 +40,9 @@ const idSchema = z.object({
 });
 
 const listByTypeSchema = z.object({
-  type: z.nativeEnum(CredentialType).optional(),
+  // Accept any string; the empty string from URL params means "no filter".
+  // The handler validates against CredentialType before applying.
+  type: z.string().optional().default(""),
   page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
   pageSize: z
     .number()
@@ -300,14 +302,19 @@ export const credentialsRouter = createTRPCRouter({
    * List all credentials for the authenticated user (metadata only)
    * Requirements: 1.3
    */
-  list: protectedProcedure
+  list: orgProcedure
     .input(listByTypeSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize, search, type } = input;
 
+      // Narrow to a valid CredentialType; ignore any other string (incl. "").
+      const validType = (Object.values(CredentialType) as string[]).includes(type)
+        ? (type as CredentialType)
+        : undefined;
+
       const whereClause = {
-        userId: ctx.auth.user.id,
-        ...(type && { type }),
+        organizationId: ctx.organizationId,
+        ...(validType && { type: validType }),
         ...(search && {
           name: {
             contains: search,
@@ -358,7 +365,7 @@ export const credentialsRouter = createTRPCRouter({
    * Get a single credential by ID (metadata only)
    * Requirements: 2.4
    */
-  getById: protectedProcedure.input(idSchema).query(async ({ ctx, input }) => {
+  getById: orgProcedure.input(idSchema).query(async ({ ctx, input }) => {
     const credential = await prisma.credential.findUnique({
       where: { id: input.id },
       select: {
@@ -368,6 +375,7 @@ export const credentialsRouter = createTRPCRouter({
         createdAt: true,
         updatedAt: true,
         userId: true,
+        organizationId: true,
       },
     });
 
@@ -378,7 +386,7 @@ export const credentialsRouter = createTRPCRouter({
       });
     }
 
-    if (credential.userId !== ctx.auth.user.id) {
+    if (credential.organizationId !== ctx.organizationId) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "Not authorized to access this credential",
@@ -398,7 +406,7 @@ export const credentialsRouter = createTRPCRouter({
    * Create a new credential
    * Requirements: 1.1, 1.2, 1.4, 1.5
    */
-  create: protectedProcedure
+  create: orgProcedure
     .input(createCredentialSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.user.id;
@@ -450,6 +458,7 @@ export const credentialsRouter = createTRPCRouter({
           iv: encrypted.iv,
           authTag: encrypted.authTag,
           userId,
+          organizationId: ctx.organizationId,
         },
       });
 
@@ -469,7 +478,7 @@ export const credentialsRouter = createTRPCRouter({
    * Update an existing credential
    * Requirements: 2.1, 2.2, 2.4
    */
-  update: protectedProcedure
+  update: orgProcedure
     .input(updateCredentialSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.user.id;
@@ -487,7 +496,7 @@ export const credentialsRouter = createTRPCRouter({
       }
 
       // Authorization check
-      if (existing.userId !== userId) {
+      if (existing.organizationId !== ctx.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to modify this credential",
@@ -564,12 +573,12 @@ export const credentialsRouter = createTRPCRouter({
    * Delete a credential
    * Requirements: 2.3, 2.4, 2.5
    */
-  delete: protectedProcedure
+  delete: orgProcedure
     .input(idSchema)
     .mutation(async ({ ctx, input }) => {
       const credential = await prisma.credential.findUnique({
         where: { id: input.id },
-        select: { userId: true },
+        select: { userId: true, organizationId: true },
       });
 
       if (!credential) {
@@ -580,7 +589,7 @@ export const credentialsRouter = createTRPCRouter({
       }
 
       // Authorization check
-      if (credential.userId !== ctx.auth.user.id) {
+      if (credential.organizationId !== ctx.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to delete this credential",
@@ -605,7 +614,7 @@ export const credentialsRouter = createTRPCRouter({
    * Get decrypted credential data (for internal use/execution)
    * Requirements: 3.3
    */
-  getDecrypted: protectedProcedure
+  getDecrypted: orgProcedure
     .input(idSchema)
     .query(async ({ ctx, input }) => {
       const credential = await prisma.credential.findUnique({
@@ -620,7 +629,7 @@ export const credentialsRouter = createTRPCRouter({
       }
 
       // Authorization check
-      if (credential.userId !== ctx.auth.user.id) {
+      if (credential.organizationId !== ctx.organizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to access this credential",

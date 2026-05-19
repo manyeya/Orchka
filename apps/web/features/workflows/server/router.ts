@@ -1,7 +1,7 @@
 import { PAGINATION } from "@/config/constants";
 import prisma from "@orchka/db";
 import { NodeType } from "@orchka/nodes/core";
-import { createTRPCRouter, premiumProcedure, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, orgProcedure, premiumProcedure, protectedProcedure } from "@/trpc/init";
 import { Edge, Node } from "@xyflow/react";
 import { generateSlug } from "random-word-slugs";
 import z from "zod";
@@ -9,18 +9,17 @@ import { workflowQueue } from "@orchka/workflow-engine/setup";
 import { upsertWorkflowScheduler, removeWorkflowScheduler, getWorkflowScheduler } from "@orchka/workflow-engine/schedulers";
 
 export const workflowsRouter = createTRPCRouter({
-    getScheduleStatus: protectedProcedure
+    getScheduleStatus: orgProcedure
         .input(z.object({ id: z.string() }))
         .query(async ({ ctx, input }) => {
-            // Verify user owns this workflow
+            // Verify workflow belongs to active org
             await prisma.workflow.findUniqueOrThrow({
                 where: {
                     id: input.id,
-                    userId: ctx.auth.user.id,
+                    organizationId: ctx.organizationId,
                 }
             });
 
-            // Check if there's an active scheduler for this workflow
             const scheduler = await getWorkflowScheduler(input.id);
 
             return {
@@ -29,23 +28,22 @@ export const workflowsRouter = createTRPCRouter({
                 pattern: scheduler?.pattern || null,
             };
         }),
-    executeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    executeWorkflow: orgProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
         const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
                 id: input.id,
-                userId: ctx.auth.user.id,
+                organizationId: ctx.organizationId,
             }
         });
 
-        // Create execution record
         const execution = await prisma.execution.create({
             data: {
                 workflowId: input.id,
                 userId: ctx.auth.user.id,
+                organizationId: ctx.organizationId,
             }
         });
 
-        // Queue workflow execution via BullMQ
         await workflowQueue.add('execute-workflow', {
             workflowId: input.id,
             executionId: execution.id,
@@ -55,7 +53,7 @@ export const workflowsRouter = createTRPCRouter({
         return workflow;
     }),
 
-    scheduleWorkflow: protectedProcedure
+    scheduleWorkflow: orgProcedure
         .input(z.object({
             id: z.string(),
             cronPattern: z.string(),
@@ -65,14 +63,12 @@ export const workflowsRouter = createTRPCRouter({
             const workflow = await prisma.workflow.findUniqueOrThrow({
                 where: {
                     id: input.id,
-                    userId: ctx.auth.user.id,
+                    organizationId: ctx.organizationId,
                 }
             });
 
-            // Create scheduler ID based on workflow
             const schedulerId = `workflow-${input.id}`;
 
-            // Register the cron schedule with BullMQ
             await upsertWorkflowScheduler(schedulerId, {
                 workflowId: input.id,
                 cronPattern: input.cronPattern,
@@ -87,28 +83,43 @@ export const workflowsRouter = createTRPCRouter({
             };
         }),
 
-    unscheduleWorkflow: protectedProcedure
+    unscheduleWorkflow: orgProcedure
         .input(z.object({ id: z.string() }))
         .mutation(async ({ ctx, input }) => {
             const workflow = await prisma.workflow.findUniqueOrThrow({
                 where: {
                     id: input.id,
-                    userId: ctx.auth.user.id,
+                    organizationId: ctx.organizationId,
                 }
             });
 
             const schedulerId = `workflow-${input.id}`;
-
-            // Remove the scheduler
             await removeWorkflowScheduler(schedulerId);
 
             return { ...workflow, scheduled: false };
         }),
-    createWorkflow: premiumProcedure.mutation(({ ctx }) => {
+    createWorkflow: premiumProcedure.use(async ({ ctx, next }) => {
+        // Resolve active org for this premium call. Inline so we don't have to
+        // build a premiumOrgProcedure for one use site.
+        let organizationId =
+            (ctx.auth.session as { activeOrganizationId?: string | null } | undefined)
+                ?.activeOrganizationId ?? undefined;
+        if (!organizationId) {
+            const m = await prisma.member.findFirst({
+                where: { userId: ctx.auth.user.id },
+                orderBy: { createdAt: 'asc' },
+                select: { organizationId: true },
+            });
+            if (!m) throw new Error('No organization');
+            organizationId = m.organizationId;
+        }
+        return next({ ctx: { ...ctx, organizationId } });
+    }).mutation(({ ctx }) => {
         return prisma.workflow.create({
             data: {
                 name: generateSlug(3),
                 userId: ctx.auth.user.id,
+                organizationId: ctx.organizationId,
                 nodes: {
                     create: {
                         name: NodeType.INITIAL,
@@ -122,15 +133,15 @@ export const workflowsRouter = createTRPCRouter({
             }
         });
     }),
-    removeWorkflow: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
+    removeWorkflow: orgProcedure.input(z.object({ id: z.string() })).mutation(({ ctx, input }) => {
         return prisma.workflow.delete({
             where: {
                 id: input.id,
-                userId: ctx.auth.user.id,
+                organizationId: ctx.organizationId,
             }
         })
     }),
-    updateWorkflow: protectedProcedure
+    updateWorkflow: orgProcedure
         .input(z.object({
             id: z.string(),
             nodes: z.array(z.object({
@@ -154,7 +165,7 @@ export const workflowsRouter = createTRPCRouter({
             const workflow = await prisma.workflow.findUniqueOrThrow({
                 where: {
                     id,
-                    userId: ctx.auth.user.id,
+                    organizationId: ctx.organizationId,
                 },
                 include: {
                     nodes: true,
@@ -186,7 +197,6 @@ export const workflowsRouter = createTRPCRouter({
                     }))
                 })
 
-                //connections 
                 await tx.connection.createMany({
                     data: edges.map(edge => ({
                         fromNodeId: edge.source,
@@ -197,11 +207,10 @@ export const workflowsRouter = createTRPCRouter({
                     }))
                 })
 
-                //update workflow updatedAt
                 await tx.workflow.update({
                     where: {
                         id,
-                        userId: ctx.auth.user.id,
+                        organizationId: ctx.organizationId,
                     },
                     data: {
                         updatedAt: new Date(),
@@ -213,24 +222,24 @@ export const workflowsRouter = createTRPCRouter({
 
         }),
 
-    updateWorkflowName: protectedProcedure
+    updateWorkflowName: orgProcedure
         .input(z.object({ id: z.string(), name: z.string().min(1) }))
         .mutation(({ ctx, input }) => {
             return prisma.workflow.update({
                 where: {
                     id: input.id,
-                    userId: ctx.auth.user.id,
+                    organizationId: ctx.organizationId,
                 },
                 data: {
                     name: input.name,
                 }
             })
         }),
-    getOneWorkflow: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    getOneWorkflow: orgProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
         const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
                 id: input.id,
-                userId: ctx.auth.user.id,
+                organizationId: ctx.organizationId,
             }, include: {
                 nodes: true,
                 connections: true,
@@ -268,7 +277,7 @@ export const workflowsRouter = createTRPCRouter({
             edges,
         }
     }),
-    getWorkflows: protectedProcedure
+    getWorkflows: orgProcedure
         .input(z.object({
             page: z.number().min(1).default(PAGINATION.DEFAULT_PAGE),
             pageSize: z.number()
@@ -302,7 +311,7 @@ export const workflowsRouter = createTRPCRouter({
                     skip: (page - 1) * pageSize,
                     take: pageSize,
                     where: {
-                        userId: ctx.auth.user.id,
+                        organizationId: ctx.organizationId,
                         name: {
                             contains: search,
                             mode: "insensitive",
@@ -312,7 +321,7 @@ export const workflowsRouter = createTRPCRouter({
                 }),
                 prisma.workflow.count({
                     where: {
-                        userId: ctx.auth.user.id,
+                        organizationId: ctx.organizationId,
                         name: {
                             contains: search,
                             mode: "insensitive",
