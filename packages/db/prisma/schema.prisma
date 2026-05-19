@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "./generated"
@@ -22,6 +23,9 @@ model User {
   credentials   Credential[]
   executions    Execution[]
 
+  members     Member[]
+  invitations Invitation[]
+
   @@unique([email])
   @@map("user")
 }
@@ -37,8 +41,11 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  activeOrganizationId String?
+
   @@unique([token])
   @@map("session")
+  @@index([userId])
 }
 
 model Account {
@@ -58,6 +65,7 @@ model Account {
   updatedAt             DateTime  @updatedAt
 
   @@map("account")
+  @@index([userId])
 }
 
 model Verification {
@@ -69,19 +77,24 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+  @@index([identifier])
 }
 
 model Workflow {
-  id          String       @id @default(cuid())
-  name        String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nodes       Node[]
-  connections Connection[]
-  executions  Execution[]
+  id             String        @id @default(cuid())
+  name           String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  nodes          Node[]
+  connections    Connection[]
+  executions     Execution[]
 
+  @@index([organizationId])
+  @@index([organizationId, updatedAt(sort: Desc)])
   @@map("workflow")
 }
 
@@ -119,18 +132,21 @@ model Connection {
 }
 
 model Credential {
-  id            String   @id @default(cuid())
-  name          String
-  type          String
-  encryptedData String
-  iv            String
-  authTag       String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String        @id @default(cuid())
+  name           String
+  type           String
+  encryptedData  String
+  iv             String
+  authTag        String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
+  @@index([organizationId])
   @@map("credential")
 }
 
@@ -146,24 +162,28 @@ model CredentialLog {
 }
 
 model Execution {
-  id           String          @id @default(cuid())
-  workflowId   String
-  workflow     Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  status       ExecutionStatus @default(RUNNING)
-  inngestRunId String?
-  startedAt    DateTime        @default(now())
-  completedAt  DateTime?
-  result       Json?
-  error        String?
-  userId       String
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  steps        ExecutionStep[]
+  id             String          @id @default(cuid())
+  workflowId     String
+  workflow       Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  status         ExecutionStatus @default(RUNNING)
+  inngestRunId   String?
+  startedAt      DateTime        @default(now())
+  completedAt    DateTime?
+  result         Json?
+  error          String?
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  steps          ExecutionStep[]
 
   @@index([workflowId])
   @@index([userId])
   @@index([status])
   @@index([userId, startedAt(sort: Desc)])
   @@index([userId, status, startedAt(sort: Desc)])
+  @@index([organizationId, startedAt(sort: Desc)])
+  @@index([organizationId, status, startedAt(sort: Desc)])
   @@map("execution")
 }
 
@@ -175,19 +195,22 @@ enum ExecutionStatus {
 }
 
 model ExecutionStat {
-  id         String   @id @default(cuid())
-  date       DateTime @db.Date
-  userId     String
-  workflowId String
-  total      Int      @default(0)
-  succeeded  Int      @default(0)
-  failed     Int      @default(0)
-  cancelled  Int      @default(0)
-  durationMs BigInt   @default(0)
-  updatedAt  DateTime @updatedAt
+  id             String        @id @default(cuid())
+  date           DateTime      @db.Date
+  userId         String
+  workflowId     String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  total          Int          @default(0)
+  succeeded      Int           @default(0)
+  failed         Int           @default(0)
+  cancelled      Int           @default(0)
+  durationMs     BigInt        @default(0)
+  updatedAt      DateTime      @updatedAt
 
   @@unique([userId, workflowId, date])
   @@index([userId, date(sort: Desc)])
+  @@index([organizationId, date(sort: Desc)])
   @@map("execution_stat")
 }
 
@@ -207,4 +230,53 @@ model ExecutionStep {
 
   @@index([executionId])
   @@map("execution_step")
+}
+
+model Organization {
+  id             String          @id
+  name           String
+  slug           String
+  logo           String?
+  createdAt      DateTime
+  metadata       String?
+  members        Member[]
+  invitations    Invitation[]
+  workflows      Workflow[]
+  credentials    Credential[]
+  executions     Execution[]
+  executionStats ExecutionStat[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
 }

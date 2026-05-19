@@ -34,6 +34,7 @@ export type CredentialMinAggregateOutputType = {
   createdAt: Date | null
   updatedAt: Date | null
   userId: string | null
+  organizationId: string | null
 }
 
 export type CredentialMaxAggregateOutputType = {
@@ -46,6 +47,7 @@ export type CredentialMaxAggregateOutputType = {
   createdAt: Date | null
   updatedAt: Date | null
   userId: string | null
+  organizationId: string | null
 }
 
 export type CredentialCountAggregateOutputType = {
@@ -58,6 +60,7 @@ export type CredentialCountAggregateOutputType = {
   createdAt: number
   updatedAt: number
   userId: number
+  organizationId: number
   _all: number
 }
 
@@ -72,6 +75,7 @@ export type CredentialMinAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   userId?: true
+  organizationId?: true
 }
 
 export type CredentialMaxAggregateInputType = {
@@ -84,6 +88,7 @@ export type CredentialMaxAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   userId?: true
+  organizationId?: true
 }
 
 export type CredentialCountAggregateInputType = {
@@ -96,6 +101,7 @@ export type CredentialCountAggregateInputType = {
   createdAt?: true
   updatedAt?: true
   userId?: true
+  organizationId?: true
   _all?: true
 }
 
@@ -181,6 +187,7 @@ export type CredentialGroupByOutputType = {
   createdAt: Date
   updatedAt: Date
   userId: string
+  organizationId: string
   _count: CredentialCountAggregateOutputType | null
   _min: CredentialMinAggregateOutputType | null
   _max: CredentialMaxAggregateOutputType | null
@@ -214,7 +221,9 @@ export type CredentialWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   userId?: Prisma.StringFilter<"Credential"> | string
+  organizationId?: Prisma.StringFilter<"Credential"> | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
 }
 
 export type CredentialOrderByWithRelationInput = {
@@ -227,7 +236,9 @@ export type CredentialOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  organization?: Prisma.OrganizationOrderByWithRelationInput
 }
 
 export type CredentialWhereUniqueInput = Prisma.AtLeast<{
@@ -244,7 +255,9 @@ export type CredentialWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   userId?: Prisma.StringFilter<"Credential"> | string
+  organizationId?: Prisma.StringFilter<"Credential"> | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
 }, "id" | "userId_name">
 
 export type CredentialOrderByWithAggregationInput = {
@@ -257,6 +270,7 @@ export type CredentialOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   _count?: Prisma.CredentialCountOrderByAggregateInput
   _max?: Prisma.CredentialMaxOrderByAggregateInput
   _min?: Prisma.CredentialMinOrderByAggregateInput
@@ -275,6 +289,7 @@ export type CredentialScalarWhereWithAggregatesInput = {
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Credential"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Credential"> | Date | string
   userId?: Prisma.StringWithAggregatesFilter<"Credential"> | string
+  organizationId?: Prisma.StringWithAggregatesFilter<"Credential"> | string
 }
 
 export type CredentialCreateInput = {
@@ -287,6 +302,7 @@ export type CredentialCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutCredentialsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutCredentialsInput
 }
 
 export type CredentialUncheckedCreateInput = {
@@ -299,6 +315,7 @@ export type CredentialUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   userId: string
+  organizationId: string
 }
 
 export type CredentialUpdateInput = {
@@ -311,6 +328,7 @@ export type CredentialUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutCredentialsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutCredentialsNestedInput
 }
 
 export type CredentialUncheckedUpdateInput = {
@@ -323,6 +341,7 @@ export type CredentialUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type CredentialCreateManyInput = {
@@ -335,6 +354,7 @@ export type CredentialCreateManyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   userId: string
+  organizationId: string
 }
 
 export type CredentialUpdateManyMutationInput = {
@@ -358,6 +378,7 @@ export type CredentialUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type CredentialListRelationFilter = {
@@ -385,6 +406,7 @@ export type CredentialCountOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type CredentialMaxOrderByAggregateInput = {
@@ -397,6 +419,7 @@ export type CredentialMaxOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type CredentialMinOrderByAggregateInput = {
@@ -409,6 +432,7 @@ export type CredentialMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type CredentialCreateNestedManyWithoutUserInput = {
@@ -453,6 +477,48 @@ export type CredentialUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.CredentialScalarWhereInput | Prisma.CredentialScalarWhereInput[]
 }
 
+export type CredentialCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput> | Prisma.CredentialCreateWithoutOrganizationInput[] | Prisma.CredentialUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.CredentialCreateOrConnectWithoutOrganizationInput | Prisma.CredentialCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.CredentialCreateManyOrganizationInputEnvelope
+  connect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+}
+
+export type CredentialUncheckedCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput> | Prisma.CredentialCreateWithoutOrganizationInput[] | Prisma.CredentialUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.CredentialCreateOrConnectWithoutOrganizationInput | Prisma.CredentialCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.CredentialCreateManyOrganizationInputEnvelope
+  connect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+}
+
+export type CredentialUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput> | Prisma.CredentialCreateWithoutOrganizationInput[] | Prisma.CredentialUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.CredentialCreateOrConnectWithoutOrganizationInput | Prisma.CredentialCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.CredentialUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.CredentialUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.CredentialCreateManyOrganizationInputEnvelope
+  set?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  disconnect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  delete?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  connect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  update?: Prisma.CredentialUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.CredentialUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.CredentialUpdateManyWithWhereWithoutOrganizationInput | Prisma.CredentialUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.CredentialScalarWhereInput | Prisma.CredentialScalarWhereInput[]
+}
+
+export type CredentialUncheckedUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput> | Prisma.CredentialCreateWithoutOrganizationInput[] | Prisma.CredentialUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.CredentialCreateOrConnectWithoutOrganizationInput | Prisma.CredentialCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.CredentialUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.CredentialUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.CredentialCreateManyOrganizationInputEnvelope
+  set?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  disconnect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  delete?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  connect?: Prisma.CredentialWhereUniqueInput | Prisma.CredentialWhereUniqueInput[]
+  update?: Prisma.CredentialUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.CredentialUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.CredentialUpdateManyWithWhereWithoutOrganizationInput | Prisma.CredentialUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.CredentialScalarWhereInput | Prisma.CredentialScalarWhereInput[]
+}
+
 export type CredentialCreateWithoutUserInput = {
   id?: string
   name: string
@@ -462,6 +528,7 @@ export type CredentialCreateWithoutUserInput = {
   authTag: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  organization: Prisma.OrganizationCreateNestedOneWithoutCredentialsInput
 }
 
 export type CredentialUncheckedCreateWithoutUserInput = {
@@ -473,6 +540,7 @@ export type CredentialUncheckedCreateWithoutUserInput = {
   authTag: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  organizationId: string
 }
 
 export type CredentialCreateOrConnectWithoutUserInput = {
@@ -514,6 +582,57 @@ export type CredentialScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Credential"> | Date | string
   userId?: Prisma.StringFilter<"Credential"> | string
+  organizationId?: Prisma.StringFilter<"Credential"> | string
+}
+
+export type CredentialCreateWithoutOrganizationInput = {
+  id?: string
+  name: string
+  type: string
+  encryptedData: string
+  iv: string
+  authTag: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutCredentialsInput
+}
+
+export type CredentialUncheckedCreateWithoutOrganizationInput = {
+  id?: string
+  name: string
+  type: string
+  encryptedData: string
+  iv: string
+  authTag: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  userId: string
+}
+
+export type CredentialCreateOrConnectWithoutOrganizationInput = {
+  where: Prisma.CredentialWhereUniqueInput
+  create: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput>
+}
+
+export type CredentialCreateManyOrganizationInputEnvelope = {
+  data: Prisma.CredentialCreateManyOrganizationInput | Prisma.CredentialCreateManyOrganizationInput[]
+  skipDuplicates?: boolean
+}
+
+export type CredentialUpsertWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.CredentialWhereUniqueInput
+  update: Prisma.XOR<Prisma.CredentialUpdateWithoutOrganizationInput, Prisma.CredentialUncheckedUpdateWithoutOrganizationInput>
+  create: Prisma.XOR<Prisma.CredentialCreateWithoutOrganizationInput, Prisma.CredentialUncheckedCreateWithoutOrganizationInput>
+}
+
+export type CredentialUpdateWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.CredentialWhereUniqueInput
+  data: Prisma.XOR<Prisma.CredentialUpdateWithoutOrganizationInput, Prisma.CredentialUncheckedUpdateWithoutOrganizationInput>
+}
+
+export type CredentialUpdateManyWithWhereWithoutOrganizationInput = {
+  where: Prisma.CredentialScalarWhereInput
+  data: Prisma.XOR<Prisma.CredentialUpdateManyMutationInput, Prisma.CredentialUncheckedUpdateManyWithoutOrganizationInput>
 }
 
 export type CredentialCreateManyUserInput = {
@@ -525,6 +644,7 @@ export type CredentialCreateManyUserInput = {
   authTag: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  organizationId: string
 }
 
 export type CredentialUpdateWithoutUserInput = {
@@ -536,6 +656,7 @@ export type CredentialUpdateWithoutUserInput = {
   authTag?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutCredentialsNestedInput
 }
 
 export type CredentialUncheckedUpdateWithoutUserInput = {
@@ -547,6 +668,7 @@ export type CredentialUncheckedUpdateWithoutUserInput = {
   authTag?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type CredentialUncheckedUpdateManyWithoutUserInput = {
@@ -558,6 +680,55 @@ export type CredentialUncheckedUpdateManyWithoutUserInput = {
   authTag?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+}
+
+export type CredentialCreateManyOrganizationInput = {
+  id?: string
+  name: string
+  type: string
+  encryptedData: string
+  iv: string
+  authTag: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  userId: string
+}
+
+export type CredentialUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  encryptedData?: Prisma.StringFieldUpdateOperationsInput | string
+  iv?: Prisma.StringFieldUpdateOperationsInput | string
+  authTag?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutCredentialsNestedInput
+}
+
+export type CredentialUncheckedUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  encryptedData?: Prisma.StringFieldUpdateOperationsInput | string
+  iv?: Prisma.StringFieldUpdateOperationsInput | string
+  authTag?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+}
+
+export type CredentialUncheckedUpdateManyWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.StringFieldUpdateOperationsInput | string
+  encryptedData?: Prisma.StringFieldUpdateOperationsInput | string
+  iv?: Prisma.StringFieldUpdateOperationsInput | string
+  authTag?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -572,7 +743,9 @@ export type CredentialSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   createdAt?: boolean
   updatedAt?: boolean
   userId?: boolean
+  organizationId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credential"]>
 
 export type CredentialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -585,7 +758,9 @@ export type CredentialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   createdAt?: boolean
   updatedAt?: boolean
   userId?: boolean
+  organizationId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credential"]>
 
 export type CredentialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -598,7 +773,9 @@ export type CredentialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   createdAt?: boolean
   updatedAt?: boolean
   userId?: boolean
+  organizationId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["credential"]>
 
 export type CredentialSelectScalar = {
@@ -611,23 +788,28 @@ export type CredentialSelectScalar = {
   createdAt?: boolean
   updatedAt?: boolean
   userId?: boolean
+  organizationId?: boolean
 }
 
-export type CredentialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "encryptedData" | "iv" | "authTag" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["credential"]>
+export type CredentialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "encryptedData" | "iv" | "authTag" | "createdAt" | "updatedAt" | "userId" | "organizationId", ExtArgs["result"]["credential"]>
 export type CredentialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
 export type CredentialIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
 export type CredentialIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
 
 export type $CredentialPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Credential"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    organization: Prisma.$OrganizationPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -639,6 +821,7 @@ export type $CredentialPayload<ExtArgs extends runtime.Types.Extensions.Internal
     createdAt: Date
     updatedAt: Date
     userId: string
+    organizationId: string
   }, ExtArgs["result"]["credential"]>
   composites: {}
 }
@@ -1034,6 +1217,7 @@ readonly fields: CredentialFieldRefs;
 export interface Prisma__CredentialClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1072,6 +1256,7 @@ export interface CredentialFieldRefs {
   readonly createdAt: Prisma.FieldRef<"Credential", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Credential", 'DateTime'>
   readonly userId: Prisma.FieldRef<"Credential", 'String'>
+  readonly organizationId: Prisma.FieldRef<"Credential", 'String'>
 }
     
 

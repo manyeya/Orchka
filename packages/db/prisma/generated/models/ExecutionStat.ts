@@ -47,6 +47,7 @@ export type ExecutionStatMinAggregateOutputType = {
   date: Date | null
   userId: string | null
   workflowId: string | null
+  organizationId: string | null
   total: number | null
   succeeded: number | null
   failed: number | null
@@ -60,6 +61,7 @@ export type ExecutionStatMaxAggregateOutputType = {
   date: Date | null
   userId: string | null
   workflowId: string | null
+  organizationId: string | null
   total: number | null
   succeeded: number | null
   failed: number | null
@@ -73,6 +75,7 @@ export type ExecutionStatCountAggregateOutputType = {
   date: number
   userId: number
   workflowId: number
+  organizationId: number
   total: number
   succeeded: number
   failed: number
@@ -104,6 +107,7 @@ export type ExecutionStatMinAggregateInputType = {
   date?: true
   userId?: true
   workflowId?: true
+  organizationId?: true
   total?: true
   succeeded?: true
   failed?: true
@@ -117,6 +121,7 @@ export type ExecutionStatMaxAggregateInputType = {
   date?: true
   userId?: true
   workflowId?: true
+  organizationId?: true
   total?: true
   succeeded?: true
   failed?: true
@@ -130,6 +135,7 @@ export type ExecutionStatCountAggregateInputType = {
   date?: true
   userId?: true
   workflowId?: true
+  organizationId?: true
   total?: true
   succeeded?: true
   failed?: true
@@ -230,6 +236,7 @@ export type ExecutionStatGroupByOutputType = {
   date: Date
   userId: string
   workflowId: string
+  organizationId: string
   total: number
   succeeded: number
   failed: number
@@ -266,12 +273,14 @@ export type ExecutionStatWhereInput = {
   date?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
   userId?: Prisma.StringFilter<"ExecutionStat"> | string
   workflowId?: Prisma.StringFilter<"ExecutionStat"> | string
+  organizationId?: Prisma.StringFilter<"ExecutionStat"> | string
   total?: Prisma.IntFilter<"ExecutionStat"> | number
   succeeded?: Prisma.IntFilter<"ExecutionStat"> | number
   failed?: Prisma.IntFilter<"ExecutionStat"> | number
   cancelled?: Prisma.IntFilter<"ExecutionStat"> | number
   durationMs?: Prisma.BigIntFilter<"ExecutionStat"> | bigint | number
   updatedAt?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
 }
 
 export type ExecutionStatOrderByWithRelationInput = {
@@ -279,12 +288,14 @@ export type ExecutionStatOrderByWithRelationInput = {
   date?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   total?: Prisma.SortOrder
   succeeded?: Prisma.SortOrder
   failed?: Prisma.SortOrder
   cancelled?: Prisma.SortOrder
   durationMs?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  organization?: Prisma.OrganizationOrderByWithRelationInput
 }
 
 export type ExecutionStatWhereUniqueInput = Prisma.AtLeast<{
@@ -296,12 +307,14 @@ export type ExecutionStatWhereUniqueInput = Prisma.AtLeast<{
   date?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
   userId?: Prisma.StringFilter<"ExecutionStat"> | string
   workflowId?: Prisma.StringFilter<"ExecutionStat"> | string
+  organizationId?: Prisma.StringFilter<"ExecutionStat"> | string
   total?: Prisma.IntFilter<"ExecutionStat"> | number
   succeeded?: Prisma.IntFilter<"ExecutionStat"> | number
   failed?: Prisma.IntFilter<"ExecutionStat"> | number
   cancelled?: Prisma.IntFilter<"ExecutionStat"> | number
   durationMs?: Prisma.BigIntFilter<"ExecutionStat"> | bigint | number
   updatedAt?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
 }, "id" | "userId_workflowId_date">
 
 export type ExecutionStatOrderByWithAggregationInput = {
@@ -309,6 +322,7 @@ export type ExecutionStatOrderByWithAggregationInput = {
   date?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   total?: Prisma.SortOrder
   succeeded?: Prisma.SortOrder
   failed?: Prisma.SortOrder
@@ -330,6 +344,7 @@ export type ExecutionStatScalarWhereWithAggregatesInput = {
   date?: Prisma.DateTimeWithAggregatesFilter<"ExecutionStat"> | Date | string
   userId?: Prisma.StringWithAggregatesFilter<"ExecutionStat"> | string
   workflowId?: Prisma.StringWithAggregatesFilter<"ExecutionStat"> | string
+  organizationId?: Prisma.StringWithAggregatesFilter<"ExecutionStat"> | string
   total?: Prisma.IntWithAggregatesFilter<"ExecutionStat"> | number
   succeeded?: Prisma.IntWithAggregatesFilter<"ExecutionStat"> | number
   failed?: Prisma.IntWithAggregatesFilter<"ExecutionStat"> | number
@@ -349,6 +364,7 @@ export type ExecutionStatCreateInput = {
   cancelled?: number
   durationMs?: bigint | number
   updatedAt?: Date | string
+  organization: Prisma.OrganizationCreateNestedOneWithoutExecutionStatsInput
 }
 
 export type ExecutionStatUncheckedCreateInput = {
@@ -356,6 +372,7 @@ export type ExecutionStatUncheckedCreateInput = {
   date: Date | string
   userId: string
   workflowId: string
+  organizationId: string
   total?: number
   succeeded?: number
   failed?: number
@@ -375,6 +392,7 @@ export type ExecutionStatUpdateInput = {
   cancelled?: Prisma.IntFieldUpdateOperationsInput | number
   durationMs?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutExecutionStatsNestedInput
 }
 
 export type ExecutionStatUncheckedUpdateInput = {
@@ -382,6 +400,7 @@ export type ExecutionStatUncheckedUpdateInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   total?: Prisma.IntFieldUpdateOperationsInput | number
   succeeded?: Prisma.IntFieldUpdateOperationsInput | number
   failed?: Prisma.IntFieldUpdateOperationsInput | number
@@ -395,6 +414,7 @@ export type ExecutionStatCreateManyInput = {
   date: Date | string
   userId: string
   workflowId: string
+  organizationId: string
   total?: number
   succeeded?: number
   failed?: number
@@ -421,6 +441,7 @@ export type ExecutionStatUncheckedUpdateManyInput = {
   date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   total?: Prisma.IntFieldUpdateOperationsInput | number
   succeeded?: Prisma.IntFieldUpdateOperationsInput | number
   failed?: Prisma.IntFieldUpdateOperationsInput | number
@@ -440,6 +461,7 @@ export type ExecutionStatCountOrderByAggregateInput = {
   date?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   total?: Prisma.SortOrder
   succeeded?: Prisma.SortOrder
   failed?: Prisma.SortOrder
@@ -461,6 +483,7 @@ export type ExecutionStatMaxOrderByAggregateInput = {
   date?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   total?: Prisma.SortOrder
   succeeded?: Prisma.SortOrder
   failed?: Prisma.SortOrder
@@ -474,6 +497,7 @@ export type ExecutionStatMinOrderByAggregateInput = {
   date?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   workflowId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   total?: Prisma.SortOrder
   succeeded?: Prisma.SortOrder
   failed?: Prisma.SortOrder
@@ -488,6 +512,16 @@ export type ExecutionStatSumOrderByAggregateInput = {
   failed?: Prisma.SortOrder
   cancelled?: Prisma.SortOrder
   durationMs?: Prisma.SortOrder
+}
+
+export type ExecutionStatListRelationFilter = {
+  every?: Prisma.ExecutionStatWhereInput
+  some?: Prisma.ExecutionStatWhereInput
+  none?: Prisma.ExecutionStatWhereInput
+}
+
+export type ExecutionStatOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -506,6 +540,169 @@ export type BigIntFieldUpdateOperationsInput = {
   divide?: bigint | number
 }
 
+export type ExecutionStatCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionStatCreateWithoutOrganizationInput[] | Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionStatCreateManyOrganizationInputEnvelope
+  connect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+}
+
+export type ExecutionStatUncheckedCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionStatCreateWithoutOrganizationInput[] | Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionStatCreateManyOrganizationInputEnvelope
+  connect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+}
+
+export type ExecutionStatUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionStatCreateWithoutOrganizationInput[] | Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.ExecutionStatUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionStatUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionStatCreateManyOrganizationInputEnvelope
+  set?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  disconnect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  delete?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  connect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  update?: Prisma.ExecutionStatUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionStatUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.ExecutionStatUpdateManyWithWhereWithoutOrganizationInput | Prisma.ExecutionStatUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.ExecutionStatScalarWhereInput | Prisma.ExecutionStatScalarWhereInput[]
+}
+
+export type ExecutionStatUncheckedUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionStatCreateWithoutOrganizationInput[] | Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionStatCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.ExecutionStatUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionStatUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionStatCreateManyOrganizationInputEnvelope
+  set?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  disconnect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  delete?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  connect?: Prisma.ExecutionStatWhereUniqueInput | Prisma.ExecutionStatWhereUniqueInput[]
+  update?: Prisma.ExecutionStatUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionStatUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.ExecutionStatUpdateManyWithWhereWithoutOrganizationInput | Prisma.ExecutionStatUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.ExecutionStatScalarWhereInput | Prisma.ExecutionStatScalarWhereInput[]
+}
+
+export type ExecutionStatCreateWithoutOrganizationInput = {
+  id?: string
+  date: Date | string
+  userId: string
+  workflowId: string
+  total?: number
+  succeeded?: number
+  failed?: number
+  cancelled?: number
+  durationMs?: bigint | number
+  updatedAt?: Date | string
+}
+
+export type ExecutionStatUncheckedCreateWithoutOrganizationInput = {
+  id?: string
+  date: Date | string
+  userId: string
+  workflowId: string
+  total?: number
+  succeeded?: number
+  failed?: number
+  cancelled?: number
+  durationMs?: bigint | number
+  updatedAt?: Date | string
+}
+
+export type ExecutionStatCreateOrConnectWithoutOrganizationInput = {
+  where: Prisma.ExecutionStatWhereUniqueInput
+  create: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput>
+}
+
+export type ExecutionStatCreateManyOrganizationInputEnvelope = {
+  data: Prisma.ExecutionStatCreateManyOrganizationInput | Prisma.ExecutionStatCreateManyOrganizationInput[]
+  skipDuplicates?: boolean
+}
+
+export type ExecutionStatUpsertWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.ExecutionStatWhereUniqueInput
+  update: Prisma.XOR<Prisma.ExecutionStatUpdateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedUpdateWithoutOrganizationInput>
+  create: Prisma.XOR<Prisma.ExecutionStatCreateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedCreateWithoutOrganizationInput>
+}
+
+export type ExecutionStatUpdateWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.ExecutionStatWhereUniqueInput
+  data: Prisma.XOR<Prisma.ExecutionStatUpdateWithoutOrganizationInput, Prisma.ExecutionStatUncheckedUpdateWithoutOrganizationInput>
+}
+
+export type ExecutionStatUpdateManyWithWhereWithoutOrganizationInput = {
+  where: Prisma.ExecutionStatScalarWhereInput
+  data: Prisma.XOR<Prisma.ExecutionStatUpdateManyMutationInput, Prisma.ExecutionStatUncheckedUpdateManyWithoutOrganizationInput>
+}
+
+export type ExecutionStatScalarWhereInput = {
+  AND?: Prisma.ExecutionStatScalarWhereInput | Prisma.ExecutionStatScalarWhereInput[]
+  OR?: Prisma.ExecutionStatScalarWhereInput[]
+  NOT?: Prisma.ExecutionStatScalarWhereInput | Prisma.ExecutionStatScalarWhereInput[]
+  id?: Prisma.StringFilter<"ExecutionStat"> | string
+  date?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
+  userId?: Prisma.StringFilter<"ExecutionStat"> | string
+  workflowId?: Prisma.StringFilter<"ExecutionStat"> | string
+  organizationId?: Prisma.StringFilter<"ExecutionStat"> | string
+  total?: Prisma.IntFilter<"ExecutionStat"> | number
+  succeeded?: Prisma.IntFilter<"ExecutionStat"> | number
+  failed?: Prisma.IntFilter<"ExecutionStat"> | number
+  cancelled?: Prisma.IntFilter<"ExecutionStat"> | number
+  durationMs?: Prisma.BigIntFilter<"ExecutionStat"> | bigint | number
+  updatedAt?: Prisma.DateTimeFilter<"ExecutionStat"> | Date | string
+}
+
+export type ExecutionStatCreateManyOrganizationInput = {
+  id?: string
+  date: Date | string
+  userId: string
+  workflowId: string
+  total?: number
+  succeeded?: number
+  failed?: number
+  cancelled?: number
+  durationMs?: bigint | number
+  updatedAt?: Date | string
+}
+
+export type ExecutionStatUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  total?: Prisma.IntFieldUpdateOperationsInput | number
+  succeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  failed?: Prisma.IntFieldUpdateOperationsInput | number
+  cancelled?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMs?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ExecutionStatUncheckedUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  total?: Prisma.IntFieldUpdateOperationsInput | number
+  succeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  failed?: Prisma.IntFieldUpdateOperationsInput | number
+  cancelled?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMs?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ExecutionStatUncheckedUpdateManyWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  total?: Prisma.IntFieldUpdateOperationsInput | number
+  succeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  failed?: Prisma.IntFieldUpdateOperationsInput | number
+  cancelled?: Prisma.IntFieldUpdateOperationsInput | number
+  durationMs?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 
 
 export type ExecutionStatSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -513,12 +710,14 @@ export type ExecutionStatSelect<ExtArgs extends runtime.Types.Extensions.Interna
   date?: boolean
   userId?: boolean
   workflowId?: boolean
+  organizationId?: boolean
   total?: boolean
   succeeded?: boolean
   failed?: boolean
   cancelled?: boolean
   durationMs?: boolean
   updatedAt?: boolean
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["executionStat"]>
 
 export type ExecutionStatSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -526,12 +725,14 @@ export type ExecutionStatSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   date?: boolean
   userId?: boolean
   workflowId?: boolean
+  organizationId?: boolean
   total?: boolean
   succeeded?: boolean
   failed?: boolean
   cancelled?: boolean
   durationMs?: boolean
   updatedAt?: boolean
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["executionStat"]>
 
 export type ExecutionStatSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -539,12 +740,14 @@ export type ExecutionStatSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   date?: boolean
   userId?: boolean
   workflowId?: boolean
+  organizationId?: boolean
   total?: boolean
   succeeded?: boolean
   failed?: boolean
   cancelled?: boolean
   durationMs?: boolean
   updatedAt?: boolean
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["executionStat"]>
 
 export type ExecutionStatSelectScalar = {
@@ -552,6 +755,7 @@ export type ExecutionStatSelectScalar = {
   date?: boolean
   userId?: boolean
   workflowId?: boolean
+  organizationId?: boolean
   total?: boolean
   succeeded?: boolean
   failed?: boolean
@@ -560,16 +764,28 @@ export type ExecutionStatSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ExecutionStatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "userId" | "workflowId" | "total" | "succeeded" | "failed" | "cancelled" | "durationMs" | "updatedAt", ExtArgs["result"]["executionStat"]>
+export type ExecutionStatOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "userId" | "workflowId" | "organizationId" | "total" | "succeeded" | "failed" | "cancelled" | "durationMs" | "updatedAt", ExtArgs["result"]["executionStat"]>
+export type ExecutionStatInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+}
+export type ExecutionStatIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+}
+export type ExecutionStatIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+}
 
 export type $ExecutionStatPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ExecutionStat"
-  objects: {}
+  objects: {
+    organization: Prisma.$OrganizationPayload<ExtArgs>
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     date: Date
     userId: string
     workflowId: string
+    organizationId: string
     total: number
     succeeded: number
     failed: number
@@ -970,6 +1186,7 @@ readonly fields: ExecutionStatFieldRefs;
  */
 export interface Prisma__ExecutionStatClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1003,6 +1220,7 @@ export interface ExecutionStatFieldRefs {
   readonly date: Prisma.FieldRef<"ExecutionStat", 'DateTime'>
   readonly userId: Prisma.FieldRef<"ExecutionStat", 'String'>
   readonly workflowId: Prisma.FieldRef<"ExecutionStat", 'String'>
+  readonly organizationId: Prisma.FieldRef<"ExecutionStat", 'String'>
   readonly total: Prisma.FieldRef<"ExecutionStat", 'Int'>
   readonly succeeded: Prisma.FieldRef<"ExecutionStat", 'Int'>
   readonly failed: Prisma.FieldRef<"ExecutionStat", 'Int'>
@@ -1026,6 +1244,10 @@ export type ExecutionStatFindUniqueArgs<ExtArgs extends runtime.Types.Extensions
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
+  /**
    * Filter, which ExecutionStat to fetch.
    */
   where: Prisma.ExecutionStatWhereUniqueInput
@@ -1044,6 +1266,10 @@ export type ExecutionStatFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Ext
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
+  /**
    * Filter, which ExecutionStat to fetch.
    */
   where: Prisma.ExecutionStatWhereUniqueInput
@@ -1061,6 +1287,10 @@ export type ExecutionStatFindFirstArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the ExecutionStat
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
   /**
    * Filter, which ExecutionStat to fetch.
    */
@@ -1110,6 +1340,10 @@ export type ExecutionStatFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Exte
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
+  /**
    * Filter, which ExecutionStat to fetch.
    */
   where?: Prisma.ExecutionStatWhereInput
@@ -1158,6 +1392,10 @@ export type ExecutionStatFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
+  /**
    * Filter, which ExecutionStats to fetch.
    */
   where?: Prisma.ExecutionStatWhereInput
@@ -1201,6 +1439,10 @@ export type ExecutionStatCreateArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
+  /**
    * The data needed to create a ExecutionStat.
    */
   data: Prisma.XOR<Prisma.ExecutionStatCreateInput, Prisma.ExecutionStatUncheckedCreateInput>
@@ -1234,6 +1476,10 @@ export type ExecutionStatCreateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    */
   data: Prisma.ExecutionStatCreateManyInput | Prisma.ExecutionStatCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1248,6 +1494,10 @@ export type ExecutionStatUpdateArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the ExecutionStat
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
   /**
    * The data needed to update a ExecutionStat.
    */
@@ -1300,6 +1550,10 @@ export type ExecutionStatUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    * Limit how many ExecutionStats to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1314,6 +1568,10 @@ export type ExecutionStatUpsertArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the ExecutionStat
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
   /**
    * The filter to search for the ExecutionStat to update in case it exists.
    */
@@ -1340,6 +1598,10 @@ export type ExecutionStatDeleteArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the ExecutionStat
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
   /**
    * Filter which ExecutionStat to delete.
    */
@@ -1372,4 +1634,8 @@ export type ExecutionStatDefaultArgs<ExtArgs extends runtime.Types.Extensions.In
    * Omit specific fields from the ExecutionStat
    */
   omit?: Prisma.ExecutionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ExecutionStatInclude<ExtArgs> | null
 }

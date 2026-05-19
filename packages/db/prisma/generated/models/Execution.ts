@@ -33,6 +33,7 @@ export type ExecutionMinAggregateOutputType = {
   completedAt: Date | null
   error: string | null
   userId: string | null
+  organizationId: string | null
 }
 
 export type ExecutionMaxAggregateOutputType = {
@@ -44,6 +45,7 @@ export type ExecutionMaxAggregateOutputType = {
   completedAt: Date | null
   error: string | null
   userId: string | null
+  organizationId: string | null
 }
 
 export type ExecutionCountAggregateOutputType = {
@@ -56,6 +58,7 @@ export type ExecutionCountAggregateOutputType = {
   result: number
   error: number
   userId: number
+  organizationId: number
   _all: number
 }
 
@@ -69,6 +72,7 @@ export type ExecutionMinAggregateInputType = {
   completedAt?: true
   error?: true
   userId?: true
+  organizationId?: true
 }
 
 export type ExecutionMaxAggregateInputType = {
@@ -80,6 +84,7 @@ export type ExecutionMaxAggregateInputType = {
   completedAt?: true
   error?: true
   userId?: true
+  organizationId?: true
 }
 
 export type ExecutionCountAggregateInputType = {
@@ -92,6 +97,7 @@ export type ExecutionCountAggregateInputType = {
   result?: true
   error?: true
   userId?: true
+  organizationId?: true
   _all?: true
 }
 
@@ -177,6 +183,7 @@ export type ExecutionGroupByOutputType = {
   result: runtime.JsonValue | null
   error: string | null
   userId: string
+  organizationId: string
   _count: ExecutionCountAggregateOutputType | null
   _min: ExecutionMinAggregateOutputType | null
   _max: ExecutionMaxAggregateOutputType | null
@@ -210,8 +217,10 @@ export type ExecutionWhereInput = {
   result?: Prisma.JsonNullableFilter<"Execution">
   error?: Prisma.StringNullableFilter<"Execution"> | string | null
   userId?: Prisma.StringFilter<"Execution"> | string
+  organizationId?: Prisma.StringFilter<"Execution"> | string
   workflow?: Prisma.XOR<Prisma.WorkflowScalarRelationFilter, Prisma.WorkflowWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   steps?: Prisma.ExecutionStepListRelationFilter
 }
 
@@ -225,8 +234,10 @@ export type ExecutionOrderByWithRelationInput = {
   result?: Prisma.SortOrderInput | Prisma.SortOrder
   error?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   workflow?: Prisma.WorkflowOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
+  organization?: Prisma.OrganizationOrderByWithRelationInput
   steps?: Prisma.ExecutionStepOrderByRelationAggregateInput
 }
 
@@ -243,8 +254,10 @@ export type ExecutionWhereUniqueInput = Prisma.AtLeast<{
   result?: Prisma.JsonNullableFilter<"Execution">
   error?: Prisma.StringNullableFilter<"Execution"> | string | null
   userId?: Prisma.StringFilter<"Execution"> | string
+  organizationId?: Prisma.StringFilter<"Execution"> | string
   workflow?: Prisma.XOR<Prisma.WorkflowScalarRelationFilter, Prisma.WorkflowWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   steps?: Prisma.ExecutionStepListRelationFilter
 }, "id">
 
@@ -258,6 +271,7 @@ export type ExecutionOrderByWithAggregationInput = {
   result?: Prisma.SortOrderInput | Prisma.SortOrder
   error?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
   _count?: Prisma.ExecutionCountOrderByAggregateInput
   _max?: Prisma.ExecutionMaxOrderByAggregateInput
   _min?: Prisma.ExecutionMinOrderByAggregateInput
@@ -276,6 +290,7 @@ export type ExecutionScalarWhereWithAggregatesInput = {
   result?: Prisma.JsonNullableWithAggregatesFilter<"Execution">
   error?: Prisma.StringNullableWithAggregatesFilter<"Execution"> | string | null
   userId?: Prisma.StringWithAggregatesFilter<"Execution"> | string
+  organizationId?: Prisma.StringWithAggregatesFilter<"Execution"> | string
 }
 
 export type ExecutionCreateInput = {
@@ -288,6 +303,7 @@ export type ExecutionCreateInput = {
   error?: string | null
   workflow: Prisma.WorkflowCreateNestedOneWithoutExecutionsInput
   user: Prisma.UserCreateNestedOneWithoutExecutionsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutExecutionsInput
   steps?: Prisma.ExecutionStepCreateNestedManyWithoutExecutionInput
 }
 
@@ -301,6 +317,7 @@ export type ExecutionUncheckedCreateInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   userId: string
+  organizationId: string
   steps?: Prisma.ExecutionStepUncheckedCreateNestedManyWithoutExecutionInput
 }
 
@@ -314,6 +331,7 @@ export type ExecutionUpdateInput = {
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workflow?: Prisma.WorkflowUpdateOneRequiredWithoutExecutionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutExecutionsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutExecutionsNestedInput
   steps?: Prisma.ExecutionStepUpdateManyWithoutExecutionNestedInput
 }
 
@@ -327,6 +345,7 @@ export type ExecutionUncheckedUpdateInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   steps?: Prisma.ExecutionStepUncheckedUpdateManyWithoutExecutionNestedInput
 }
 
@@ -340,6 +359,7 @@ export type ExecutionCreateManyInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   userId: string
+  organizationId: string
 }
 
 export type ExecutionUpdateManyMutationInput = {
@@ -362,6 +382,7 @@ export type ExecutionUncheckedUpdateManyInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type ExecutionListRelationFilter = {
@@ -384,6 +405,7 @@ export type ExecutionCountOrderByAggregateInput = {
   result?: Prisma.SortOrder
   error?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type ExecutionMaxOrderByAggregateInput = {
@@ -395,6 +417,7 @@ export type ExecutionMaxOrderByAggregateInput = {
   completedAt?: Prisma.SortOrder
   error?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type ExecutionMinOrderByAggregateInput = {
@@ -406,6 +429,7 @@ export type ExecutionMinOrderByAggregateInput = {
   completedAt?: Prisma.SortOrder
   error?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  organizationId?: Prisma.SortOrder
 }
 
 export type ExecutionScalarRelationFilter = {
@@ -515,6 +539,48 @@ export type ExecutionUpdateOneRequiredWithoutStepsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ExecutionUpdateToOneWithWhereWithoutStepsInput, Prisma.ExecutionUpdateWithoutStepsInput>, Prisma.ExecutionUncheckedUpdateWithoutStepsInput>
 }
 
+export type ExecutionCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionCreateWithoutOrganizationInput[] | Prisma.ExecutionUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionCreateManyOrganizationInputEnvelope
+  connect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+}
+
+export type ExecutionUncheckedCreateNestedManyWithoutOrganizationInput = {
+  create?: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionCreateWithoutOrganizationInput[] | Prisma.ExecutionUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionCreateOrConnectWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionCreateManyOrganizationInputEnvelope
+  connect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+}
+
+export type ExecutionUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionCreateWithoutOrganizationInput[] | Prisma.ExecutionUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.ExecutionUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionCreateManyOrganizationInputEnvelope
+  set?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  disconnect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  delete?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  connect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  update?: Prisma.ExecutionUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.ExecutionUpdateManyWithWhereWithoutOrganizationInput | Prisma.ExecutionUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.ExecutionScalarWhereInput | Prisma.ExecutionScalarWhereInput[]
+}
+
+export type ExecutionUncheckedUpdateManyWithoutOrganizationNestedInput = {
+  create?: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput> | Prisma.ExecutionCreateWithoutOrganizationInput[] | Prisma.ExecutionUncheckedCreateWithoutOrganizationInput[]
+  connectOrCreate?: Prisma.ExecutionCreateOrConnectWithoutOrganizationInput | Prisma.ExecutionCreateOrConnectWithoutOrganizationInput[]
+  upsert?: Prisma.ExecutionUpsertWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionUpsertWithWhereUniqueWithoutOrganizationInput[]
+  createMany?: Prisma.ExecutionCreateManyOrganizationInputEnvelope
+  set?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  disconnect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  delete?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  connect?: Prisma.ExecutionWhereUniqueInput | Prisma.ExecutionWhereUniqueInput[]
+  update?: Prisma.ExecutionUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.ExecutionUpdateWithWhereUniqueWithoutOrganizationInput[]
+  updateMany?: Prisma.ExecutionUpdateManyWithWhereWithoutOrganizationInput | Prisma.ExecutionUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.ExecutionScalarWhereInput | Prisma.ExecutionScalarWhereInput[]
+}
+
 export type ExecutionCreateWithoutUserInput = {
   id?: string
   status?: $Enums.ExecutionStatus
@@ -524,6 +590,7 @@ export type ExecutionCreateWithoutUserInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   workflow: Prisma.WorkflowCreateNestedOneWithoutExecutionsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutExecutionsInput
   steps?: Prisma.ExecutionStepCreateNestedManyWithoutExecutionInput
 }
 
@@ -536,6 +603,7 @@ export type ExecutionUncheckedCreateWithoutUserInput = {
   completedAt?: Date | string | null
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
+  organizationId: string
   steps?: Prisma.ExecutionStepUncheckedCreateNestedManyWithoutExecutionInput
 }
 
@@ -578,6 +646,7 @@ export type ExecutionScalarWhereInput = {
   result?: Prisma.JsonNullableFilter<"Execution">
   error?: Prisma.StringNullableFilter<"Execution"> | string | null
   userId?: Prisma.StringFilter<"Execution"> | string
+  organizationId?: Prisma.StringFilter<"Execution"> | string
 }
 
 export type ExecutionCreateWithoutWorkflowInput = {
@@ -589,6 +658,7 @@ export type ExecutionCreateWithoutWorkflowInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   user: Prisma.UserCreateNestedOneWithoutExecutionsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutExecutionsInput
   steps?: Prisma.ExecutionStepCreateNestedManyWithoutExecutionInput
 }
 
@@ -601,6 +671,7 @@ export type ExecutionUncheckedCreateWithoutWorkflowInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   userId: string
+  organizationId: string
   steps?: Prisma.ExecutionStepUncheckedCreateNestedManyWithoutExecutionInput
 }
 
@@ -640,6 +711,7 @@ export type ExecutionCreateWithoutStepsInput = {
   error?: string | null
   workflow: Prisma.WorkflowCreateNestedOneWithoutExecutionsInput
   user: Prisma.UserCreateNestedOneWithoutExecutionsInput
+  organization: Prisma.OrganizationCreateNestedOneWithoutExecutionsInput
 }
 
 export type ExecutionUncheckedCreateWithoutStepsInput = {
@@ -652,6 +724,7 @@ export type ExecutionUncheckedCreateWithoutStepsInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   userId: string
+  organizationId: string
 }
 
 export type ExecutionCreateOrConnectWithoutStepsInput = {
@@ -680,6 +753,7 @@ export type ExecutionUpdateWithoutStepsInput = {
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workflow?: Prisma.WorkflowUpdateOneRequiredWithoutExecutionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutExecutionsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutExecutionsNestedInput
 }
 
 export type ExecutionUncheckedUpdateWithoutStepsInput = {
@@ -692,6 +766,59 @@ export type ExecutionUncheckedUpdateWithoutStepsInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+}
+
+export type ExecutionCreateWithoutOrganizationInput = {
+  id?: string
+  status?: $Enums.ExecutionStatus
+  inngestRunId?: string | null
+  startedAt?: Date | string
+  completedAt?: Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: string | null
+  workflow: Prisma.WorkflowCreateNestedOneWithoutExecutionsInput
+  user: Prisma.UserCreateNestedOneWithoutExecutionsInput
+  steps?: Prisma.ExecutionStepCreateNestedManyWithoutExecutionInput
+}
+
+export type ExecutionUncheckedCreateWithoutOrganizationInput = {
+  id?: string
+  workflowId: string
+  status?: $Enums.ExecutionStatus
+  inngestRunId?: string | null
+  startedAt?: Date | string
+  completedAt?: Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: string | null
+  userId: string
+  steps?: Prisma.ExecutionStepUncheckedCreateNestedManyWithoutExecutionInput
+}
+
+export type ExecutionCreateOrConnectWithoutOrganizationInput = {
+  where: Prisma.ExecutionWhereUniqueInput
+  create: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput>
+}
+
+export type ExecutionCreateManyOrganizationInputEnvelope = {
+  data: Prisma.ExecutionCreateManyOrganizationInput | Prisma.ExecutionCreateManyOrganizationInput[]
+  skipDuplicates?: boolean
+}
+
+export type ExecutionUpsertWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.ExecutionWhereUniqueInput
+  update: Prisma.XOR<Prisma.ExecutionUpdateWithoutOrganizationInput, Prisma.ExecutionUncheckedUpdateWithoutOrganizationInput>
+  create: Prisma.XOR<Prisma.ExecutionCreateWithoutOrganizationInput, Prisma.ExecutionUncheckedCreateWithoutOrganizationInput>
+}
+
+export type ExecutionUpdateWithWhereUniqueWithoutOrganizationInput = {
+  where: Prisma.ExecutionWhereUniqueInput
+  data: Prisma.XOR<Prisma.ExecutionUpdateWithoutOrganizationInput, Prisma.ExecutionUncheckedUpdateWithoutOrganizationInput>
+}
+
+export type ExecutionUpdateManyWithWhereWithoutOrganizationInput = {
+  where: Prisma.ExecutionScalarWhereInput
+  data: Prisma.XOR<Prisma.ExecutionUpdateManyMutationInput, Prisma.ExecutionUncheckedUpdateManyWithoutOrganizationInput>
 }
 
 export type ExecutionCreateManyUserInput = {
@@ -703,6 +830,7 @@ export type ExecutionCreateManyUserInput = {
   completedAt?: Date | string | null
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
+  organizationId: string
 }
 
 export type ExecutionUpdateWithoutUserInput = {
@@ -714,6 +842,7 @@ export type ExecutionUpdateWithoutUserInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   workflow?: Prisma.WorkflowUpdateOneRequiredWithoutExecutionsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutExecutionsNestedInput
   steps?: Prisma.ExecutionStepUpdateManyWithoutExecutionNestedInput
 }
 
@@ -726,6 +855,7 @@ export type ExecutionUncheckedUpdateWithoutUserInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   steps?: Prisma.ExecutionStepUncheckedUpdateManyWithoutExecutionNestedInput
 }
 
@@ -738,6 +868,7 @@ export type ExecutionUncheckedUpdateManyWithoutUserInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type ExecutionCreateManyWorkflowInput = {
@@ -749,6 +880,7 @@ export type ExecutionCreateManyWorkflowInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: string | null
   userId: string
+  organizationId: string
 }
 
 export type ExecutionUpdateWithoutWorkflowInput = {
@@ -760,6 +892,7 @@ export type ExecutionUpdateWithoutWorkflowInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutExecutionsNestedInput
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutExecutionsNestedInput
   steps?: Prisma.ExecutionStepUpdateManyWithoutExecutionNestedInput
 }
 
@@ -772,11 +905,63 @@ export type ExecutionUncheckedUpdateWithoutWorkflowInput = {
   result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
   steps?: Prisma.ExecutionStepUncheckedUpdateManyWithoutExecutionNestedInput
 }
 
 export type ExecutionUncheckedUpdateManyWithoutWorkflowInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumExecutionStatusFieldUpdateOperationsInput | $Enums.ExecutionStatus
+  inngestRunId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  organizationId?: Prisma.StringFieldUpdateOperationsInput | string
+}
+
+export type ExecutionCreateManyOrganizationInput = {
+  id?: string
+  workflowId: string
+  status?: $Enums.ExecutionStatus
+  inngestRunId?: string | null
+  startedAt?: Date | string
+  completedAt?: Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: string | null
+  userId: string
+}
+
+export type ExecutionUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumExecutionStatusFieldUpdateOperationsInput | $Enums.ExecutionStatus
+  inngestRunId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  workflow?: Prisma.WorkflowUpdateOneRequiredWithoutExecutionsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutExecutionsNestedInput
+  steps?: Prisma.ExecutionStepUpdateManyWithoutExecutionNestedInput
+}
+
+export type ExecutionUncheckedUpdateWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workflowId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumExecutionStatusFieldUpdateOperationsInput | $Enums.ExecutionStatus
+  inngestRunId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  steps?: Prisma.ExecutionStepUncheckedUpdateManyWithoutExecutionNestedInput
+}
+
+export type ExecutionUncheckedUpdateManyWithoutOrganizationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  workflowId?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumExecutionStatusFieldUpdateOperationsInput | $Enums.ExecutionStatus
   inngestRunId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -827,8 +1012,10 @@ export type ExecutionSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   result?: boolean
   error?: boolean
   userId?: boolean
+  organizationId?: boolean
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   steps?: boolean | Prisma.Execution$stepsArgs<ExtArgs>
   _count?: boolean | Prisma.ExecutionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["execution"]>
@@ -843,8 +1030,10 @@ export type ExecutionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   result?: boolean
   error?: boolean
   userId?: boolean
+  organizationId?: boolean
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["execution"]>
 
 export type ExecutionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -857,8 +1046,10 @@ export type ExecutionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   result?: boolean
   error?: boolean
   userId?: boolean
+  organizationId?: boolean
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["execution"]>
 
 export type ExecutionSelectScalar = {
@@ -871,22 +1062,26 @@ export type ExecutionSelectScalar = {
   result?: boolean
   error?: boolean
   userId?: boolean
+  organizationId?: boolean
 }
 
-export type ExecutionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workflowId" | "status" | "inngestRunId" | "startedAt" | "completedAt" | "result" | "error" | "userId", ExtArgs["result"]["execution"]>
+export type ExecutionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "workflowId" | "status" | "inngestRunId" | "startedAt" | "completedAt" | "result" | "error" | "userId" | "organizationId", ExtArgs["result"]["execution"]>
 export type ExecutionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   steps?: boolean | Prisma.Execution$stepsArgs<ExtArgs>
   _count?: boolean | Prisma.ExecutionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ExecutionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
 export type ExecutionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workflow?: boolean | Prisma.WorkflowDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
 
 export type $ExecutionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -894,6 +1089,7 @@ export type $ExecutionPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     workflow: Prisma.$WorkflowPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs>
+    organization: Prisma.$OrganizationPayload<ExtArgs>
     steps: Prisma.$ExecutionStepPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -906,6 +1102,7 @@ export type $ExecutionPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     result: runtime.JsonValue | null
     error: string | null
     userId: string
+    organizationId: string
   }, ExtArgs["result"]["execution"]>
   composites: {}
 }
@@ -1302,6 +1499,7 @@ export interface Prisma__ExecutionClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   workflow<T extends Prisma.WorkflowDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkflowDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkflowClient<runtime.Types.Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   steps<T extends Prisma.Execution$stepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Execution$stepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExecutionStepPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1341,6 +1539,7 @@ export interface ExecutionFieldRefs {
   readonly result: Prisma.FieldRef<"Execution", 'Json'>
   readonly error: Prisma.FieldRef<"Execution", 'String'>
   readonly userId: Prisma.FieldRef<"Execution", 'String'>
+  readonly organizationId: Prisma.FieldRef<"Execution", 'String'>
 }
     
 
