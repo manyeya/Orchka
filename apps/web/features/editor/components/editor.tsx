@@ -4,17 +4,28 @@ import { ErrorView, LoadingView } from '@/components/entity-component';
 import { NodeType, isTriggerNode } from '@orchka/nodes/core';
 import { NODE_COMPONENTS } from '@orchka/nodes/editor';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
-import { ReactFlow, Background, Panel, ConnectionLineType } from '@xyflow/react';
+import { ReactFlow, Background, Panel, ConnectionLineType, type OnConnectEnd, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { createId } from '@paralleldrive/cuid2';
 import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom, workflowIdAtom } from '../store';
+import { generateUniqueNodeName, getNodeNames } from '../utils/graph-validation';
 import { AddNodeButton } from './add-node-button';
 import { ExecuteWorkflowButton } from './execute-workflow-butto';
 import { resolveCollisions } from '../utils/resolve-collisions';
 import { GroupButton } from './group-button';
 import { NodeEditorBridgeProvider } from './node-editor-bridge-provider';
 import { RealtimeManager } from './realtime-manager';
+import { ConnectEndNodePicker, type ConnectEndPickerLeaf } from './connect-end-node-picker';
+
+interface ConnectEndPickerState {
+    screenX: number;
+    screenY: number;
+    sourceNodeId: string;
+    sourceHandleId: string | null;
+    handleType: 'source' | 'target';
+}
 
 export const EditorLoadingView = () => {
     return (
@@ -42,6 +53,75 @@ function Editor({ workflowId }: { workflowId: string }) {
     const setWorkflowId = useSetAtom(workflowIdAtom);
 
     const hasTriggerNode = useMemo(() => nodes.some(node => isTriggerNode(node.type as string)), [nodes]);
+
+    const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
+    const [pickerState, setPickerState] = useState<ConnectEndPickerState | null>(null);
+
+    const handleConnectEnd = useCallback<OnConnectEnd>((event, connectionState) => {
+        if (connectionState.isValid) return;
+        const fromNode = connectionState.fromNode;
+        if (!fromNode) return;
+        const point = 'changedTouches' in event && event.changedTouches.length > 0
+            ? { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }
+            : { x: (event as MouseEvent).clientX, y: (event as MouseEvent).clientY };
+        setPickerState({
+            screenX: point.x,
+            screenY: point.y,
+            sourceNodeId: fromNode.id,
+            sourceHandleId: connectionState.fromHandle?.id ?? null,
+            handleType: (connectionState.fromHandle?.type as 'source' | 'target' | undefined) ?? 'source',
+        });
+    }, []);
+
+    const handlePickerClose = useCallback(() => setPickerState(null), []);
+
+    const handlePickerSelect = useCallback((leaf: ConnectEndPickerLeaf) => {
+        const state = pickerState;
+        const instance = rfInstanceRef.current;
+        if (!state || !instance) {
+            setPickerState(null);
+            return;
+        }
+
+        const flowPosition = instance.screenToFlowPosition({
+            x: state.screenX,
+            y: state.screenY,
+        });
+
+        const newNodeId = createId();
+        const currentNodes = nodes;
+        const uniqueName = generateUniqueNodeName(leaf.label, getNodeNames(currentNodes));
+
+        const newNode = {
+            id: newNodeId,
+            type: leaf.type,
+            position: flowPosition,
+            data: {
+                label: leaf.label,
+                name: uniqueName,
+            },
+        };
+
+        setNodes([...currentNodes, newNode]);
+
+        const connection = state.handleType === 'target'
+            ? {
+                source: newNodeId,
+                sourceHandle: null,
+                target: state.sourceNodeId,
+                targetHandle: state.sourceHandleId,
+            }
+            : {
+                source: state.sourceNodeId,
+                sourceHandle: state.sourceHandleId,
+                target: newNodeId,
+                targetHandle: null,
+            };
+
+        onConnect(connection);
+        setPickerState(null);
+    }, [nodes, onConnect, pickerState, setNodes]);
+
     // Load workflow data when component mounts or workflow changes
     useEffect(() => {
         setWorkflowId(workflowId);
@@ -63,6 +143,8 @@ function Editor({ workflowId }: { workflowId: string }) {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onConnectEnd={handleConnectEnd}
+                onInit={(instance) => { rfInstanceRef.current = instance; }}
 
                 onNodeDrag={(_, node) => {
                     // Ignore Group nodes for collision updates (they shouldn't push things while being dragged)
@@ -226,6 +308,13 @@ function Editor({ workflowId }: { workflowId: string }) {
                 )}
             </ReactFlow>
             </NodeEditorBridgeProvider>
+            {pickerState && (
+                <ConnectEndNodePicker
+                    position={{ x: pickerState.screenX, y: pickerState.screenY }}
+                    onSelect={handlePickerSelect}
+                    onClose={handlePickerClose}
+                />
+            )}
         </div>
     )
 }
