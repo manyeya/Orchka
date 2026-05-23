@@ -90,6 +90,10 @@ export const orgProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 });
 
 export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+    if (process.env.NODE_ENV !== "production") {
+        return next({ ctx });
+    }
+
     const customer = await polarClient.customers.getStateExternal({
         externalId: ctx.auth.user.id,
     })
