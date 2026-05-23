@@ -47,10 +47,15 @@ export function RealtimeManager() {
                 }
 
                 // 2. Update Execution Data
-                if (data.type === 'node-completed' || data.input !== undefined) {
+                if (
+                    data.type === 'node-completed' ||
+                    data.input !== undefined ||
+                    (data.type === 'node-status' && data.status === 'error')
+                ) {
                     const newData: NodeExecutionData = {
                         input: data.input,
                         output: data.output,
+                        error: data.error ?? null,
                         timestamp: Date.now(),
                         iteration: data.iteration,
                     };

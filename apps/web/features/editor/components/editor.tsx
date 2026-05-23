@@ -4,12 +4,13 @@ import { ErrorView, LoadingView } from '@/components/entity-component';
 import { NodeType, isTriggerNode } from '@orchka/nodes/core';
 import { NODE_COMPONENTS } from '@orchka/nodes/editor';
 import { useSuspenseWorkflow } from '@/features/workflows/hooks/use-workflows';
+import { useLatestExecutionForWorkflow } from '@/features/executions/hooks/use-executions';
 import { ReactFlow, Background, Panel, ConnectionLineType, type OnConnectEnd, type ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { createId } from '@paralleldrive/cuid2';
-import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom, workflowIdAtom } from '../store';
+import { nodesAtom, edgesAtom, onNodesChangeAtom, onEdgesChangeAtom, onConnectAtom, loadWorkflowAtom, workflowIdAtom, nodeStatusesAtom, nodeExecutionDataAtom, type NodeExecutionData } from '../store';
 import { generateUniqueNodeName, getNodeNames } from '../utils/graph-validation';
 import { AddNodeButton } from './add-node-button';
 import { ExecuteWorkflowButton } from './execute-workflow-butto';
@@ -18,6 +19,8 @@ import { GroupButton } from './group-button';
 import { NodeEditorBridgeProvider } from './node-editor-bridge-provider';
 import { RealtimeManager } from './realtime-manager';
 import { ConnectEndNodePicker, type ConnectEndPickerLeaf } from './connect-end-node-picker';
+import { NodeErrorOverlays } from './node-error-overlays';
+import type { WorkflowNodeStatus } from '@orchka/nodes/editor';
 
 interface ConnectEndPickerState {
     screenX: number;
@@ -51,8 +54,39 @@ function Editor({ workflowId }: { workflowId: string }) {
     const onConnect = useSetAtom(onConnectAtom);
     const loadWorkflow = useSetAtom(loadWorkflowAtom);
     const setWorkflowId = useSetAtom(workflowIdAtom);
+    const setNodeStatuses = useSetAtom(nodeStatusesAtom);
+    const setNodeExecutionData = useSetAtom(nodeExecutionDataAtom);
 
     const hasTriggerNode = useMemo(() => nodes.some(node => isTriggerNode(node.type as string)), [nodes]);
+
+    // Hydrate node statuses + execution data from the most recent execution so
+    // failures persist on the canvas across reloads. Live SSE events still win.
+    const { data: latestExecution } = useLatestExecutionForWorkflow(workflowId);
+    const hydratedExecutionIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!latestExecution) return;
+        if (hydratedExecutionIdRef.current === latestExecution.id) return;
+        hydratedExecutionIdRef.current = latestExecution.id;
+
+        const statuses: Record<string, WorkflowNodeStatus> = {};
+        const execData: Record<string, NodeExecutionData> = {};
+        for (const step of latestExecution.steps) {
+            statuses[step.nodeId] = step.status === 'COMPLETED' ? 'success'
+                : step.status === 'FAILED' ? 'error'
+                : step.status === 'RUNNING' ? 'loading'
+                : 'initial';
+            execData[step.nodeId] = {
+                input: step.input,
+                output: step.output,
+                error: step.error ?? null,
+                timestamp: new Date(step.completedAt ?? step.startedAt).getTime(),
+            };
+        }
+        // Hydrated values are seeded first; anything already in the atom (from
+        // a live SSE update) takes precedence.
+        setNodeStatuses(prev => ({ ...statuses, ...prev }));
+        setNodeExecutionData(prev => ({ ...execData, ...prev }));
+    }, [latestExecution, setNodeStatuses, setNodeExecutionData]);
 
     const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
     const [pickerState, setPickerState] = useState<ConnectEndPickerState | null>(null);
@@ -104,18 +138,21 @@ function Editor({ workflowId }: { workflowId: string }) {
 
         setNodes([...currentNodes, newNode]);
 
+        // Use the node-id-based handle convention from base-{action,ai,control}-node.tsx
+        // so the saved edge has non-null sourceHandle/targetHandle (updateWorkflow's
+        // Zod schema rejects nulls and silently drops the edge otherwise).
         const connection = state.handleType === 'target'
             ? {
                 source: newNodeId,
-                sourceHandle: null,
+                sourceHandle: `${newNodeId}-source`,
                 target: state.sourceNodeId,
-                targetHandle: state.sourceHandleId,
+                targetHandle: state.sourceHandleId ?? `${state.sourceNodeId}-target`,
             }
             : {
                 source: state.sourceNodeId,
-                sourceHandle: state.sourceHandleId,
+                sourceHandle: state.sourceHandleId ?? `${state.sourceNodeId}-source`,
                 target: newNodeId,
-                targetHandle: null,
+                targetHandle: `${newNodeId}-target`,
             };
 
         onConnect(connection);
@@ -297,6 +334,7 @@ function Editor({ workflowId }: { workflowId: string }) {
                 minZoom={0.9}
                 fitView>
                 <Background gap={20} />
+                <NodeErrorOverlays />
                 <Panel className='flex flex-col gap-2' position="top-left">
                     <AddNodeButton />
                     <GroupButton />

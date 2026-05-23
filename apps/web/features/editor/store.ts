@@ -49,10 +49,11 @@ export const dragDataAtom = atom<{
   displayPath: string;
 } | null>(null);
 
-/** Stores execution data (input/output) per node, keyed by nodeId */
+/** Stores execution data (input/output/error) per node, keyed by nodeId */
 export interface NodeExecutionData {
   input: unknown;
   output: unknown;
+  error?: string | null;
   timestamp: number;
   iteration?: {
     index: number;

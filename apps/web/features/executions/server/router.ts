@@ -407,4 +407,35 @@ export const executionsRouter = createTRPCRouter({
         error: e.error,
       }));
     }),
+
+  /**
+   * Fetch the most recent execution for a workflow, with its steps.
+   * Used by the editor to hydrate node statuses/errors on load so failed
+   * nodes still surface their state when the user comes back to the canvas.
+   */
+  getLatestForWorkflow: orgProcedure
+    .input(z.object({ workflowId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const execution = await prisma.execution.findFirst({
+        where: {
+          workflowId: input.workflowId,
+          organizationId: ctx.organizationId,
+        },
+        orderBy: { startedAt: "desc" },
+      });
+
+      if (!execution) return null;
+
+      const steps = await getExecutionStepsWithLazyPersist(execution.id, execution.workflowId);
+
+      return {
+        id: execution.id,
+        workflowId: execution.workflowId,
+        status: execution.status,
+        startedAt: execution.startedAt,
+        completedAt: execution.completedAt,
+        error: execution.error,
+        steps,
+      };
+    }),
 });

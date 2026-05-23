@@ -45,6 +45,7 @@ import {
 } from '../store';
 import EditorBreadcrum from './editor-breadcrum';
 import { useUpdateWorkflow } from '@/features/workflows/hooks/use-workflows';
+import { LastRunChip } from './last-run-chip';
 
 interface EditorHeaderProps {
     workflowId: string;
@@ -151,6 +152,7 @@ export function EditorHeader({
                         Unsaved
                     </Badge>
                 )}
+                <LastRunChip workflowId={workflowId} />
             </div>
 
             <TooltipProvider>
