@@ -853,23 +853,25 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Node execution failed";
 
-    // RELIABILITY: Persist steps from Redis to DB on failure
-    await persistExecutionSteps(executionId, workflowId);
-
-    await finalizeExecution(executionId, {
-      status: ExecutionStatus.FAILED,
-      error: errorMessage,
-    });
-
     console.error(`[Node] Failed ${nodeName}: ${errorMessage}`);
 
-    // Publish error event
+    // Publish the error event BEFORE persisting so the Redis history contains
+    // the terminal state when persistExecutionSteps reads it. Without this,
+    // failed steps get frozen as RUNNING in the DB.
     await publishWorkflowEvent(workflowId, executionId, {
       nodeId,
       nodeName,
       nodeType,
       type: 'node-status',
       status: 'error',
+      error: errorMessage,
+    });
+
+    // RELIABILITY: Persist steps from Redis to DB on failure
+    await persistExecutionSteps(executionId, workflowId);
+
+    await finalizeExecution(executionId, {
+      status: ExecutionStatus.FAILED,
       error: errorMessage,
     });
 
