@@ -13,6 +13,7 @@ import {
     ResizableHandle,
 } from "@orchka/ui/resizable";
 import { AdvancedDataViewer } from "./advanced-data-viewer";
+import { ExpressionDropLayer } from "./expression-drop-layer";
 import { useNodeEditorBridge } from "./bridge";
 import { cn } from "@orchka/ui/utils";
 
@@ -92,11 +93,11 @@ export const NodeDetailModal = memo(({
                         <ResizablePanel defaultSize={50} minSize={30}>
                             <div className="h-full flex flex-col overflow-hidden">
                                 <PanelHeader title="Settings" />
-                                <div className="flex-1 min-h-0 overflow-auto">
+                                <ExpressionDropLayer className="flex-1 min-h-0 overflow-auto">
                                     <div className="p-6">
                                         {children}
                                     </div>
-                                </div>
+                                </ExpressionDropLayer>
                             </div>
                         </ResizablePanel>
 

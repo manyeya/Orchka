@@ -224,10 +224,94 @@ function convertToTreeItems(
     return items;
 }
 
+export const EXPRESSION_DRAG_MIME = "application/x-orchka-expression";
+
+export interface ExpressionDragPayload {
+    nodeName: string;
+    /** JS-style accessor path after the node name, e.g. "data.users[0].name". Empty for top-level node ref. */
+    fieldPath: string;
+    /** Human-readable label used as drag preview / fallback. */
+    displayPath: string;
+}
+
+/**
+ * Parse a react-complex-tree item index (e.g. "root.HTTP Request.data.users[0].name")
+ * into the upstream node name + accessor path used to build an expression.
+ *
+ * Returns null when the path doesn't represent a draggable expression source —
+ * e.g. the synthetic "root" item itself, or when the input data isn't a
+ * { nodeName: nodeOutput } object (array root, primitive root, etc.).
+ */
+function parseDragPath(treeItemIndex: unknown): ExpressionDragPayload | null {
+    if (typeof treeItemIndex !== "string") return null;
+    if (treeItemIndex === "root") return null;
+
+    let rest: string;
+    if (treeItemIndex.startsWith("root.")) {
+        rest = treeItemIndex.slice("root.".length);
+    } else {
+        // root[...] etc — there is no upstream node name to bind to.
+        return null;
+    }
+
+    // Split off the first segment (node name) from the field accessor that follows.
+    const firstDot = rest.indexOf(".");
+    const firstBracket = rest.indexOf("[");
+    const splitCandidates = [firstDot, firstBracket].filter(i => i !== -1);
+    const splitIdx = splitCandidates.length > 0 ? Math.min(...splitCandidates) : -1;
+
+    let nodeName: string;
+    let fieldPath: string;
+    if (splitIdx === -1) {
+        nodeName = rest;
+        fieldPath = "";
+    } else {
+        nodeName = rest.slice(0, splitIdx);
+        fieldPath = rest.slice(splitIdx);
+        if (fieldPath.startsWith(".")) fieldPath = fieldPath.slice(1);
+    }
+
+    return {
+        nodeName,
+        fieldPath,
+        displayPath: fieldPath ? `${nodeName}.${fieldPath}` : nodeName,
+    };
+}
+
 /**
  * Render syntax-highlighted tree item
  */
-function renderTreeItemTitle(itemData: TreeItemData): React.ReactElement {
+function renderTreeItemTitle(itemData: TreeItemData, itemIndex: unknown): React.ReactElement {
+    const inner = renderTreeItemInner(itemData);
+    const dragPayload = parseDragPath(itemIndex);
+
+    if (!dragPayload) return inner;
+
+    return (
+        <span
+            draggable
+            onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "copy";
+                e.dataTransfer.setData(EXPRESSION_DRAG_MIME, JSON.stringify(dragPayload));
+                // Plain-text fallback for editors that don't recognize our mime type.
+                const expr = dragPayload.fieldPath
+                    ? `{{ $node("${dragPayload.nodeName}").${dragPayload.fieldPath} }}`
+                    : `{{ $node("${dragPayload.nodeName}") }}`;
+                e.dataTransfer.setData("text/plain", expr);
+                window.dispatchEvent(new CustomEvent("orchka-expression-drag-start"));
+            }}
+            onDragEnd={() => {
+                window.dispatchEvent(new CustomEvent("orchka-expression-drag-end"));
+            }}
+            title={`Drag to insert · ${dragPayload.displayPath}`}
+            className="rct-drag-source cursor-grab active:cursor-grabbing"
+        >
+            {inner}
+        </span>
+    );
+}
+
+function renderTreeItemInner(itemData: TreeItemData): React.ReactElement {
     const { key, value, type, count } = itemData;
 
     // Color classes matching common JSON syntax highlighting
@@ -375,7 +459,7 @@ const TreeViewPanel = memo(
                     key={collapsed ? "collapsed" : "expanded"}
                     dataProvider={dataProvider}
                     getItemTitle={(item) => item.data.key}
-                    renderItemTitle={({ item }) => renderTreeItemTitle(item.data)}
+                    renderItemTitle={({ item }) => renderTreeItemTitle(item.data, item.index)}
                     viewState={{
                         "data-tree": {
                             expandedItems,
