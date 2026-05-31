@@ -1,0 +1,160 @@
+---
+title: Execution Reliability
+description: How Orchka retries, recovers, and persists workflow runs — retries, the dead-letter queue, Redis durability, checkpoints, and parallel branch execution.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+# Execution Reliability
+
+Orchka executes workflows on a **BullMQ + Redis** engine. Every node runs as its
+own background job, and the engine is built so that a failure, a crash, or a
+restart loses as little work as possible. This page explains the reliability
+guarantees and the knobs you control.
+
+<Callout type="info">
+  These behaviors are handled by the workflow engine and the BullMQ worker. They
+  apply to every workflow automatically — there is nothing to configure per
+  workflow, except the optional [parallel execution](#parallel-branch-execution)
+  flag.
+</Callout>
+
+## Execution model in one paragraph
+
+When a workflow is triggered, the engine creates an execution record, sorts the
+nodes, and enqueues the **first** node. Each node job runs the node, publishes a
+real-time event to Redis, and then **chains the next node(s)**. Step history is
+streamed to Redis for the live UI and flushed to Postgres at checkpoints and on
+completion — so the database isn't hit on every step.
+
+## Retries
+
+A failed node is **retried automatically — but only when retrying is safe.** The
+engine classifies each node type:
+
+| Class | Behavior | Node types |
+| --- | --- | --- |
+| **Idempotent** | Retried up to **3×** with exponential backoff (1s, 2s, 4s) | AI nodes (Generate, Extract, Classify, Agent), control nodes (If, Switch, Loop, Wait, Merge), triggers, **HTTP GET/HEAD** |
+| **Side-effecting** | **No automatic retry** — runs once, then goes to the [dead-letter queue](#dead-letter-queue) on failure | Social posts (X, LinkedIn, Facebook, Instagram, Threads, Discord, Reddit, Bluesky, Mastodon, Pinterest), **HTTP POST/PUT/PATCH/DELETE** |
+
+<Callout type="warn">
+  **Why side-effecting nodes don't auto-retry:** retrying a node re-runs it from
+  scratch. For a node that already posted a tweet or sent a Discord message,
+  that would post it **twice**. Orchka runs these once and surfaces the failure
+  in the dead-letter queue for a deliberate manual retry, rather than risking a
+  duplicate.
+</Callout>
+
+Some failures are **never** retried even for idempotent nodes — for example a
+missing credential or an invalid workflow. These are marked non-retryable so the
+job fails fast instead of burning three attempts on an error that can't succeed.
+
+The `HTTP Request` node's class is chosen from its **method**: a `GET` is treated
+as safe to retry, a `POST` is not.
+
+## Dead-letter queue
+
+When a job fails terminally — retries exhausted, or a side-effecting node that
+never retries — it is **parked in a dead-letter queue (DLQ)** instead of being
+discarded. Each DLQ entry keeps:
+
+- the full job payload (so it can be re-run unchanged),
+- which node and execution it belonged to,
+- the number of attempts made, and the error message + stack.
+
+This means a failed post or a flaky integration is never silently lost: you can
+inspect what failed and **re-queue it** for a deliberate retry. Successful and
+failed jobs are also retained (most-recent 1,000) rather than deleted
+immediately, so there's always a recent history to triage.
+
+## Durability: surviving a restart
+
+Redis holds all in-flight job state and the live step history. If Redis were
+in-memory only, a restart would drop every running workflow. Orchka ships a
+Redis configured for **append-only persistence**:
+
+```yaml
+# docker-compose.yml (repo root)
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - orchka-redis-data:/data
+```
+
+- `appendonly yes` — every change is written to the append-only file (AOF).
+- `appendfsync everysec` — the AOF is fsync'd once per second, so a crash loses
+  at most ~1 second of state, with negligible throughput cost.
+
+<Callout type="warn">
+  If you run your own Redis, enable AOF persistence there too. Without it, a
+  Redis restart loses in-flight executions regardless of everything else on this
+  page. Start the bundled one with `docker compose up -d redis`.
+</Callout>
+
+### Periodic checkpoints
+
+Step history is flushed from Redis to Postgres **every 25 nodes** (and every 25
+loop iterations), not only when the workflow finishes. Combined with AOF, a crash
+mid-run resumes with most of its history already persisted. Checkpointing is
+idempotent — re-running it never creates duplicate step rows.
+
+### No silent truncation on long runs
+
+The per-execution step history retained in Redis holds up to **10,000 events**,
+comfortably above any realistic workflow (including loop iterations), so long
+runs don't lose their middle steps before they're persisted.
+
+## Parallel branch execution
+
+By default, Orchka executes one node at a time, depth-first within a branch — so
+independent branches of a workflow run **sequentially**. An opt-in mode runs
+independent branches **concurrently**.
+
+```
+Sequential (default):    1 → 2 → 4 → 3
+Parallel  (opt-in):      1 → (2 and 3 at the same time) → 4
+```
+
+Enable it by setting an environment variable for the **worker** process (the
+worker reads `apps/web/.env.local`):
+
+```env
+ORCHKA_PARALLEL_BRANCHES=1
+```
+
+When enabled:
+
+- Every node whose dependencies are satisfied is enqueued immediately, so
+  independent branches progress at the same time.
+- Shared execution state (each node's output, which nodes have completed, branch
+  decisions) lives in Redis rather than being threaded through job payloads, so a
+  **fan-in / Merge** node correctly sees the output of *every* incoming branch.
+- A node with multiple parents is enqueued exactly once (atomic claim), and the
+  last branch to finish finalizes the run.
+
+<Callout type="warn">
+  Parallel execution is **off by default** and should be validated in a staging
+  environment before enabling in production. Loops still run in-process in this
+  mode (making them crash-recoverable mid-iteration is a planned follow-up), so
+  prefer enabling it for fan-out/fan-in DAGs first.
+</Callout>
+
+## What's still being hardened
+
+The engine's roadmap (`packages/workflow-engine/src/ROADMAP.md`) tracks the
+remaining items, notably converting **loop bodies into queued jobs** so loops —
+and `Wait` nodes inside loops — become fully crash-recoverable.
+
+<Cards>
+  <Card title="Execution Monitoring" href="/docs/executions">
+    Track, filter, and debug individual runs with the trace timeline and payload
+    inspector.
+  </Card>
+  <Card title="Control Nodes" href="/docs/nodes">
+    If, Switch, Loop, Wait, and Merge — the nodes that shape branching and
+    fan-in.
+  </Card>
+</Cards>

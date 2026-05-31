@@ -32,7 +32,14 @@ A powerful, developer-first workflow automation platform. Design, execute, and m
 - **Payload Viewer**: Deep inspection of input/output data with a premium JSON viewer
 - **Live Updates**: Watch workflows execute with real-time status updates
 - **Background Processing**: Reliable execution with BullMQ and Redis for job queuing
-- **Error Handling**: Robust retry mechanisms and error recovery
+
+### Reliability & Durability
+See the [Execution Reliability guide](apps/docs-site/content/docs/execution-reliability.mdx) and the [engine README](packages/workflow-engine/src/README.md) for the full details.
+- **Smart Retries**: Per-node retry classification — idempotent nodes (AI, HTTP `GET`, control) retry with exponential backoff; side-effecting nodes (social posts, HTTP `POST`) run once to avoid duplicate side effects
+- **Dead-Letter Queue**: Terminally-failed jobs are parked with their full payload + error for inspection and deliberate re-queue, never silently dropped
+- **Crash-Safe Redis**: Bundled Redis runs with append-only persistence (AOF) so in-flight runs survive a restart
+- **Checkpointing**: Step history is flushed to Postgres at periodic checkpoints (not just on completion) and retained without truncation for long runs
+- **Parallel Branch Execution** *(opt-in)*: Run independent branches concurrently via shared Redis execution state with correct fan-in at Merge nodes (`ORCHKA_PARALLEL_BRANCHES=1`)
 
 
 ### Node Types
@@ -97,16 +104,22 @@ Configure the following environment variables:
 - `GOOGLE_GENERATIVE_AI_API_KEY`: Google AI API key (optional, can use stored credentials)
 - `GROQ_API_KEY`: Groq API key (optional)
 - `REDIS_URL`: Redis connection URL (for BullMQ job processing)
+- `ORCHKA_PARALLEL_BRANCHES`: Set to `1` to run independent branches concurrently (optional, default off — see [Execution Reliability](apps/docs-site/content/docs/execution-reliability.mdx))
 
-4. Set up the database:
+4. Start Redis with append-only persistence (recommended — survives restarts):
+```bash
+docker compose up -d redis
+```
+
+5. Set up the database:
 ```bash
 bun run prisma migrate dev
 bun run prisma generate
 ```
 
-5. Start the development server:
+6. Start the development server (app + BullMQ worker):
 ```bash
-bun run dev
+bun run dev:all
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
