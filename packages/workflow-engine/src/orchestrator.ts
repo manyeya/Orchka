@@ -18,6 +18,8 @@ import {
 
 import { publishWorkflowEvent, MAX_HISTORY_EVENTS } from "./publisher";
 import type { BranchDecision } from "./types";
+import { executionState, isParallelExecutionEnabled } from "./execution-state";
+import { computeReadyNodes, isWorkflowComplete } from "./plan-next-nodes";
 
 import {
   getCredentialForExecution,
@@ -511,6 +513,14 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
 
   const firstNode = sortedNodes[0];
 
+  // PARALLEL PATH: seed shared Redis execution state with the trigger data and
+  // claim the first node so it can't be double-enqueued. All subsequent
+  // context/completed/branch state lives in Redis, not the job payload.
+  if (isParallelExecutionEnabled()) {
+    await executionState.init(executionId, initialData || {});
+    await executionState.claimNode(executionId, firstNode.id);
+  }
+
   // Serialize workflow data to pass through jobs (avoids repeated DB fetches)
   const workflowData: SerializedWorkflow = {
     id: workflow.id,
@@ -593,6 +603,9 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   const dependencies = new Map<string, string[]>(depsArray || []);
   const completedNodeIds = new Set(completed || []);
 
+  // PARALLEL PATH: authoritative state lives in Redis, not the job payload.
+  const parallel = isParallelExecutionEnabled();
+
   console.log(`[Node ${nodeIndex + 1}/${totalNodes}] Executing ${nodeName} (${nodeType})`);
   console.log(`[Node Debug] nodeType="${nodeType}", NodeType.WAIT="${NodeType.WAIT}", NodeType.LOOP="${NodeType.LOOP}"`);
   console.log(`[Node Debug] isWait=${nodeType === NodeType.WAIT}, isLoop=${nodeType === NodeType.LOOP}`);
@@ -613,16 +626,21 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   if (skippedNodeIds.includes(nodeId)) {
     console.log(`[Node] Skipping ${nodeName} - not on active branch`);
 
-    // Chain to next node if there is one
-    await chainToNextNode(
-      job.data,
-      context,
-      branchDecisions,
-      skippedNodeIds,
-      undefined,
-      dependencies,
-      completedNodeIds
-    );
+    if (parallel) {
+      await executionState.markSkipped(executionId, [nodeId]);
+      await chainToNextNodeParallel(job.data, { isSkippedSelf: true });
+    } else {
+      // Chain to next node if there is one
+      await chainToNextNode(
+        job.data,
+        context,
+        branchDecisions,
+        skippedNodeIds,
+        undefined,
+        dependencies,
+        completedNodeIds
+      );
+    }
 
     return { skipped: true, nodeId, nodeName };
   }
@@ -631,16 +649,21 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
   if (isVisualOnlyNode(nodeType as NodeType)) {
     console.log(`[Node] Skipping ${nodeName} (${nodeType}) - visual-only node`);
 
-    // Chain to next node without creating any execution history
-    await chainToNextNode(
-      job.data,
-      context,
-      branchDecisions,
-      skippedNodeIds,
-      undefined,
-      dependencies,
-      completedNodeIds
-    );
+    if (parallel) {
+      // Commit an empty output so downstream dependents see this node as done.
+      await chainToNextNodeParallel(job.data, { nodeName, nodeOutput: {} });
+    } else {
+      // Chain to next node without creating any execution history
+      await chainToNextNode(
+        job.data,
+        context,
+        branchDecisions,
+        skippedNodeIds,
+        undefined,
+        dependencies,
+        completedNodeIds
+      );
+    }
 
     return { skipped: true, nodeId, nodeName, reason: 'visual-only' };
   }
@@ -677,11 +700,20 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     };
   }
 
+  // In parallel mode the accumulated context/branch decisions are authoritative
+  // in Redis (fan-in joins need every branch's output, not just this job's copy).
+  const effectiveContext = parallel
+    ? await executionState.getContext(executionId)
+    : context;
+  const effectiveBranchDecisions = parallel
+    ? await executionState.getBranchDecisions(executionId)
+    : branchDecisions;
+
   // Build expression context
   const expressionContext = buildExpressionContext({
     nodeResults: {
-      ...context,
-      __branchDecisions: branchDecisions,
+      ...effectiveContext,
+      __branchDecisions: effectiveBranchDecisions,
     },
     nodes: workflow.nodes.map(n => ({
       id: n.id,
@@ -727,7 +759,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       nodeType,
       type: 'node-status',
       status: 'loading',
-      input: filterInternalFields(context) as any,
+      input: filterInternalFields(effectiveContext) as any,
     });
 
     let result: Record<string, unknown>;
@@ -747,7 +779,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
       result = await executor({
         data: resolvedData,
         nodeId,
-        context,
+        context: effectiveContext,
         expressionContext,
         publish,
         resolveCredential,
@@ -775,7 +807,7 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
     await publishWorkflowEvent(workflowId, executionId, {
       nodeId,
       nodeName,
-      input: filterInternalFields(context) as any,
+      input: filterInternalFields(effectiveContext) as any,
       output: filterInternalFields(nodeOutput) as any,
       nodeType,
       type: 'node-status',
@@ -791,12 +823,12 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
 
     // Update context with this node's result (flat structure, like n8n)
     const newContext = {
-      ...context,
+      ...effectiveContext,
       [nodeName]: nodeOutput,
     };
 
     // Handle control node branch decisions
-    let newBranchDecisions = { ...branchDecisions };
+    let newBranchDecisions = { ...effectiveBranchDecisions };
     let newSkippedNodeIds = [...skippedNodeIds];
 
     if (isControlNode(nodeType as NodeType) && result.__branchDecision) {
@@ -842,16 +874,40 @@ export async function executeNodeJob(job: Job<NodeJobData>): Promise<any> {
 
     console.log(`[Node] Completed ${nodeName}`);
 
-    // Chain to next node (with delay if this was a WAIT node)
-    await chainToNextNode(
-      job.data,
-      newContext,
-      newBranchDecisions,
-      newSkippedNodeIds,
-      delayForNextNode,
-      dependencies,
-      completedNodeIds
-    );
+    if (parallel) {
+      // Commit this node's output (and any branch decision / transitive skips)
+      // to shared Redis state, then enqueue every ready successor concurrently.
+      let branchDecisionToCommit: BranchDecision | undefined;
+      let skipsToCommit: string[] = [];
+      if (isControlNode(nodeType as NodeType) && result.__branchDecision) {
+        // For LOOP the authoritative decision is the post-iteration "done" one.
+        branchDecisionToCommit = nodeType === NodeType.LOOP
+          ? newBranchDecisions[nodeId]
+          : (result.__branchDecision as BranchDecision);
+        skipsToCommit = newSkippedNodeIds;
+      }
+      // For LOOP, the loop-node summary lives in newContext[nodeName].
+      const outputToCommit = (newContext as Record<string, unknown>)[nodeName] ?? nodeOutput;
+
+      await chainToNextNodeParallel(job.data, {
+        nodeName,
+        nodeOutput: outputToCommit,
+        branchDecision: branchDecisionToCommit,
+        skippedNodeIds: skipsToCommit,
+        delayMs: delayForNextNode,
+      });
+    } else {
+      // Chain to next node (with delay if this was a WAIT node)
+      await chainToNextNode(
+        job.data,
+        newContext,
+        newBranchDecisions,
+        newSkippedNodeIds,
+        delayForNextNode,
+        dependencies,
+        completedNodeIds
+      );
+    }
 
     return {
       nodeId,
@@ -1065,6 +1121,152 @@ async function chainToNextNode(
   );
 
   console.log(`[Node] Chained to next node: ${nextNode.name} (branch continuation)`);
+}
+
+// ============================================================================
+// Chain to Next Node(s) — PARALLEL path (shared Redis state)
+// ============================================================================
+
+/**
+ * Parallel sibling of `chainToNextNode`, used when `ORCHKA_PARALLEL_BRANCHES`
+ * is enabled. Commits the just-finished node to shared Redis state, then
+ * enqueues EVERY ready successor concurrently (each guarded by an atomic claim
+ * so a node with two parents is enqueued exactly once). Completion is detected
+ * from the shared completed/skipped sets, so the last branch to finish — not
+ * the first to run dry — finalizes the run.
+ */
+async function chainToNextNodeParallel(
+  currentJobData: NodeJobData,
+  opts: {
+    nodeName?: string;
+    nodeOutput?: unknown;
+    branchDecision?: BranchDecision;
+    skippedNodeIds?: string[];
+    delayMs?: number;
+    /** This node was itself skipped: don't commit output, just advance. */
+    isSkippedSelf?: boolean;
+  }
+): Promise<void> {
+  const { workflowId, executionId, nodeType, nodeId, totalNodes, sortedNodeIds, workflowData } = currentJobData;
+
+  // Resolve workflow (prefer the payload copy, fall back to DB for old jobs).
+  let workflow: SerializedWorkflow;
+  if (workflowData) {
+    workflow = workflowData;
+  } else {
+    const dbWorkflow = await prisma.workflow.findUniqueOrThrow({
+      where: { id: workflowId },
+      include: { nodes: true, connections: true },
+    });
+    workflow = {
+      id: dbWorkflow.id,
+      name: dbWorkflow.name,
+      userId: dbWorkflow.userId,
+      nodes: dbWorkflow.nodes.map(n => ({ id: n.id, type: n.type, name: n.name, data: n.data as Record<string, unknown> })),
+      connections: dbWorkflow.connections.map(c => ({ fromNodeId: c.fromNodeId, toNodeId: c.toNodeId, fromOutput: c.fromOutput, toInput: c.toInput })),
+    };
+  }
+
+  // 1) Commit this node's result. (Skipped-self was already marked by caller.)
+  if (!opts.isSkippedSelf) {
+    await executionState.commitNode(executionId, {
+      nodeId,
+      nodeName: opts.nodeName ?? nodeId,
+      output: opts.nodeOutput,
+      branchDecision: opts.branchDecision,
+      skippedNodeIds: opts.skippedNodeIds,
+    });
+  }
+
+  // 2) Read authoritative state AFTER committing, so it reflects this node.
+  const completed = await executionState.getCompleted(executionId);
+  const skipped = await executionState.getSkipped(executionId);
+
+  // Periodic checkpoint: flush steps every N completed nodes.
+  if (completed.size > 0 && completed.size % CHECKPOINT_EVERY_N === 0) {
+    await persistExecutionSteps(executionId, workflowId);
+  }
+
+  // 3) Compute every ready successor.
+  const dependencies = new Map<string, string[]>(currentJobData.dependencies || []);
+  const ready = computeReadyNodes({
+    currentNodeId: nodeId,
+    sortedNodeIds,
+    dependencies,
+    edges: workflow.connections.map(c => ({ fromNodeId: c.fromNodeId, toNodeId: c.toNodeId })),
+    completed,
+    skipped,
+  });
+
+  // 4) Enqueue each ready node we can atomically claim.
+  const delayMs = opts.delayMs;
+  const waitResume = nodeType === NodeType.WAIT && delayMs && delayMs > 0 ? nodeId : undefined;
+
+  for (const readyId of ready) {
+    if (!(await executionState.claimNode(executionId, readyId))) continue; // someone else got it
+
+    const nextNode = workflow.nodes.find(n => n.id === readyId);
+    if (!nextNode) {
+      console.error(`[Node|parallel] Ready node not found: ${readyId}`);
+      continue;
+    }
+
+    const jobOptions: any = {
+      ...getRetryPolicy(nextNode.type as NodeType, nextNode.data as Record<string, unknown>),
+    };
+    if (delayMs && delayMs > 0) jobOptions.delay = delayMs;
+
+    await nodeQueue.add(
+      `node:${nextNode.type}:${nextNode.name}`,
+      {
+        workflowId,
+        executionId,
+        nodeId: nextNode.id,
+        nodeName: nextNode.name,
+        nodeType: nextNode.type,
+        nodeData: nextNode.data,
+        nodeIndex: sortedNodeIds.indexOf(readyId),
+        totalNodes,
+        // Parallel path reads context/branch/skip state from Redis; payload
+        // carries only the structural fields each job needs.
+        context: {},
+        branchDecisions: {},
+        skippedNodeIds: [],
+        sortedNodeIds,
+        dependencies: currentJobData.dependencies,
+        completedNodeIds: [],
+        workflowData: workflow,
+        previousWaitNodeId: waitResume,
+      } as NodeJobData,
+      jobOptions
+    );
+    console.log(`[Node|parallel] Enqueued ready node: ${nextNode.name}`);
+  }
+
+  // 5) Finalize exactly once when the whole graph is done.
+  if (isWorkflowComplete(sortedNodeIds, completed, skipped)) {
+    if (await executionState.tryFinalize(executionId)) {
+      // Terminal WAIT with no successors: surface its success before finishing.
+      if (waitResume) {
+        await publishWorkflowEvent(workflowId, executionId, {
+          nodeId,
+          type: 'node-status',
+          status: 'success',
+          nodeType: NodeType.WAIT,
+        });
+      }
+
+      await persistExecutionSteps(executionId, workflowId);
+
+      const finalContext = await executionState.getContext(executionId);
+      await finalizeExecution(executionId, {
+        status: ExecutionStatus.COMPLETED,
+        result: filterInternalFields(finalContext),
+      });
+      await executionState.clear(executionId);
+      console.log(`[Workflow|parallel] Completed execution ${executionId}`);
+    }
+  }
 }
 
 // ============================================================================

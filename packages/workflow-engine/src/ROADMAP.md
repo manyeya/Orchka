@@ -114,23 +114,45 @@ async function chainToNextNode(...) {
 
 ### Performance
 
-#### 4. Parallel Execution with FlowProducer 🟡 Medium Priority
+#### 4. Parallel Execution 🟢 LANDED (opt-in) — loop-as-jobs remaining
 
-**Current:** Sequential execution (one node at a time)
-
-**Goal:** True parallel execution of independent branches
+**Goal:** True parallel execution of independent branches.
 
 ```
-Current:    1 → 2 → 4 → 3
-Desired:    1 → (2, 3 in parallel) → 4
+Sequential (default):    1 → 2 → 4 → 3
+Parallel  (opt-in):      1 → (2, 3 in parallel) → 4
 ```
 
-**Solution:** Use BullMQ's FlowProducer for managing parallel workflows.
+**What landed** (behind `ORCHKA_PARALLEL_BRANCHES=1`, default off so the proven
+sequential path is unchanged):
 
-**Files to modify:**
-- `bullmq/orchestrator.ts` (major refactor)
+- **Shared Redis execution state** (`execution-state.ts`): context (keyed by node
+  name), completed/skipped sets, branch decisions, and an enqueue-claim set all
+  live in one per-execution Redis state instead of being threaded through each
+  job payload. `commitNode` writes context BEFORE adding to `completed`, so any
+  job observing a node as completed also sees its output — fan-in correctness
+  without a Lua script.
+- **Parallel fan-out** (`chainToNextNodeParallel`): enqueues *every* ready
+  successor, each guarded by `claimNode` (atomic SADD) so a node with two parents
+  is enqueued exactly once.
+- **Pure scheduler** (`plan-next-nodes.ts`): `computeReadyNodes` /
+  `isWorkflowComplete`, unit-tested for fan-out, diamonds, IF-skip joins, and
+  cascade-skips. A skipped parent counts as satisfied so IF-diamonds re-converge.
+- **MERGE fan-in**: a join node becomes ready only when all its inputs are in the
+  shared `completed` set; the last branch to finish finalizes (guarded by
+  `tryFinalize`).
 
-**Estimated effort:** 6-8 hours
+**Remaining (Phase 2.4 — loop body as queued jobs):** loops still run in-process
+(`executeLoopBody`), reconciled into shared state on completion. In-loop WAIT is
+still a blocking `setTimeout` (see item #3-adjacent). Converting the loop body to
+chained node jobs would make loops crash-recoverable mid-iteration and let in-loop
+WAIT reuse the durable delayed-job path. Est. 1–2 days; do after the parallel path
+has integration soak time.
+
+**Landed in:** `execution-state.ts`, `plan-next-nodes.ts`, `orchestrator.ts`
+(`chainToNextNodeParallel`, parallel branches in `executeWorkflowJob`/`executeNodeJob`).
+
+**Estimated effort:** 6-8 hours (done) + 1-2 days (loop-as-jobs, remaining)
 
 ---
 
