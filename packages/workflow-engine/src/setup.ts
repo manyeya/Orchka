@@ -18,7 +18,7 @@ export const workflowQueue = new Queue('workflows', {
       delay: 1000,
     },
     removeOnComplete: true,
-    removeOnFail: true,
+    removeOnFail: { count: 1000 },
   },
 });
 
@@ -31,7 +31,9 @@ export const nodeQueue = new Queue('nodes', {
       delay: 1000,
     },
     removeOnComplete: true,
-    removeOnFail: true,
+    // Retain recent failed jobs so the dead-letter handler can inspect and
+    // re-queue them. Per-node `attempts` is set explicitly at enqueue time.
+    removeOnFail: { count: 1000 },
   },
 });
 
@@ -44,7 +46,20 @@ export const webhookQueue = new Queue('webhooks', {
       delay: 1000,
     },
     removeOnComplete: true,
-    removeOnFail: true,
+    removeOnFail: { count: 1000 },
+  },
+});
+
+// Dead-letter queue: node jobs that fail terminally (retries exhausted, or a
+// side-effecting node that never retries) are parked here with their full
+// payload + error so they can be inspected and deliberately re-queued onto
+// `nodeQueue`. These jobs are not processed by any worker; they are storage.
+export const deadLetterQueue = new Queue('dead-letter', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    // Keep DLQ entries until explicitly removed/re-queued.
+    removeOnComplete: false,
+    removeOnFail: false,
   },
 });
 
@@ -65,6 +80,7 @@ export async function closeBullMQConnections() {
   await workflowQueue.close();
   await nodeQueue.close();
   await webhookQueue.close();
+  await deadLetterQueue.close();
   await flowProducer.close();
   await workflowQueueEvents.close();
   await nodeQueueEvents.close();

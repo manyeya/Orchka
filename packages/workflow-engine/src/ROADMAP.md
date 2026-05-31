@@ -4,29 +4,35 @@
 
 ### Execution Reliability
 
-#### 1. Redis Persistence (AOF) 🔴 High Priority
+#### 1. Redis Persistence (AOF) ✅ DONE
 
 **Problem:** Redis is in-memory by default. If Redis crashes/restarts, all execution history in Redis is lost.
 
-**Solution:** Enable AOF (Append Only File) persistence.
+**Solution:** Enabled AOF (Append Only File) persistence via the root `docker-compose.yml`
+Redis service: `redis-server --appendonly yes --appendfsync everysec`, backed by the
+`orchka-redis-data` named volume.
 
-```bash
-# Add to redis.conf
-appendonly yes
-appendfsync everysec
-```
-
-**Files to modify:**
-- Redis configuration
-- Deployment/docker-compose files
-
-**Estimated effort:** 30 minutes
+**Landed in:** `docker-compose.yml` (repo root).
 
 ---
 
-#### 2. Dead Letter Queue (DLQ) 🟡 Medium Priority
+#### 2. Dead Letter Queue (DLQ) ✅ DONE
 
 **Problem:** Jobs that fail all retry attempts are lost. No visibility into what failed or ability to retry manually.
+
+**Solution:** Added a `dead-letter` BullMQ queue. The node worker's `failed` handler
+routes terminally-failed jobs (retries exhausted, or side-effecting nodes that never
+retry) into it with the full `NodeJobData` payload + error, so they can be inspected and
+re-queued. Pairs with per-node retry classification (`retry-policy.ts`): idempotent nodes
+retry 3× with backoff; side-effecting nodes (social posts, non-GET HTTP) run once and DLQ
+on failure. Queues also switched from `removeOnFail: true` → `{ count: 1000 }`.
+
+**Landed in:** `setup.ts` (`deadLetterQueue`), `dead-letter.ts` (`moveToDeadLetter`,
+`requeueFromDeadLetter`, `isTerminalFailure`), `workers.ts` (failed handler),
+`@orchka/nodes/runtime` `retry-policy.ts`. Remaining: a DLQ list/retry endpoint in
+`features/executions/server/router.ts` (UI surface).
+
+<details><summary>Original sketch</summary>
 
 **Solution:** Configure BullMQ Dead Letter Queue for failed jobs.
 
@@ -59,11 +65,22 @@ export const nodeQueue = new Queue('nodes', {
 
 **Estimated effort:** 2-3 hours
 
+</details>
+
 ---
 
-#### 3. Periodic Checkpoints 🟢 Low Priority
+#### 3. Periodic Checkpoints ✅ DONE
 
 **Problem:** If worker crashes mid-execution, only completed steps are preserved. Long-running workflows could lose significant progress.
+
+**Solution:** `persistExecutionSteps` is now also called every `CHECKPOINT_EVERY_N`
+(=25) completed nodes in `chainToNextNode`, and every 25 iterations in the loop body —
+not just on completion/failure. Safe because persistence is idempotent (deterministic
+step ids + `skipDuplicates`).
+
+**Landed in:** `orchestrator.ts` (`CHECKPOINT_EVERY_N`).
+
+<details><summary>Original sketch</summary>
 
 **Solution:** Persist steps to DB every N nodes during execution.
 
@@ -90,6 +107,8 @@ async function chainToNextNode(...) {
 - `bullmq/orchestrator.ts`
 
 **Estimated effort:** 1 hour
+
+</details>
 
 ---
 

@@ -2,6 +2,16 @@ import Redis from 'ioredis';
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
+/**
+ * Maximum number of step events retained per execution in the Redis history
+ * list. This must comfortably exceed the step count of the largest expected
+ * workflow (including loop iterations) — otherwise the oldest events are
+ * trimmed away before `persistExecutionSteps` flushes them to Postgres,
+ * silently losing the middle of long runs. Keep in sync with the `lrange`
+ * bound in orchestrator.ts `persistExecutionSteps`.
+ */
+export const MAX_HISTORY_EVENTS = 10_000;
+
 export type PublishFn = (payload: {
     nodeId: string;
     input: Record<string, unknown>;
@@ -25,7 +35,7 @@ export async function publishWorkflowEvent(workflowId: string, executionId: stri
     // Store in execution-specific history for lazy persistence
     const historyKey = `workflow:${workflowId}:execution:${executionId}:history`;
     await redis.lpush(historyKey, JSON.stringify({ payload, timestamp: Date.now() }));
-    await redis.ltrim(historyKey, 0, 100);
+    await redis.ltrim(historyKey, 0, MAX_HISTORY_EVENTS - 1);
 }
 
 export async function closeRedis() {

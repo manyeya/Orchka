@@ -1,0 +1,32 @@
+# Local infrastructure for Orchka.
+#
+# Redis here is configured for DURABILITY, not just caching: BullMQ keeps all
+# in-flight job state and the per-execution step history in Redis, and the
+# engine only flushes steps to Postgres on completion / at periodic checkpoints.
+# Without persistence, a Redis restart would drop every running workflow and any
+# not-yet-persisted step history.
+#
+# - appendonly yes        : write every change to the append-only file (AOF)
+# - appendfsync everysec  : fsync the AOF once per second (durability within ~1s
+#                           of a crash, with negligible throughput cost)
+#
+# Usage:
+#   docker compose up -d redis
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: orchka-redis
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - orchka-redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  orchka-redis-data:

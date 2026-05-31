@@ -7,6 +7,7 @@ import {
   CONTROL_NODE_TYPES,
   VISUAL_NODE_TYPES,
   getExecutor,
+  getRetryPolicy,
 } from "@orchka/nodes/runtime";
 
 import { topologicalSortNodes } from "./utils";
@@ -15,7 +16,7 @@ import {
   buildExpressionContext
 } from "@orchka/expression-engine/resolve-expressions";
 
-import { publishWorkflowEvent } from "./publisher";
+import { publishWorkflowEvent, MAX_HISTORY_EVENTS } from "./publisher";
 import type { BranchDecision } from "./types";
 
 import {
@@ -198,13 +199,23 @@ function findReachableNodes(
 // ============================================================================
 
 /**
+ * Flush in-flight steps to Postgres this often (measured in completed nodes /
+ * loop iterations) so an AOF-backed crash mid-run resumes with most history
+ * intact, instead of only persisting on completion/failure. `persistExecutionSteps`
+ * is idempotent (deterministic step ids + skipDuplicates), so re-running is safe.
+ */
+const CHECKPOINT_EVERY_N = 25;
+
+/**
  * Persist execution steps from Redis to database.
  * Called on workflow completion/failure to ensure data isn't lost.
  */
 async function persistExecutionSteps(executionId: string, workflowId: string): Promise<void> {
   try {
     const historyKey = `workflow:${workflowId}:execution:${executionId}:history`;
-    const redisEvents = await redis.lrange(historyKey, 0, 100);
+    // Read the full retained history (must match the publisher's trim bound)
+    // so large workflows don't lose their middle steps on persist.
+    const redisEvents = await redis.lrange(historyKey, 0, MAX_HISTORY_EVENTS - 1);
 
     if (redisEvents.length === 0) {
       console.log(`[Persist Steps] No events in Redis for execution ${executionId}`);
@@ -541,10 +552,9 @@ export async function executeWorkflowJob(job: Job<WorkflowJobData>): Promise<any
       // OPTIMIZATION: Pass workflow data to avoid repeated DB fetches
       workflowData,
     } as NodeJobData,
-    {
-      attempts: 3, // Per-node retry
-      backoff: { type: 'exponential', delay: 1000 },
-    }
+    // Retry policy depends on the node type: idempotent nodes retry with
+    // backoff, side-effecting nodes (social posts, non-GET HTTP) run once.
+    getRetryPolicy(firstNode.type as NodeType, firstNode.data as Record<string, unknown>)
   );
 
   console.log(`[Workflow] Queued first node: ${firstNode.name}`);
@@ -903,6 +913,12 @@ async function chainToNextNode(
     completed.add(nodeId);
   }
 
+  // Periodic checkpoint: flush accumulated steps to DB every N nodes so a
+  // crash mid-run doesn't lose progress (idempotent, safe to call repeatedly).
+  if (completed.size > 0 && completed.size % CHECKPOINT_EVERY_N === 0) {
+    await persistExecutionSteps(executionId, workflowId);
+  }
+
   // Find all nodes that are ready to execute (all dependencies satisfied)
   // We prioritize depth-first: execute children of the current branch first
 
@@ -1010,10 +1026,10 @@ async function chainToNextNode(
   // Calculate next node index for display purposes
   const nextIndex = sortedNodeIds.indexOf(nextNodeId);
 
-  // Add next node job with accumulated context
+  // Add next node job with accumulated context. Retry policy is per node
+  // type so side-effecting nodes don't auto-retry into duplicate posts.
   const jobOptions: any = {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 1000 },
+    ...getRetryPolicy(nextNode.type as NodeType, nextNode.data as Record<string, unknown>),
   };
 
   // Add delay for WAIT nodes
@@ -1229,6 +1245,12 @@ async function executeLoopBody(
       index,
       result: filterInternalFields(iterationContext),
     });
+
+    // Periodic checkpoint across long loops so a crash mid-loop persists most
+    // of the progress (idempotent flush from Redis history).
+    if ((index + 1) % CHECKPOINT_EVERY_N === 0) {
+      await persistExecutionSteps(executionId, workflowId);
+    }
   }
 
   // Mark loop body nodes as skipped for main execution flow

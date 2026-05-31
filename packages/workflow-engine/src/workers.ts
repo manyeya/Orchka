@@ -1,6 +1,7 @@
 import { Worker } from 'bullmq';
 import { redisConnection } from './setup';
 import { executeWorkflowJob, executeNodeJob } from './orchestrator';
+import { moveToDeadLetter, isTerminalFailure } from './dead-letter';
 
 export let workflowWorker: Worker | null = null;
 export let nodeWorker: Worker | null = null;
@@ -50,8 +51,17 @@ export function startNodeWorker() {
     console.log(`[Node Worker] Job ${job.id} completed:`, job.name);
   });
 
-  nodeWorker.on('failed', (job, error) => {
+  nodeWorker.on('failed', async (job, error) => {
     console.error(`[Node Worker] Job ${job?.id} failed:`, job?.name, error);
+    // Once retries are exhausted (or the node never retries), park the job in
+    // the dead-letter queue so it isn't silently lost when removeOnFail prunes it.
+    if (job && isTerminalFailure(job)) {
+      try {
+        await moveToDeadLetter(job, error);
+      } catch (dlqError) {
+        console.error('[Node Worker] Failed to move job to dead-letter queue:', dlqError);
+      }
+    }
   });
 
   nodeWorker.on('error', (error) => {
